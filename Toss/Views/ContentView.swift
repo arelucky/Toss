@@ -8,6 +8,12 @@
 import SwiftUI
 
 struct ContentView: View {
+    let coinSide: CoinSide
+
+    init(coinSide: CoinSide = .front) {
+        self.coinSide = coinSide
+    }
+
     var body: some View {
         ZStack {
             LinearGradient(
@@ -20,7 +26,7 @@ struct ContentView: View {
             )
             .ignoresSafeArea()
 
-            CoinView()
+            CoinView(side: coinSide)
         }
     }
 }
@@ -29,9 +35,7 @@ struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
             ContentView()
-            CoinView(side: .back)
-                .padding()
-                .background(Color(red: 0.04, green: 0.04, blue: 0.05))
+            ContentView(coinSide: .back)
         }
     }
 }
