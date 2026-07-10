@@ -9,16 +9,29 @@ import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        ZStack {
+            LinearGradient(
+                colors: [
+                    Color(red: 0.08, green: 0.08, blue: 0.09),
+                    Color(red: 0.02, green: 0.02, blue: 0.03)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+
+            CoinView()
         }
-        .padding()
     }
 }
 
-#Preview {
-    ContentView()
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        Group {
+            ContentView()
+            CoinView(side: .back)
+                .padding()
+                .background(Color(red: 0.04, green: 0.04, blue: 0.05))
+        }
+    }
 }
