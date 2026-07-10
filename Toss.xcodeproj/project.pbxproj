@@ -94,12 +94,60 @@
 		F5A43A7A2FFFE85000F9D3AF /* Toss */ = {
 			isa = PBXGroup;
 			children = (
-				F5A43A7B2FFFE85000F9D3AF /* TossApp.swift */,
-				F5A43A7D2FFFE85000F9D3AF /* ContentView.swift */,
+				F5A43AB02FFFE90000F9D3AF /* App */,
+				F5A43AB12FFFE90000F9D3AF /* Views */,
+				F5A43AB22FFFE90000F9D3AF /* Components */,
+				F5A43AB32FFFE90000F9D3AF /* Models */,
+				F5A43AB42FFFE90000F9D3AF /* ViewModels */,
+				F5A43AB52FFFE90000F9D3AF /* Services */,
 				F5A43A7F2FFFE85100F9D3AF /* Assets.xcassets */,
 				F5A43A812FFFE85100F9D3AF /* Preview Content */,
 			);
 			path = Toss;
+			sourceTree = "<group>";
+		};
+		F5A43AB02FFFE90000F9D3AF /* App */ = {
+			isa = PBXGroup;
+			children = (
+				F5A43A7B2FFFE85000F9D3AF /* TossApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		F5A43AB12FFFE90000F9D3AF /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				F5A43A7D2FFFE85000F9D3AF /* ContentView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		F5A43AB22FFFE90000F9D3AF /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		F5A43AB32FFFE90000F9D3AF /* Models */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		F5A43AB42FFFE90000F9D3AF /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		F5A43AB52FFFE90000F9D3AF /* Services */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Services;
 			sourceTree = "<group>";
 		};
 		F5A43A812FFFE85100F9D3AF /* Preview Content */ = {
