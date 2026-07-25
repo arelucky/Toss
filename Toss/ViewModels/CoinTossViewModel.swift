@@ -3,12 +3,13 @@ import SwiftUI
 final class CoinTossViewModel: ObservableObject {
     let tossTriggerThreshold: CGFloat = -80
     let tossFlightOffset: CGFloat = -180
+    let tossFlightDuration: TimeInterval = 0.42
 
     @Published private(set) var state: CoinTossState = .idle
     @Published private(set) var verticalOffset: CGFloat = 0
 
     var canStartRotation: Bool {
-        state == .tossing
+        state == .spinning
     }
 
     func updateDragTranslation(_ translation: CGSize) {
@@ -25,5 +26,10 @@ final class CoinTossViewModel: ObservableObject {
         } else {
             verticalOffset = 0
         }
+    }
+
+    func completeTossFlight() {
+        guard state == .tossing else { return }
+        state = .spinning
     }
 }

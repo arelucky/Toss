@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     let coinSide: CoinSide
+    @State private var rotationDegrees = 0.0
     @StateObject private var viewModel: CoinTossViewModel
 
     init(coinSide: CoinSide = .front, viewModel: CoinTossViewModel = CoinTossViewModel()) {
@@ -29,8 +30,16 @@ struct ContentView: View {
             .ignoresSafeArea()
 
             CoinView(side: coinSide)
+                .rotation3DEffect(
+                    .degrees(rotationDegrees),
+                    axis: (x: 0, y: 1, z: 0),
+                    perspective: 0.55
+                )
                 .offset(y: viewModel.verticalOffset)
                 .gesture(tossGesture)
+                .onChange(of: viewModel.state) { _, state in
+                    handleStateChange(state)
+                }
         }
     }
 
@@ -43,11 +52,37 @@ struct ContentView: View {
                 withAnimation(tossAnimation) {
                     viewModel.endDrag(translation: value.translation)
                 }
+                scheduleSpinIfNeeded()
             }
     }
 
     private var tossAnimation: Animation {
         .spring(response: 0.42, dampingFraction: 0.78)
+    }
+
+    private var spinAnimation: Animation {
+        .linear(duration: 0.36)
+        .repeatForever(autoreverses: false)
+    }
+
+    private func scheduleSpinIfNeeded() {
+        guard viewModel.state == .tossing else { return }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + viewModel.tossFlightDuration) {
+            viewModel.completeTossFlight()
+        }
+    }
+
+    private func handleStateChange(_ state: CoinTossState) {
+        guard state == .spinning else { return }
+        startSpinning()
+    }
+
+    private func startSpinning() {
+        rotationDegrees = 0
+        withAnimation(spinAnimation) {
+            rotationDegrees = 360
+        }
     }
 }
 

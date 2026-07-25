@@ -129,9 +129,9 @@ feat: add coin toss gesture
 
 ---
 
-### Task 2-4（待开始）
+### Task 2-4（已完成）
 
-**飞行动画**
+**飞行与空中旋转动画**
 
 目标：
 
@@ -139,9 +139,19 @@ feat: add coin toss gesture
 * 弹性动画
 * 动画结束进入旋转状态
 
-状态：
+完成内容：
 
-⬜ 未开始
+* 扩展 Toss 状态为 `idle` / `tossing` / `spinning`
+* 保留上滑后的向上位移动画
+* 飞行阶段完成后进入 `spinning`
+* 使用 SwiftUI `rotation3DEffect` 实现连续 3D 翻转
+* 为后续停止动画与 Reveal 预留状态接口
+
+Git Commit：
+
+```text
+feat: add coin rotation animation
+```
 
 ---
 

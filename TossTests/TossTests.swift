@@ -27,7 +27,29 @@ final class TossTests: XCTestCase {
         viewModel.endDrag(translation: CGSize(width: 0, height: -96))
 
         XCTAssertEqual(viewModel.state, .tossing)
+        XCTAssertFalse(viewModel.canStartRotation)
         XCTAssertEqual(viewModel.verticalOffset, viewModel.tossFlightOffset)
+    }
+
+    func testTossFlightCompletionStartsSpinning() throws {
+        let viewModel = CoinTossViewModel()
+
+        viewModel.endDrag(translation: CGSize(width: 0, height: -96))
+        viewModel.completeTossFlight()
+
+        XCTAssertEqual(viewModel.state, .spinning)
+        XCTAssertTrue(viewModel.canStartRotation)
+        XCTAssertEqual(viewModel.verticalOffset, viewModel.tossFlightOffset)
+    }
+
+    func testIdleDoesNotCompleteIntoSpinning() throws {
+        let viewModel = CoinTossViewModel()
+
+        viewModel.completeTossFlight()
+
+        XCTAssertEqual(viewModel.state, .idle)
+        XCTAssertFalse(viewModel.canStartRotation)
+        XCTAssertEqual(viewModel.verticalOffset, 0)
     }
 
     func testDragBelowThresholdReturnsToIdle() throws {
