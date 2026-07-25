@@ -145,12 +145,15 @@ feat: add coin toss gesture
 * 保留上滑后的向上位移动画
 * 飞行阶段完成后进入 `spinning`
 * 使用 SwiftUI `rotation3DEffect` 实现连续 3D 翻转
+* 修正 CoinView 双面结构，同时包含正面、背面与金属厚度
+* 改为 X 轴翻转，让旋转过程中可见正面、侧面厚度与背面
 * 为后续停止动画与 Reveal 预留状态接口
 
 Git Commit：
 
 ```text
 feat: add coin rotation animation
+fix: improve coin 3d flip rotation
 ```
 
 ---

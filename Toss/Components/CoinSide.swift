@@ -1,6 +1,6 @@
 import Foundation
 
-enum CoinSide {
+enum CoinSide: Equatable {
     case front
     case back
 }

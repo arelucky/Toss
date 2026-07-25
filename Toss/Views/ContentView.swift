@@ -29,12 +29,7 @@ struct ContentView: View {
             )
             .ignoresSafeArea()
 
-            CoinView(side: coinSide)
-                .rotation3DEffect(
-                    .degrees(rotationDegrees),
-                    axis: (x: 0, y: 1, z: 0),
-                    perspective: 0.55
-                )
+            CoinView(side: coinSide, rotationDegrees: rotationDegrees)
                 .offset(y: viewModel.verticalOffset)
                 .gesture(tossGesture)
                 .onChange(of: viewModel.state) { _, state in
