@@ -9,9 +9,11 @@ import SwiftUI
 
 struct ContentView: View {
     let coinSide: CoinSide
+    @StateObject private var viewModel: CoinTossViewModel
 
-    init(coinSide: CoinSide = .front) {
+    init(coinSide: CoinSide = .front, viewModel: CoinTossViewModel = CoinTossViewModel()) {
         self.coinSide = coinSide
+        _viewModel = StateObject(wrappedValue: viewModel)
     }
 
     var body: some View {
@@ -27,7 +29,25 @@ struct ContentView: View {
             .ignoresSafeArea()
 
             CoinView(side: coinSide)
+                .offset(y: viewModel.verticalOffset)
+                .gesture(tossGesture)
         }
+    }
+
+    private var tossGesture: some Gesture {
+        DragGesture(minimumDistance: 12)
+            .onChanged { value in
+                viewModel.updateDragTranslation(value.translation)
+            }
+            .onEnded { value in
+                withAnimation(tossAnimation) {
+                    viewModel.endDrag(translation: value.translation)
+                }
+            }
+    }
+
+    private var tossAnimation: Animation {
+        .spring(response: 0.42, dampingFraction: 0.78)
     }
 }
 

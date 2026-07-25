@@ -102,7 +102,7 @@ feat: polish coin visual design
 
 ---
 
-### Task 2-3（待开始）
+### Task 2-3（已完成）
 
 **上滑交互**
 
@@ -112,9 +112,20 @@ feat: polish coin visual design
 * 判断向上滑
 * Toss 手势触发
 
-状态：
+完成内容：
 
-⬜ 未开始
+* 新增 `idle` / `tossing` 基础状态
+* 新增上滑阈值判断
+* 上滑超过阈值后触发 Toss
+* 硬币产生基础向上位移动画
+* 为后续旋转动画预留状态接口
+* 新增 Toss 手势状态测试
+
+Git Commit：
+
+```text
+feat: add coin toss gesture
+```
 
 ---
 
