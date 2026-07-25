@@ -42,24 +42,24 @@ struct CoinRings: View {
                 .padding(theme.outerRingLineWidth * 0.55)
 
             Circle()
-                .strokeBorder(theme.highlightGold.opacity(0.50), lineWidth: theme.innerRingLineWidth)
+                .strokeBorder(theme.highlightGold.opacity(0.42), lineWidth: theme.innerRingLineWidth)
                 .padding(theme.defaultSize * 0.13)
 
             Circle()
-                .strokeBorder(theme.shadowGold.opacity(0.30), lineWidth: 1)
-                .padding(theme.defaultSize * 0.18)
+                .strokeBorder(theme.shadowGold.opacity(0.24), lineWidth: 1)
+                .padding(theme.defaultSize * 0.17)
         }
     }
 
     private var outerRingGradient: LinearGradient {
         LinearGradient(
             colors: [
-                theme.highlightGold,
-                theme.warmGold,
-                theme.deepGold
+                theme.highlightGold.opacity(0.70),
+                theme.warmGold.opacity(0.84),
+                theme.deepGold.opacity(0.70)
             ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
+            startPoint: UnitPoint(x: 0.72, y: 0.08),
+            endPoint: UnitPoint(x: 0.16, y: 0.92)
         )
     }
 }
@@ -68,24 +68,27 @@ struct TossMonogramMark: Shape {
     func path(in rect: CGRect) -> Path {
         let width = rect.width
         let height = rect.height
-        let barHeight = height * 0.22
-        let stemWidth = width * 0.34
-        let corner = min(width, height) * 0.08
+        let barHeight = height * 0.24
+        let shoulderInset = width * 0.05
+        let shoulderDrop = barHeight * 0.26
+        let chamfer = min(width, height) * 0.07
+        let stemTopWidth = width * 0.42
+        let stemBottomWidth = width * 0.32
 
         var path = Path()
-        path.addRoundedRect(
-            in: CGRect(x: 0, y: 0, width: width, height: barHeight),
-            cornerSize: CGSize(width: corner, height: corner)
-        )
-        path.addRoundedRect(
-            in: CGRect(
-                x: (width - stemWidth) / 2,
-                y: barHeight * 0.52,
-                width: stemWidth,
-                height: height - barHeight * 0.52
-            ),
-            cornerSize: CGSize(width: corner, height: corner)
-        )
+        path.move(to: CGPoint(x: shoulderInset + chamfer, y: 0))
+        path.addLine(to: CGPoint(x: width - shoulderInset - chamfer, y: 0))
+        path.addLine(to: CGPoint(x: width - shoulderInset, y: chamfer))
+        path.addLine(to: CGPoint(x: width - shoulderInset - chamfer * 0.55, y: barHeight - shoulderDrop))
+        path.addLine(to: CGPoint(x: width * 0.5 + stemTopWidth * 0.5, y: barHeight))
+        path.addLine(to: CGPoint(x: width * 0.5 + stemBottomWidth * 0.5, y: height - chamfer))
+        path.addLine(to: CGPoint(x: width * 0.5 + stemBottomWidth * 0.5 - chamfer * 0.55, y: height))
+        path.addLine(to: CGPoint(x: width * 0.5 - stemBottomWidth * 0.5 + chamfer * 0.55, y: height))
+        path.addLine(to: CGPoint(x: width * 0.5 - stemBottomWidth * 0.5, y: height - chamfer))
+        path.addLine(to: CGPoint(x: width * 0.5 - stemTopWidth * 0.5, y: barHeight))
+        path.addLine(to: CGPoint(x: shoulderInset + chamfer * 0.55, y: barHeight - shoulderDrop))
+        path.addLine(to: CGPoint(x: shoulderInset, y: chamfer))
+        path.closeSubpath()
         return path
     }
 }

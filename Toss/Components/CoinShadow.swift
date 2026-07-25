@@ -5,9 +5,9 @@ struct CoinShadow: View {
 
     var body: some View {
         Ellipse()
-            .fill(.black.opacity(0.24))
-            .blur(radius: 18)
-            .frame(width: theme.defaultSize * 0.72, height: theme.defaultSize * 0.16)
+            .fill(.black.opacity(0.16))
+            .blur(radius: 20)
+            .frame(width: theme.defaultSize * 0.68, height: theme.defaultSize * 0.14)
             .offset(y: theme.defaultSize * 0.46)
     }
 }

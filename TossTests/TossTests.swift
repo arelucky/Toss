@@ -14,9 +14,9 @@ final class TossTests: XCTestCase {
         let theme = CoinTheme.defaultGold
 
         XCTAssertEqual(theme.defaultSize, 220)
-        XCTAssertEqual(theme.outerRingLineWidth, 7)
+        XCTAssertEqual(theme.outerRingLineWidth, 6.3)
         XCTAssertEqual(theme.innerRingLineWidth, 2)
-        XCTAssertEqual(theme.raisedCenterScale, 0.54)
-        XCTAssertEqual(theme.backCircleScales, [0.28, 0.42, 0.58])
+        XCTAssertEqual(theme.raisedCenterScale, 0.58)
+        XCTAssertEqual(theme.backCircleScales, [0.22, 0.34, 0.47, 0.61])
     }
 }
