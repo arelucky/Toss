@@ -7,15 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		F5A43AC52FFFEA1000F9D3AF /* CoinTossState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43AC42FFFEA1000F9D3AF /* CoinTossState.swift */; };
-		F5A43AC72FFFEA1000F9D3AF /* CoinTossViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43AC62FFFEA1000F9D3AF /* CoinTossViewModel.swift */; };
-		F5A43AB72FFFEA0000F9D3AF /* CoinSide.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43AB62FFFEA0000F9D3AF /* CoinSide.swift */; };
-		F5A43AB92FFFEA0000F9D3AF /* CoinTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43AB82FFFEA0000F9D3AF /* CoinTheme.swift */; };
-		F5A43ABB2FFFEA0000F9D3AF /* CoinMaterial.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43ABA2FFFEA0000F9D3AF /* CoinMaterial.swift */; };
-		F5A43ABD2FFFEA0000F9D3AF /* CoinShadow.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43ABC2FFFEA0000F9D3AF /* CoinShadow.swift */; };
-		F5A43ABF2FFFEA0000F9D3AF /* CoinFront.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43ABE2FFFEA0000F9D3AF /* CoinFront.swift */; };
-		F5A43AC12FFFEA0000F9D3AF /* CoinBack.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43AC02FFFEA0000F9D3AF /* CoinBack.swift */; };
-		F5A43AC32FFFEA0000F9D3AF /* CoinView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43AC22FFFEA0000F9D3AF /* CoinView.swift */; };
+		F5795CDE3018BA2B0011040E /* Models in Resources */ = {isa = PBXBuildFile; fileRef = F5795CDD3018BA2B0011040E /* Models */; };
 		F5A43A7C2FFFE85000F9D3AF /* TossApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43A7B2FFFE85000F9D3AF /* TossApp.swift */; };
 		F5A43A7E2FFFE85000F9D3AF /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43A7D2FFFE85000F9D3AF /* ContentView.swift */; };
 		F5A43A802FFFE85100F9D3AF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F5A43A7F2FFFE85100F9D3AF /* Assets.xcassets */; };
@@ -23,6 +15,16 @@
 		F5A43A8D2FFFE85100F9D3AF /* TossTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43A8C2FFFE85100F9D3AF /* TossTests.swift */; };
 		F5A43A972FFFE85100F9D3AF /* TossUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43A962FFFE85100F9D3AF /* TossUITests.swift */; };
 		F5A43A992FFFE85100F9D3AF /* TossUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43A982FFFE85100F9D3AF /* TossUITestsLaunchTests.swift */; };
+		F5A43AB72FFFEA0000F9D3AF /* CoinSide.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43AB62FFFEA0000F9D3AF /* CoinSide.swift */; };
+		F5A43AB92FFFEA0000F9D3AF /* CoinTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43AB82FFFEA0000F9D3AF /* CoinTheme.swift */; };
+		F5A43ABB2FFFEA0000F9D3AF /* CoinMaterial.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43ABA2FFFEA0000F9D3AF /* CoinMaterial.swift */; };
+		F5A43ABD2FFFEA0000F9D3AF /* CoinShadow.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43ABC2FFFEA0000F9D3AF /* CoinShadow.swift */; };
+		F5A43ABF2FFFEA0000F9D3AF /* CoinFront.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43ABE2FFFEA0000F9D3AF /* CoinFront.swift */; };
+		F5A43AC12FFFEA0000F9D3AF /* CoinBack.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43AC02FFFEA0000F9D3AF /* CoinBack.swift */; };
+		F5A43AC32FFFEA0000F9D3AF /* CoinView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43AC22FFFEA0000F9D3AF /* CoinView.swift */; };
+		F5A43AC52FFFEA1000F9D3AF /* CoinTossState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43AC42FFFEA1000F9D3AF /* CoinTossState.swift */; };
+		F5A43AC72FFFEA1000F9D3AF /* CoinTossViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43AC62FFFEA1000F9D3AF /* CoinTossViewModel.swift */; };
+		F5C02A0A30190851001D0A7E /* Coin3DView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5C02A0930190851001D0A7E /* Coin3DView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -43,15 +45,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		F5A43AC42FFFEA1000F9D3AF /* CoinTossState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinTossState.swift; sourceTree = "<group>"; };
-		F5A43AC62FFFEA1000F9D3AF /* CoinTossViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinTossViewModel.swift; sourceTree = "<group>"; };
-		F5A43AB62FFFEA0000F9D3AF /* CoinSide.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinSide.swift; sourceTree = "<group>"; };
-		F5A43AB82FFFEA0000F9D3AF /* CoinTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinTheme.swift; sourceTree = "<group>"; };
-		F5A43ABA2FFFEA0000F9D3AF /* CoinMaterial.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinMaterial.swift; sourceTree = "<group>"; };
-		F5A43ABC2FFFEA0000F9D3AF /* CoinShadow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinShadow.swift; sourceTree = "<group>"; };
-		F5A43ABE2FFFEA0000F9D3AF /* CoinFront.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinFront.swift; sourceTree = "<group>"; };
-		F5A43AC02FFFEA0000F9D3AF /* CoinBack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinBack.swift; sourceTree = "<group>"; };
-		F5A43AC22FFFEA0000F9D3AF /* CoinView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinView.swift; sourceTree = "<group>"; };
+		F5795CDD3018BA2B0011040E /* Models */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Models; sourceTree = "<group>"; };
 		F5A43A782FFFE85000F9D3AF /* Toss.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Toss.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5A43A7B2FFFE85000F9D3AF /* TossApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TossApp.swift; sourceTree = "<group>"; };
 		F5A43A7D2FFFE85000F9D3AF /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -62,6 +56,16 @@
 		F5A43A922FFFE85100F9D3AF /* TossUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TossUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5A43A962FFFE85100F9D3AF /* TossUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TossUITests.swift; sourceTree = "<group>"; };
 		F5A43A982FFFE85100F9D3AF /* TossUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TossUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		F5A43AB62FFFEA0000F9D3AF /* CoinSide.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinSide.swift; sourceTree = "<group>"; };
+		F5A43AB82FFFEA0000F9D3AF /* CoinTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinTheme.swift; sourceTree = "<group>"; };
+		F5A43ABA2FFFEA0000F9D3AF /* CoinMaterial.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinMaterial.swift; sourceTree = "<group>"; };
+		F5A43ABC2FFFEA0000F9D3AF /* CoinShadow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinShadow.swift; sourceTree = "<group>"; };
+		F5A43ABE2FFFEA0000F9D3AF /* CoinFront.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinFront.swift; sourceTree = "<group>"; };
+		F5A43AC02FFFEA0000F9D3AF /* CoinBack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinBack.swift; sourceTree = "<group>"; };
+		F5A43AC22FFFEA0000F9D3AF /* CoinView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinView.swift; sourceTree = "<group>"; };
+		F5A43AC42FFFEA1000F9D3AF /* CoinTossState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinTossState.swift; sourceTree = "<group>"; };
+		F5A43AC62FFFEA1000F9D3AF /* CoinTossViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinTossViewModel.swift; sourceTree = "<group>"; };
+		F5C02A0930190851001D0A7E /* Coin3DView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coin3DView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -89,6 +93,38 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		F5795CD93017BBA40011040E /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				F5795CDD3018BA2B0011040E /* Models */,
+				F5795CDA3017BBC10011040E /* CoinFrames */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		F5795CDA3017BBC10011040E /* CoinFrames */ = {
+			isa = PBXGroup;
+			children = (
+				F5795CDC3017BBDF0011040E /* Back */,
+				F5795CDB3017BBD10011040E /* Front */,
+			);
+			path = CoinFrames;
+			sourceTree = "<group>";
+		};
+		F5795CDB3017BBD10011040E /* Front */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Front;
+			sourceTree = "<group>";
+		};
+		F5795CDC3017BBDF0011040E /* Back */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Back;
+			sourceTree = "<group>";
+		};
 		F5A43A6F2FFFE85000F9D3AF = {
 			isa = PBXGroup;
 			children = (
@@ -112,6 +148,7 @@
 		F5A43A7A2FFFE85000F9D3AF /* Toss */ = {
 			isa = PBXGroup;
 			children = (
+				F5795CD93017BBA40011040E /* Resources */,
 				F5A43AB02FFFE90000F9D3AF /* App */,
 				F5A43AB12FFFE90000F9D3AF /* Views */,
 				F5A43AB22FFFE90000F9D3AF /* Components */,
@@ -122,6 +159,31 @@
 				F5A43A812FFFE85100F9D3AF /* Preview Content */,
 			);
 			path = Toss;
+			sourceTree = "<group>";
+		};
+		F5A43A812FFFE85100F9D3AF /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				F5A43A822FFFE85100F9D3AF /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		F5A43A8B2FFFE85100F9D3AF /* TossTests */ = {
+			isa = PBXGroup;
+			children = (
+				F5A43A8C2FFFE85100F9D3AF /* TossTests.swift */,
+			);
+			path = TossTests;
+			sourceTree = "<group>";
+		};
+		F5A43A952FFFE85100F9D3AF /* TossUITests */ = {
+			isa = PBXGroup;
+			children = (
+				F5A43A962FFFE85100F9D3AF /* TossUITests.swift */,
+				F5A43A982FFFE85100F9D3AF /* TossUITestsLaunchTests.swift */,
+			);
+			path = TossUITests;
 			sourceTree = "<group>";
 		};
 		F5A43AB02FFFE90000F9D3AF /* App */ = {
@@ -144,6 +206,7 @@
 			isa = PBXGroup;
 			children = (
 				F5A43AC22FFFEA0000F9D3AF /* CoinView.swift */,
+				F5C02A0930190851001D0A7E /* Coin3DView.swift */,
 				F5A43ABE2FFFEA0000F9D3AF /* CoinFront.swift */,
 				F5A43AC02FFFEA0000F9D3AF /* CoinBack.swift */,
 				F5A43ABA2FFFEA0000F9D3AF /* CoinMaterial.swift */,
@@ -175,31 +238,6 @@
 			children = (
 			);
 			path = Services;
-			sourceTree = "<group>";
-		};
-		F5A43A812FFFE85100F9D3AF /* Preview Content */ = {
-			isa = PBXGroup;
-			children = (
-				F5A43A822FFFE85100F9D3AF /* Preview Assets.xcassets */,
-			);
-			path = "Preview Content";
-			sourceTree = "<group>";
-		};
-		F5A43A8B2FFFE85100F9D3AF /* TossTests */ = {
-			isa = PBXGroup;
-			children = (
-				F5A43A8C2FFFE85100F9D3AF /* TossTests.swift */,
-			);
-			path = TossTests;
-			sourceTree = "<group>";
-		};
-		F5A43A952FFFE85100F9D3AF /* TossUITests */ = {
-			isa = PBXGroup;
-			children = (
-				F5A43A962FFFE85100F9D3AF /* TossUITests.swift */,
-				F5A43A982FFFE85100F9D3AF /* TossUITestsLaunchTests.swift */,
-			);
-			path = TossUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -306,6 +344,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F5795CDE3018BA2B0011040E /* Models in Resources */,
 				F5A43A832FFFE85100F9D3AF /* Preview Assets.xcassets in Resources */,
 				F5A43A802FFFE85100F9D3AF /* Assets.xcassets in Resources */,
 			);
@@ -339,6 +378,7 @@
 				F5A43AB72FFFEA0000F9D3AF /* CoinSide.swift in Sources */,
 				F5A43AC52FFFEA1000F9D3AF /* CoinTossState.swift in Sources */,
 				F5A43AC32FFFEA0000F9D3AF /* CoinView.swift in Sources */,
+				F5C02A0A30190851001D0A7E /* Coin3DView.swift in Sources */,
 				F5A43ABB2FFFEA0000F9D3AF /* CoinMaterial.swift in Sources */,
 				F5A43AC72FFFEA1000F9D3AF /* CoinTossViewModel.swift in Sources */,
 				F5A43A7C2FFFE85000F9D3AF /* TossApp.swift in Sources */,

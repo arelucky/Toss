@@ -18,24 +18,36 @@ struct ContentView: View {
     }
 
     var body: some View {
-        ZStack {
-            LinearGradient(
-                colors: [
-                    Color(red: 0.08, green: 0.08, blue: 0.09),
-                    Color(red: 0.02, green: 0.02, blue: 0.03)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+        if shouldShowCoin3DTest {
+            Coin3DView()
+        } else {
+            ZStack {
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.08, green: 0.08, blue: 0.09),
+                        Color(red: 0.02, green: 0.02, blue: 0.03)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
 
-            CoinView(side: coinSide, rotationDegrees: rotationDegrees)
-                .offset(y: viewModel.verticalOffset)
-                .gesture(tossGesture)
-                .onChange(of: viewModel.state) { _, state in
-                    handleStateChange(state)
-                }
+                CoinView(side: coinSide, rotationDegrees: rotationDegrees)
+                    .offset(y: viewModel.verticalOffset)
+                    .gesture(tossGesture)
+                    .onChange(of: viewModel.state) { _, state in
+                        handleStateChange(state)
+                    }
+            }
         }
+    }
+
+    private var shouldShowCoin3DTest: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-showCoin3D")
+        #else
+        false
+        #endif
     }
 
     private var tossGesture: some Gesture {

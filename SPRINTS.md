@@ -131,23 +131,30 @@ feat: add coin toss gesture
 
 ### Task 2-4（已完成）
 
-**飞行与空中旋转动画**
+**Coin Animation Rendering Strategy**
 
 目标：
 
-* 硬币向上飞起
-* 弹性动画
-* 动画结束进入旋转状态
+* 评估硬币旋转动画渲染方案
+* 停止继续投入 SwiftUI 3D Coin Rotation
+* 确认后续硬币动画技术路线
+
+状态：
+
+✅ Architecture decision completed
 
 完成内容：
 
-* 扩展 Toss 状态为 `idle` / `tossing` / `spinning`
-* 保留上滑后的向上位移动画
-* 飞行阶段完成后进入 `spinning`
-* 使用 SwiftUI `rotation3DEffect` 实现连续 3D 翻转
-* 修正 CoinView 双面结构，同时包含正面、背面与金属厚度
-* 改为 X 轴翻转，让旋转过程中可见正面、侧面厚度与背面
-* 为后续停止动画与 Reveal 预留状态接口
+* 验证 SwiftUI `rotation3DEffect` 无法稳定模拟高质量双面金属硬币翻转
+* 确认主要问题：
+  * 双面遮挡不稳定
+  * 侧边厚度表现不足
+  * 旋转动画一致性不足
+* 对比 SceneKit、RealityKit、序列帧动画方案
+* 最终确认采用预渲染 PNG 序列帧动画
+* 确认 `CoinView` 继续负责静态硬币展示
+* 确认 Toss 阶段后续由 `CoinAnimationView` 播放序列帧
+* 确认 SwiftUI 继续负责手势、状态、位移、缩放、阴影与帧播放控制
 
 Git Commit：
 
@@ -160,16 +167,98 @@ fix: improve coin 3d flip rotation
 
 ### Task 2-5（待开始）
 
-**旋转动画**
+**Coin Animation Player**
 
 目标：
 
-* 开始旋转
-* 为 Sprint 3 无限旋转预留接口
+* 创建序列帧动画播放框架
+* 为 Toss 阶段播放硬币旋转动画
+* 为 Sprint 3 无限旋转与后续 Reveal 停止帧预留接口
+
+限制：
+
+* 暂不接入最终 3D 资源
+* 使用 placeholder frame 验证播放流程
+* 不修改最终硬币视觉设计
+* 不新增随机结果
+* 不进入 Reveal
 
 状态：
 
 ⬜ 未开始
+
+---
+
+### Task 2-7A（已完成）
+
+**RealityKit 3D Coin Model Loading Test**
+
+目标：
+
+* 验证 `TossCoin.usdz` 能否通过 RealityKit 在 iOS App 中加载和显示
+* 新增独立 `Coin3DView`
+* 保留现有 SwiftUI `CoinView`，不替换首页硬币
+
+完成内容：
+
+* 新增 `Coin3DView`
+* 通过 RealityKit 加载 `Toss/Resources/Models/TossCoin.usdz`
+* 新增 `-showCoin3D` Debug 启动参数测试入口
+* 完成模型居中、基础缩放、相机与灯光设置
+* 保持现有投掷业务逻辑不变
+
+状态：
+
+✅ Completed
+
+---
+
+### Task 2-7B（已完成）
+
+**Coin3DView Visual Tuning**
+
+目标：
+
+* 优化 3D 硬币测试视图，使其达到首页展示可评估状态
+
+完成内容：
+
+* 放大 3D 硬币显示尺寸
+* 调整初始角度，让 T 正面更清楚，同时保留侧边厚度与锯齿边
+* 优化 RealityKit 暖主光、冷补光与边缘金属反射
+* 降低测试自动旋转速度，方便静态视觉评估
+
+状态：
+
+✅ Completed
+
+---
+
+### Task 2-7C（已完成）
+
+**Coin3DView Final Presentation Polish**
+
+目标：
+
+* 对 RealityKit 3D 硬币测试视图做最终首页展示微调
+
+完成内容：
+
+* 硬币尺寸继续放大约 12%
+* 初始角度进一步转向正面
+* 保留少量侧面厚度与 Fine Reeded Edge 视觉信息
+* 增强正面与 T Monogram 浮雕高光
+* 保持 `CoinView` 作为现有 SwiftUI 首页硬币，不替换业务入口
+
+Git Commit：
+
+```text
+feat: add RealityKit 3D coin preview
+```
+
+状态：
+
+✅ Completed
 
 ---
 
