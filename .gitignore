@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+
+# Xcode user data
+xcuserdata/
+*.xcuserstate
+*.xcbkptlist
+
+# Local build output
+DerivedData/
+.build/
+
+# Local secrets
+.env
+.env.local
+LocalSecrets.xcconfig
+*.p8
+
+# Supabase local state
+supabase/.temp/
