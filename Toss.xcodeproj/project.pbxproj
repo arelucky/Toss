@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		F5795CDE3018BA2B0011040E /* Models in Resources */ = {isa = PBXBuildFile; fileRef = F5795CDD3018BA2B0011040E /* Models */; };
+		F5E41001301B100100000001 /* SoundManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5E41002301B100100000001 /* SoundManager.swift */; };
+		F5E41003301B100100000001 /* Sounds in Resources */ = {isa = PBXBuildFile; fileRef = F5E41004301B100100000001 /* Sounds */; };
+		F5E41005301B200100000001 /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5E41006301B200100000001 /* HapticManager.swift */; };
 		F5A43A7C2FFFE85000F9D3AF /* TossApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43A7B2FFFE85000F9D3AF /* TossApp.swift */; };
 		F5A43A7E2FFFE85000F9D3AF /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43A7D2FFFE85000F9D3AF /* ContentView.swift */; };
 		F5A43A802FFFE85100F9D3AF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F5A43A7F2FFFE85100F9D3AF /* Assets.xcassets */; };
@@ -24,7 +27,13 @@
 		F5A43AC32FFFEA0000F9D3AF /* CoinView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43AC22FFFEA0000F9D3AF /* CoinView.swift */; };
 		F5A43AC52FFFEA1000F9D3AF /* CoinTossState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43AC42FFFEA1000F9D3AF /* CoinTossState.swift */; };
 		F5A43AC72FFFEA1000F9D3AF /* CoinTossViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43AC62FFFEA1000F9D3AF /* CoinTossViewModel.swift */; };
+		F5B53002301C000100000001 /* TossBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5B53001301C000100000001 /* TossBackground.swift */; };
 		F5C02A0A30190851001D0A7E /* Coin3DView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5C02A0930190851001D0A7E /* Coin3DView.swift */; };
+		F5C02A0C30190851001D0A7E /* CoinDisplayLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5C02A0B30190851001D0A7E /* CoinDisplayLayer.swift */; };
+		F5C02A0E30190851001D0A7E /* TossGestureEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5C02A0D30190851001D0A7E /* TossGestureEvent.swift */; };
+		F5C02A1030190851001D0A7E /* CoinTossMotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5C02A0F30190851001D0A7E /* CoinTossMotion.swift */; };
+		F5C02A1230190851001D0A7E /* TossDebugLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5C02A1130190851001D0A7E /* TossDebugLog.swift */; };
+		F5D33A02301A000100000001 /* TossResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5D33A01301A000100000001 /* TossResult.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -46,6 +55,9 @@
 
 /* Begin PBXFileReference section */
 		F5795CDD3018BA2B0011040E /* Models */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Models; sourceTree = "<group>"; };
+		F5E41002301B100100000001 /* SoundManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundManager.swift; sourceTree = "<group>"; };
+		F5E41004301B100100000001 /* Sounds */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Sounds; sourceTree = "<group>"; };
+		F5E41006301B200100000001 /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
 		F5A43A782FFFE85000F9D3AF /* Toss.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Toss.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5A43A7B2FFFE85000F9D3AF /* TossApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TossApp.swift; sourceTree = "<group>"; };
 		F5A43A7D2FFFE85000F9D3AF /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -65,7 +77,13 @@
 		F5A43AC22FFFEA0000F9D3AF /* CoinView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinView.swift; sourceTree = "<group>"; };
 		F5A43AC42FFFEA1000F9D3AF /* CoinTossState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinTossState.swift; sourceTree = "<group>"; };
 		F5A43AC62FFFEA1000F9D3AF /* CoinTossViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinTossViewModel.swift; sourceTree = "<group>"; };
+		F5B53001301C000100000001 /* TossBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TossBackground.swift; sourceTree = "<group>"; };
 		F5C02A0930190851001D0A7E /* Coin3DView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coin3DView.swift; sourceTree = "<group>"; };
+		F5C02A0B30190851001D0A7E /* CoinDisplayLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinDisplayLayer.swift; sourceTree = "<group>"; };
+		F5C02A0D30190851001D0A7E /* TossGestureEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TossGestureEvent.swift; sourceTree = "<group>"; };
+		F5C02A0F30190851001D0A7E /* CoinTossMotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinTossMotion.swift; sourceTree = "<group>"; };
+		F5C02A1130190851001D0A7E /* TossDebugLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TossDebugLog.swift; sourceTree = "<group>"; };
+		F5D33A01301A000100000001 /* TossResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TossResult.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -97,32 +115,9 @@
 			isa = PBXGroup;
 			children = (
 				F5795CDD3018BA2B0011040E /* Models */,
-				F5795CDA3017BBC10011040E /* CoinFrames */,
+				F5E41004301B100100000001 /* Sounds */,
 			);
 			path = Resources;
-			sourceTree = "<group>";
-		};
-		F5795CDA3017BBC10011040E /* CoinFrames */ = {
-			isa = PBXGroup;
-			children = (
-				F5795CDC3017BBDF0011040E /* Back */,
-				F5795CDB3017BBD10011040E /* Front */,
-			);
-			path = CoinFrames;
-			sourceTree = "<group>";
-		};
-		F5795CDB3017BBD10011040E /* Front */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Front;
-			sourceTree = "<group>";
-		};
-		F5795CDC3017BBDF0011040E /* Back */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Back;
 			sourceTree = "<group>";
 		};
 		F5A43A6F2FFFE85000F9D3AF = {
@@ -207,6 +202,8 @@
 			children = (
 				F5A43AC22FFFEA0000F9D3AF /* CoinView.swift */,
 				F5C02A0930190851001D0A7E /* Coin3DView.swift */,
+				F5C02A0B30190851001D0A7E /* CoinDisplayLayer.swift */,
+				F5B53001301C000100000001 /* TossBackground.swift */,
 				F5A43ABE2FFFEA0000F9D3AF /* CoinFront.swift */,
 				F5A43AC02FFFEA0000F9D3AF /* CoinBack.swift */,
 				F5A43ABA2FFFEA0000F9D3AF /* CoinMaterial.swift */,
@@ -221,6 +218,9 @@
 			isa = PBXGroup;
 			children = (
 				F5A43AC42FFFEA1000F9D3AF /* CoinTossState.swift */,
+				F5C02A0D30190851001D0A7E /* TossGestureEvent.swift */,
+				F5C02A0F30190851001D0A7E /* CoinTossMotion.swift */,
+				F5D33A01301A000100000001 /* TossResult.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -236,6 +236,9 @@
 		F5A43AB52FFFE90000F9D3AF /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				F5C02A1130190851001D0A7E /* TossDebugLog.swift */,
+				F5E41002301B100100000001 /* SoundManager.swift */,
+				F5E41006301B200100000001 /* HapticManager.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -345,6 +348,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F5795CDE3018BA2B0011040E /* Models in Resources */,
+				F5E41003301B100100000001 /* Sounds in Resources */,
 				F5A43A832FFFE85100F9D3AF /* Preview Assets.xcassets in Resources */,
 				F5A43A802FFFE85100F9D3AF /* Assets.xcassets in Resources */,
 			);
@@ -379,9 +383,17 @@
 				F5A43AC52FFFEA1000F9D3AF /* CoinTossState.swift in Sources */,
 				F5A43AC32FFFEA0000F9D3AF /* CoinView.swift in Sources */,
 				F5C02A0A30190851001D0A7E /* Coin3DView.swift in Sources */,
+				F5C02A0C30190851001D0A7E /* CoinDisplayLayer.swift in Sources */,
+				F5B53002301C000100000001 /* TossBackground.swift in Sources */,
 				F5A43ABB2FFFEA0000F9D3AF /* CoinMaterial.swift in Sources */,
+				F5C02A0E30190851001D0A7E /* TossGestureEvent.swift in Sources */,
 				F5A43AC72FFFEA1000F9D3AF /* CoinTossViewModel.swift in Sources */,
+				F5C02A1030190851001D0A7E /* CoinTossMotion.swift in Sources */,
 				F5A43A7C2FFFE85000F9D3AF /* TossApp.swift in Sources */,
+				F5D33A02301A000100000001 /* TossResult.swift in Sources */,
+				F5C02A1230190851001D0A7E /* TossDebugLog.swift in Sources */,
+				F5E41001301B100100000001 /* SoundManager.swift in Sources */,
+				F5E41005301B200100000001 /* HapticManager.swift in Sources */,
 				F5A43ABD2FFFEA0000F9D3AF /* CoinShadow.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -546,6 +558,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Toss/Preview Content\"";
+				DEVELOPMENT_TEAM = 36ZQWSGBJ4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

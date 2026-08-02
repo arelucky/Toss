@@ -2,34 +2,62 @@ import SwiftUI
 
 final class CoinTossViewModel: ObservableObject {
     let tossTriggerThreshold: CGFloat = -80
-    let tossFlightOffset: CGFloat = -180
-    let tossFlightDuration: TimeInterval = 0.42
+    private let resultProvider: () -> TossResult
 
     @Published private(set) var state: CoinTossState = .idle
-    @Published private(set) var verticalOffset: CGFloat = 0
+    @Published private(set) var latestGestureEvent: TossGestureEvent?
+    @Published private(set) var lastTossEvent: TossGestureEvent?
+    @Published private(set) var lastTossResult: TossResult?
+
+    init(resultProvider: @escaping () -> TossResult = TossResult.random) {
+        self.resultProvider = resultProvider
+    }
 
     var canStartRotation: Bool {
         state == .spinning
     }
 
     func updateDragTranslation(_ translation: CGSize) {
-        guard state == .idle else { return }
-        verticalOffset = min(0, translation.height * 0.35)
+        guard canStartToss else { return }
+        debugLog("drag translation received: \(translation)")
     }
 
-    func endDrag(translation: CGSize) {
-        guard state == .idle else { return }
+    func endDrag(
+        translation: CGSize,
+        duration: TimeInterval,
+        onToss: (TossGestureEvent) -> Void = { _ in }
+    ) {
+        guard canStartToss else { return }
 
-        if translation.height <= tossTriggerThreshold {
+        let event = TossGestureEvent(translation: translation, duration: duration)
+        latestGestureEvent = event
+        debugLog(
+            "gesture event direction=\(event.direction) distance=\(event.distance) speed=\(event.speed)"
+        )
+
+        if event.isSuccessfulUpwardToss(threshold: tossTriggerThreshold) {
+            let result = resultProvider()
             state = .tossing
-            verticalOffset = tossFlightOffset
+            lastTossEvent = event
+            lastTossResult = result
+            debugLog("toss accepted result=\(result)")
+            onToss(event)
         } else {
-            verticalOffset = 0
+            debugLog("toss rejected")
         }
     }
 
-    func completeTossFlight() {
+    func completeTossMotion() {
         guard state == .tossing else { return }
-        state = .spinning
+        state = .resultHolding
+        debugLog("motion completed")
+    }
+
+    private var canStartToss: Bool {
+        state == .idle || state == .resultHolding
+    }
+
+    private func debugLog(_ message: String) {
+        TossDebugLog.log("CoinTossViewModel", message)
     }
 }

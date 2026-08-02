@@ -1,15 +1,102 @@
 import SwiftUI
 import RealityKit
+import UIKit
 
 struct Coin3DView: View {
+    let style: Coin3DViewStyle
+    let tossMotion: CoinTossMotion?
+    let tossMotionTrigger: Int
+    let previewRotation: CoinPreviewRotation
+    let previewInertia: CoinPreviewInertia?
+    let previewInertiaTrigger: Int
+
+    init(
+        style: Coin3DViewStyle = .home,
+        tossMotion: CoinTossMotion? = nil,
+        tossMotionTrigger: Int = 0,
+        previewRotation: CoinPreviewRotation = .zero,
+        previewInertia: CoinPreviewInertia? = nil,
+        previewInertiaTrigger: Int = 0
+    ) {
+        self.style = style
+        self.tossMotion = tossMotion
+        self.tossMotionTrigger = tossMotionTrigger
+        self.previewRotation = previewRotation
+        self.previewInertia = previewInertia
+        self.previewInertiaTrigger = previewInertiaTrigger
+    }
+
     var body: some View {
-        CoinRealityView()
-            .background(Color(red: 0.02, green: 0.02, blue: 0.03))
-            .ignoresSafeArea()
+        CoinRealityView(
+            style: style,
+            tossMotion: tossMotion,
+            tossMotionTrigger: tossMotionTrigger,
+            previewRotation: previewRotation,
+            previewInertia: previewInertia,
+            previewInertiaTrigger: previewInertiaTrigger
+        )
+            .allowsHitTesting(false)
+            .onAppear {
+                debugLog("appeared")
+            }
+    }
+
+    private func debugLog(_ message: String) {
+        TossDebugLog.log("Coin3DView", message)
+    }
+}
+
+struct Coin3DViewStyle {
+    let targetSize: Float
+    let faceTilt: Float
+    let edgeReveal: Float
+    let autoRotates: Bool
+    let rotationStep: Float
+    let materialStyle: Coin3DMaterialStyle
+
+    static let home = Coin3DViewStyle(
+        targetSize: 0.90,
+        faceTilt: -.pi / 18,
+        edgeReveal: -.pi / 32,
+        autoRotates: false,
+        rotationStep: .pi / 3600,
+        materialStyle: .champagneGold
+    )
+}
+
+struct Coin3DMaterialStyle: Equatable {
+    let baseColor: SIMD4<Float>
+    let metallic: Float
+    let roughness: Float
+
+    static let champagneGold = Coin3DMaterialStyle(
+        baseColor: SIMD4<Float>(0.93, 0.76, 0.46, 1),
+        metallic: 1,
+        roughness: 0.28
+    )
+
+    func makeRealityKitMaterial() -> PhysicallyBasedMaterial {
+        var material = PhysicallyBasedMaterial()
+        material.baseColor = .init(tint: UIColor(
+            red: CGFloat(baseColor.x),
+            green: CGFloat(baseColor.y),
+            blue: CGFloat(baseColor.z),
+            alpha: CGFloat(baseColor.w)
+        ))
+        material.metallic = .init(floatLiteral: metallic)
+        material.roughness = .init(floatLiteral: roughness)
+        return material
     }
 }
 
 private struct CoinRealityView: UIViewRepresentable {
+    let style: Coin3DViewStyle
+    let tossMotion: CoinTossMotion?
+    let tossMotionTrigger: Int
+    let previewRotation: CoinPreviewRotation
+    let previewInertia: CoinPreviewInertia?
+    let previewInertiaTrigger: Int
+
     func makeCoordinator() -> Coordinator {
         Coordinator()
     }
@@ -30,7 +117,22 @@ private struct CoinRealityView: UIViewRepresentable {
         return view
     }
 
-    func updateUIView(_ uiView: ARView, context: Context) {}
+    func updateUIView(_ uiView: ARView, context: Context) {
+        context.coordinator.applyPreviewRotation(previewRotation)
+        if let previewInertia {
+            context.coordinator.playPreviewInertia(
+                previewInertia,
+                trigger: previewInertiaTrigger
+            )
+        }
+
+        if let tossMotion {
+            context.coordinator.playTossRotation(
+                motion: tossMotion,
+                trigger: tossMotionTrigger
+            )
+        }
+    }
 
     static func dismantleUIView(_ uiView: ARView, coordinator: Coordinator) {
         coordinator.stopRotation()
@@ -48,8 +150,12 @@ private struct CoinRealityView: UIViewRepresentable {
         do {
             let coin = try Entity.load(contentsOf: modelURL)
             prepareCoin(coin)
+            applyMaterialOverride(to: coin)
             anchor.addChild(coin)
-            coordinator.startRotation(for: coin)
+            coordinator.setCoin(coin)
+            if style.autoRotates {
+                coordinator.startRotation(for: coin, step: style.rotationStep)
+            }
         } catch {
             assertionFailure("Failed to load TossCoin.usdz: \(error.localizedDescription)")
         }
@@ -59,15 +165,29 @@ private struct CoinRealityView: UIViewRepresentable {
         let bounds = coin.visualBounds(relativeTo: nil)
         let extents = bounds.extents
         let largestDimension = max(extents.x, extents.y, extents.z)
-        let targetSize: Float = 0.515
-        let scale = largestDimension > 0 ? targetSize / largestDimension : 1
+        let scale = largestDimension > 0 ? style.targetSize / largestDimension : 1
 
         coin.scale = SIMD3<Float>(repeating: scale)
         coin.position = -bounds.center * scale
 
-        let faceTilt = simd_quatf(angle: -.pi / 18, axis: SIMD3<Float>(1, 0, 0))
-        let edgeReveal = simd_quatf(angle: -.pi / 32, axis: SIMD3<Float>(0, 1, 0))
+        let faceTilt = simd_quatf(angle: style.faceTilt, axis: SIMD3<Float>(1, 0, 0))
+        let edgeReveal = simd_quatf(angle: style.edgeReveal, axis: SIMD3<Float>(0, 1, 0))
         coin.orientation = edgeReveal * faceTilt
+    }
+
+    private func applyMaterialOverride(to entity: Entity) {
+        if let modelEntity = entity as? ModelEntity,
+           let model = modelEntity.model {
+            let material = style.materialStyle.makeRealityKitMaterial()
+            modelEntity.model?.materials = Array(
+                repeating: material,
+                count: max(model.materials.count, 1)
+            )
+        }
+
+        for child in entity.children {
+            applyMaterialOverride(to: child)
+        }
     }
 
     private func addLighting(to anchor: AnchorEntity) {
@@ -101,28 +221,230 @@ private struct CoinRealityView: UIViewRepresentable {
     final class Coordinator {
         private weak var coin: Entity?
         private var timer: Timer?
+        private var rotationStep: Float = 0
+        private var baseTransform = Transform()
+        private var restingXRotationAngle: Double = 0
+        private var settledPreviewRotation: CoinPreviewRotation = .zero
+        private var previewRotation: CoinPreviewRotation = .zero
+        private var isPreviewDragging = false
+        private var previewInertiaRotation: CoinPreviewRotation = .zero
+        private var previewInertia: CoinPreviewInertia?
+        private var previewInertiaStartDate: Date?
+        private var previewInertiaTimer: Timer?
+        private var activePreviewInertiaTrigger = 0
+        private var activeTossTrigger = 0
+        private var tossRotationStartDate: Date?
+        private var tossRotationMotion: CoinTossMotion?
 
-        func startRotation(for coin: Entity) {
+        func setCoin(_ coin: Entity) {
             self.coin = coin
+            baseTransform = coin.transform
+            applyDisplayRotation()
+        }
+
+        func startRotation(for coin: Entity, step: Float) {
+            self.coin = coin
+            baseTransform = coin.transform
+            applyDisplayRotation()
+            rotationStep = step
             timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
                 self?.rotateCoin()
             }
         }
 
+        func playTossRotation(motion: CoinTossMotion, trigger: Int) {
+            guard trigger != activeTossTrigger else { return }
+            guard let coin else { return }
+
+            activeTossTrigger = trigger
+            tossRotationStartDate = Date()
+            tossRotationMotion = motion
+            timer?.invalidate()
+            stopPreviewInertia(holdsFinalRotation: false)
+            settledPreviewRotation = .zero
+            previewRotation = .zero
+            isPreviewDragging = false
+            restingXRotationAngle = 0
+            coin.transform = baseTransform
+            timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
+                self?.rotateTossCoin()
+            }
+            TossDebugLog.log(
+                "Coin3DView",
+                "play RealityKit rotation result=\(motion.result) turns=\(motion.rotationTurns) duration=\(motion.rotationDuration)"
+            )
+        }
+
         func stopRotation() {
             timer?.invalidate()
             timer = nil
+            tossRotationStartDate = nil
+            tossRotationMotion = nil
+            stopPreviewInertia(holdsFinalRotation: true)
+        }
+
+        func applyPreviewRotation(_ rotation: CoinPreviewRotation) {
+            guard tossRotationMotion == nil else { return }
+            guard previewRotation != rotation else { return }
+
+            if rotation != .zero {
+                if !isPreviewDragging {
+                    stopPreviewInertia(holdsFinalRotation: true)
+                    isPreviewDragging = true
+                }
+            } else {
+                isPreviewDragging = false
+            }
+            previewRotation = rotation
+            applyDisplayRotation()
+        }
+
+        func playPreviewInertia(_ inertia: CoinPreviewInertia, trigger: Int) {
+            guard tossRotationMotion == nil else { return }
+            guard trigger != activePreviewInertiaTrigger else { return }
+
+            activePreviewInertiaTrigger = trigger
+            previewInertiaTimer?.invalidate()
+            isPreviewDragging = false
+            previewRotation = inertia.initialRotation
+            previewInertiaRotation = .zero
+            previewInertia = inertia
+            previewInertiaStartDate = Date()
+            previewInertiaTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
+                self?.rotatePreviewInertia()
+            }
         }
 
         private func rotateCoin() {
-            let rotation = simd_quatf(angle: .pi / 3600, axis: SIMD3<Float>(0, 1, 0))
+            let rotation = simd_quatf(angle: rotationStep, axis: SIMD3<Float>(0, 1, 0))
             coin?.orientation = rotation * (coin?.orientation ?? simd_quatf())
+        }
+
+        private func applyDisplayRotation() {
+            guard let coin else { return }
+
+            let restingRotation = simd_quatf(
+                angle: Float(restingXRotationAngle),
+                axis: SIMD3<Float>(1, 0, 0)
+            )
+            let previewXRotation = simd_quatf(
+                angle: Float(previewRotation.xAngle),
+                axis: SIMD3<Float>(1, 0, 0)
+            )
+            let previewYRotation = simd_quatf(
+                angle: Float(previewRotation.yAngle),
+                axis: SIMD3<Float>(0, 1, 0)
+            )
+            let inertiaXRotation = simd_quatf(
+                angle: Float(previewInertiaRotation.xAngle),
+                axis: SIMD3<Float>(1, 0, 0)
+            )
+            let inertiaYRotation = simd_quatf(
+                angle: Float(previewInertiaRotation.yAngle),
+                axis: SIMD3<Float>(0, 1, 0)
+            )
+            let settledXRotation = simd_quatf(
+                angle: Float(settledPreviewRotation.xAngle),
+                axis: SIMD3<Float>(1, 0, 0)
+            )
+            let settledYRotation = simd_quatf(
+                angle: Float(settledPreviewRotation.yAngle),
+                axis: SIMD3<Float>(0, 1, 0)
+            )
+
+            var transform = baseTransform
+            transform.rotation = baseTransform.rotation *
+                restingRotation *
+                settledYRotation *
+                settledXRotation *
+                previewYRotation *
+                previewXRotation *
+                inertiaYRotation *
+                inertiaXRotation
+            coin.transform = transform
+        }
+
+        private func rotatePreviewInertia() {
+            guard let previewInertia, let previewInertiaStartDate else { return }
+
+            let elapsed = Date().timeIntervalSince(previewInertiaStartDate)
+            let progress = elapsed / previewInertia.duration
+            previewInertiaRotation = previewInertia.rotation(at: progress)
+            applyDisplayRotation()
+
+            if progress >= 1 {
+                stopPreviewInertia(holdsFinalRotation: true)
+            }
+        }
+
+        private func stopPreviewInertia(holdsFinalRotation: Bool) {
+            if holdsFinalRotation {
+                settledPreviewRotation = CoinPreviewRotation(
+                    xAngle: normalizedAngle(
+                        settledPreviewRotation.xAngle +
+                        previewRotation.xAngle +
+                        previewInertiaRotation.xAngle
+                    ),
+                    yAngle: normalizedAngle(
+                        settledPreviewRotation.yAngle +
+                        previewRotation.yAngle +
+                        previewInertiaRotation.yAngle
+                    )
+                )
+            }
+
+            previewInertiaTimer?.invalidate()
+            previewInertiaTimer = nil
+            previewInertiaStartDate = nil
+            previewInertia = nil
+            isPreviewDragging = false
+            previewRotation = .zero
+            previewInertiaRotation = .zero
+            applyDisplayRotation()
+        }
+
+        private func normalizedAngle(_ angle: Double) -> Double {
+            let fullTurn = Double.pi * 2
+            var normalized = angle.truncatingRemainder(dividingBy: fullTurn)
+            if normalized < 0 {
+                normalized += fullTurn
+            }
+            return normalized
+        }
+
+        private func rotateTossCoin() {
+            guard let coin, let tossRotationStartDate, let tossRotationMotion else { return }
+
+            let elapsed = Date().timeIntervalSince(tossRotationStartDate)
+            let progress = elapsed / tossRotationMotion.rotationDuration
+            let angle: Float
+            if progress >= 1 {
+                angle = Float(tossRotationMotion.normalizedFinalRotationAngle)
+            } else {
+                angle = Float(tossRotationMotion.rotationAngle(at: progress))
+            }
+            let rotation = simd_quatf(angle: angle, axis: SIMD3<Float>(1, 0, 0))
+            var transform = baseTransform
+            transform.rotation = baseTransform.rotation * rotation
+            coin.transform = transform
+
+            if progress >= 1 {
+                restingXRotationAngle = tossRotationMotion.normalizedFinalRotationAngle
+                previewRotation = .zero
+                applyDisplayRotation()
+                stopRotation()
+            }
         }
     }
 }
 
 struct Coin3DView_Previews: PreviewProvider {
     static var previews: some View {
-        Coin3DView()
+        ZStack {
+            Color(red: 0.02, green: 0.02, blue: 0.03)
+                .ignoresSafeArea()
+            Coin3DView()
+                .frame(width: 360, height: 430)
+        }
     }
 }

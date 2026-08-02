@@ -9,95 +9,226 @@ import SwiftUI
 
 struct ContentView: View {
     let coinSide: CoinSide
+    let coinDisplayMode: CoinDisplayMode
+    let onToss: (TossGestureEvent) -> Void
     @State private var rotationDegrees = 0.0
+    @State private var tossOffset: CGFloat = 0
+    @State private var coinScale: CGFloat = 1
+    @State private var tossMotion: CoinTossMotion?
+    @State private var tossMotionTrigger = 0
+    @State private var previewRotation: CoinPreviewRotation = .zero
+    @State private var previewInertia: CoinPreviewInertia?
+    @State private var previewInertiaTrigger = 0
+    @State private var dragStartTime: Date?
     @StateObject private var viewModel: CoinTossViewModel
 
-    init(coinSide: CoinSide = .front, viewModel: CoinTossViewModel = CoinTossViewModel()) {
+    init(
+        coinSide: CoinSide = .front,
+        coinDisplayMode: CoinDisplayMode = .resolved(),
+        viewModel: CoinTossViewModel = CoinTossViewModel(),
+        onToss: @escaping (TossGestureEvent) -> Void = { _ in }
+    ) {
         self.coinSide = coinSide
+        self.coinDisplayMode = coinDisplayMode
+        self.onToss = onToss
         _viewModel = StateObject(wrappedValue: viewModel)
     }
 
     var body: some View {
-        if shouldShowCoin3DTest {
-            Coin3DView()
-        } else {
-            ZStack {
-                LinearGradient(
-                    colors: [
-                        Color(red: 0.08, green: 0.08, blue: 0.09),
-                        Color(red: 0.02, green: 0.02, blue: 0.03)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
+        ZStack {
+            TossBackground()
 
-                CoinView(side: coinSide, rotationDegrees: rotationDegrees)
-                    .offset(y: viewModel.verticalOffset)
-                    .gesture(tossGesture)
-                    .onChange(of: viewModel.state) { _, state in
-                        handleStateChange(state)
-                    }
-            }
+            coinInputLayer
+            .offset(y: coinVerticalOffset)
+        }
+        .onChange(of: viewModel.state) { _, state in
+            debugLog("state changed: \(state)")
+        }
+        .onChange(of: tossOffset) { _, offset in
+            debugLog("coin offset changed: \(offset)")
+        }
+        .onAppear {
+            SoundManager.shared.prepare()
+            HapticManager.shared.prepare()
         }
     }
 
-    private var shouldShowCoin3DTest: Bool {
-        #if DEBUG
-        ProcessInfo.processInfo.arguments.contains("-showCoin3D")
-        #else
-        false
-        #endif
+    private var coinInputLayer: some View {
+        ZStack {
+            Color.clear
+            CoinDisplayLayer(
+                mode: coinDisplayMode,
+                coinSide: coinSide,
+                rotationDegrees: rotationDegrees,
+                tossMotion: tossMotion,
+                tossMotionTrigger: tossMotionTrigger,
+                previewRotation: previewRotation,
+                previewInertia: previewInertia,
+                previewInertiaTrigger: previewInertiaTrigger
+            )
+                .scaleEffect(coinScale)
+        }
+        .frame(width: 360, height: 430)
+        .contentShape(Rectangle())
+        .gesture(tossGesture)
+    }
+
+    private var coinVerticalOffset: CGFloat {
+        tossOffset - 12
     }
 
     private var tossGesture: some Gesture {
         DragGesture(minimumDistance: 12)
             .onChanged { value in
+                if dragStartTime == nil {
+                    dragStartTime = value.time
+                    debugLog("drag began")
+                }
+
                 viewModel.updateDragTranslation(value.translation)
+                updatePreviewRotation(for: value.translation)
+                triggerPreviewHapticIfNeeded(
+                    translation: value.translation,
+                    duration: value.time.timeIntervalSince(dragStartTime ?? value.time)
+                )
+                debugLog(
+                    "drag changed translation=(\(value.translation.width), \(value.translation.height))"
+                )
             }
             .onEnded { value in
-                withAnimation(tossAnimation) {
-                    viewModel.endDrag(translation: value.translation)
-                }
-                scheduleSpinIfNeeded()
+                let duration = value.time.timeIntervalSince(dragStartTime ?? value.time)
+                debugLog(
+                    "drag ended translation=(\(value.translation.width), \(value.translation.height)) duration=\(duration)"
+                )
+
+                viewModel.endDrag(
+                    translation: value.translation,
+                    duration: duration,
+                    onToss: handleToss
+                )
+                finishPreviewRotation(
+                    translation: value.translation,
+                    duration: duration
+                )
+                dragStartTime = nil
             }
     }
 
-    private var tossAnimation: Animation {
-        .spring(response: 0.42, dampingFraction: 0.78)
+    private func handleToss(_ event: TossGestureEvent) {
+        debugLog(
+            "toss callback direction=\(event.direction) distance=\(event.distance) speed=\(event.speed)"
+        )
+        let result = viewModel.lastTossResult ?? .heads
+        let motion = CoinTossMotion(event: event, result: result)
+        SoundManager.shared.play(.coinThrow)
+        SoundManager.shared.play(.coinAirSpin)
+        HapticManager.shared.triggerTossStartImpact()
+        HapticManager.shared.startTossFlightFeedback(duration: motion.rotationDuration)
+        onToss(event)
+        previewRotation = .zero
+        previewInertia = nil
+        playTossMotion(motion)
     }
 
-    private var spinAnimation: Animation {
-        .linear(duration: 0.36)
-        .repeatForever(autoreverses: false)
+    private func updatePreviewRotation(for translation: CGSize) {
+        guard canPreviewRotation else { return }
+        guard !isLikelyTossGesture(translation) else {
+            previewRotation = .zero
+            return
+        }
+
+        previewRotation = CoinPreviewRotation(translation: translation)
     }
 
-    private func scheduleSpinIfNeeded() {
-        guard viewModel.state == .tossing else { return }
+    private func triggerPreviewHapticIfNeeded(translation: CGSize, duration: TimeInterval) {
+        guard canPreviewRotation else { return }
+        guard !isLikelyTossGesture(translation) else { return }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + viewModel.tossFlightDuration) {
-            viewModel.completeTossFlight()
+        let event = TossGestureEvent(translation: translation, duration: duration)
+        guard event.distance >= 44 else { return }
+        HapticManager.shared.triggerPreviewSpinIfNeeded(speed: event.speed)
+    }
+
+    private func resetPreviewRotation() {
+        guard previewRotation != .zero else { return }
+
+        withAnimation(.easeOut(duration: 0.22)) {
+            previewRotation = .zero
         }
     }
 
-    private func handleStateChange(_ state: CoinTossState) {
-        guard state == .spinning else { return }
-        startSpinning()
+    private func finishPreviewRotation(translation: CGSize, duration: TimeInterval) {
+        guard canPreviewRotation else {
+            resetPreviewRotation()
+            return
+        }
+        guard !isLikelyTossGesture(translation) else {
+            resetPreviewRotation()
+            return
+        }
+
+        previewInertia = CoinPreviewInertia(
+            translation: translation,
+            duration: duration,
+            initialRotation: previewRotation
+        )
+        previewInertiaTrigger += 1
+        previewRotation = .zero
     }
 
-    private func startSpinning() {
-        rotationDegrees = 0
-        withAnimation(spinAnimation) {
-            rotationDegrees = 360
+    private var canPreviewRotation: Bool {
+        viewModel.state == .idle || viewModel.state == .resultHolding
+    }
+
+    private func isLikelyTossGesture(_ translation: CGSize) -> Bool {
+        translation.height <= viewModel.tossTriggerThreshold &&
+        abs(translation.height) >= abs(translation.width)
+    }
+
+    private func playTossMotion(_ motion: CoinTossMotion) {
+        debugLog(
+            "play motion peakOffset=\(motion.peakOffset) rise=\(motion.riseDuration) fall=\(motion.fallDuration)"
+        )
+        tossMotion = motion
+        tossMotionTrigger += 1
+
+        withAnimation(.easeOut(duration: 0.14)) {
+            coinScale = motion.flightScaleRatio
         }
+
+        withAnimation(.easeOut(duration: motion.riseDuration)) {
+            tossOffset = motion.peakOffset
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + motion.riseDuration) {
+            withAnimation(.spring(response: motion.fallDuration, dampingFraction: 0.86)) {
+                tossOffset = motion.settledOffset
+            }
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + motion.scaleRecoveryDelay) {
+            withAnimation(.easeOut(duration: motion.scaleRecoveryDuration)) {
+                coinScale = 1
+            }
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + motion.flightDuration) {
+            HapticManager.shared.triggerLandingImpact()
+            coinScale = 1
+            viewModel.completeTossMotion()
+        }
+    }
+
+    private func debugLog(_ message: String) {
+        TossDebugLog.log("ContentView", message)
     }
 }
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
-            ContentView()
-            ContentView(coinSide: .back)
+            ContentView(coinDisplayMode: .realityKit3D)
+            ContentView(coinSide: .back, coinDisplayMode: .swiftUI)
         }
     }
 }
