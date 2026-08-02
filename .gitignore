@@ -18,3 +18,6 @@ LocalSecrets.xcconfig
 
 # Supabase local state
 supabase/.temp/
+
+# Local archived design assets
+/LocalAssets/
