@@ -52,32 +52,6 @@ final class TossTests: XCTestCase {
         XCTAssertEqual(viewModel.verticalOffset, 0)
     }
 
-    func testCoinFlipGeometryShowsFrontAtRest() throws {
-        let geometry = CoinFlipGeometry(rotationDegrees: 0, restingSide: .front)
-
-        XCTAssertEqual(geometry.face, .front)
-        XCTAssertEqual(geometry.frontOpacity, 1)
-        XCTAssertEqual(geometry.backOpacity, 0)
-        XCTAssertEqual(geometry.edgeVisibility, 0, accuracy: 0.01)
-    }
-
-    func testCoinFlipGeometryShowsEdgeMidFlip() throws {
-        let geometry = CoinFlipGeometry(rotationDegrees: 90, restingSide: .front)
-
-        XCTAssertEqual(geometry.frontOpacity, 0)
-        XCTAssertEqual(geometry.backOpacity, 0)
-        XCTAssertEqual(geometry.edgeVisibility, 1, accuracy: 0.01)
-    }
-
-    func testCoinFlipGeometryShowsBackAfterHalfTurn() throws {
-        let geometry = CoinFlipGeometry(rotationDegrees: 180, restingSide: .front)
-
-        XCTAssertEqual(geometry.face, .back)
-        XCTAssertEqual(geometry.frontOpacity, 0)
-        XCTAssertEqual(geometry.backOpacity, 1)
-        XCTAssertEqual(geometry.edgeVisibility, 0, accuracy: 0.01)
-    }
-
     func testDragBelowThresholdReturnsToIdle() throws {
         let viewModel = CoinTossViewModel()
 

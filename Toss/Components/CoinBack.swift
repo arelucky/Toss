@@ -12,8 +12,9 @@ struct CoinBack: View {
                 Circle()
                     .strokeBorder(circleGradient(index: index), lineWidth: circleLineWidth(index: index))
                     .scaleEffect(scale)
-                    .shadow(color: theme.highlightGold.opacity(0.16), radius: 1, x: -0.8, y: -0.8)
-                    .shadow(color: theme.shadowGold.opacity(0.18), radius: 1, x: 0.9, y: 0.9)
+                    .overlay(circleInsetShade(scale: scale, index: index))
+                    .shadow(color: theme.highlightGold.opacity(0.10), radius: 0.6, x: -0.6, y: -0.6)
+                    .shadow(color: theme.shadowGold.opacity(0.20), radius: 1, x: 0.8, y: 0.9)
             }
 
             centerDisk
@@ -24,9 +25,10 @@ struct CoinBack: View {
     private func circleGradient(index: Int) -> LinearGradient {
         LinearGradient(
             colors: [
-                theme.highlightGold.opacity(index.isMultiple(of: 2) ? 0.48 : 0.64),
-                theme.warmGold.opacity(0.28),
-                theme.deepGold.opacity(0.40)
+                theme.coolReflection.opacity(index.isMultiple(of: 2) ? 0.12 : 0.16),
+                theme.highlightGold.opacity(index.isMultiple(of: 2) ? 0.28 : 0.40),
+                theme.baseGold.opacity(0.30),
+                theme.deepGold.opacity(0.48)
             ],
             startPoint: UnitPoint(x: 0.72, y: 0.12),
             endPoint: UnitPoint(x: 0.20, y: 0.90)
@@ -34,7 +36,14 @@ struct CoinBack: View {
     }
 
     private func circleLineWidth(index: Int) -> CGFloat {
-        index.isMultiple(of: 2) ? 1.2 : 2.5
+        index.isMultiple(of: 2) ? 1.1 : 2.3
+    }
+
+    private func circleInsetShade(scale: CGFloat, index: Int) -> some View {
+        Circle()
+            .strokeBorder(theme.shadowGold.opacity(index.isMultiple(of: 2) ? 0.12 : 0.18), lineWidth: 0.7)
+            .scaleEffect(scale + 0.018)
+            .blur(radius: 0.25)
     }
 
     private var centerDisk: some View {
@@ -42,22 +51,27 @@ struct CoinBack: View {
             .fill(
                 RadialGradient(
                     colors: [
-                        theme.coolReflection.opacity(0.24),
-                        theme.highlightGold.opacity(0.40),
-                        theme.baseGold.opacity(0.72),
-                        theme.deepGold.opacity(0.62)
+                        theme.coolReflection.opacity(0.12),
+                        theme.highlightGold.opacity(0.24),
+                        theme.baseGold.opacity(0.62),
+                        theme.deepGold.opacity(0.70)
                     ],
                     center: UnitPoint(x: 0.66, y: 0.22),
                     startRadius: 1,
-                    endRadius: theme.defaultSize * 0.12
+                    endRadius: theme.defaultSize * 0.10
                 )
             )
             .overlay(
                 Circle()
-                    .strokeBorder(theme.highlightGold.opacity(0.28), lineWidth: 1)
+                    .strokeBorder(theme.highlightGold.opacity(0.14), lineWidth: 0.7)
+                    .padding(1)
             )
-            .shadow(color: theme.highlightGold.opacity(0.16), radius: 1, x: -0.6, y: -0.8)
-            .shadow(color: theme.shadowGold.opacity(0.18), radius: 1.5, x: 1, y: 1.2)
-            .scaleEffect(0.16)
+            .overlay(
+                Circle()
+                    .strokeBorder(theme.shadowGold.opacity(0.26), lineWidth: 0.9)
+            )
+            .shadow(color: theme.highlightGold.opacity(0.08), radius: 0.6, x: -0.4, y: -0.5)
+            .shadow(color: theme.shadowGold.opacity(0.18), radius: 1, x: 0.7, y: 0.8)
+            .scaleEffect(0.165)
     }
 }

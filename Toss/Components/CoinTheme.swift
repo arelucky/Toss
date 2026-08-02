@@ -21,12 +21,12 @@ struct CoinTheme {
         innerRingLineWidth: 2,
         raisedCenterScale: 0.58,
         backCircleScales: [0.22, 0.34, 0.47, 0.61],
-        baseGold: Color(red: 0.90, green: 0.62, blue: 0.19),
-        deepGold: Color(red: 0.45, green: 0.25, blue: 0.06),
-        warmGold: Color(red: 0.96, green: 0.70, blue: 0.25),
-        paleGold: Color(red: 0.98, green: 0.86, blue: 0.48),
-        highlightGold: Color(red: 1.00, green: 0.93, blue: 0.66),
-        shadowGold: Color(red: 0.30, green: 0.16, blue: 0.04),
-        coolReflection: Color(red: 0.88, green: 0.94, blue: 1.00)
+        baseGold: Color(red: 0.78, green: 0.62, blue: 0.42),
+        deepGold: Color(red: 0.36, green: 0.25, blue: 0.15),
+        warmGold: Color(red: 0.88, green: 0.72, blue: 0.50),
+        paleGold: Color(red: 0.96, green: 0.86, blue: 0.68),
+        highlightGold: Color(red: 1.00, green: 0.93, blue: 0.78),
+        shadowGold: Color(red: 0.22, green: 0.16, blue: 0.10),
+        coolReflection: Color(red: 0.92, green: 0.96, blue: 1.00)
     )
 }

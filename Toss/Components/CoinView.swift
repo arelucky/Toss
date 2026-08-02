@@ -13,90 +13,54 @@ struct CoinView: View {
 
     var body: some View {
         ZStack {
-            coinBody
-                .rotation3DEffect(
-                    .degrees(geometry.effectiveRotationDegrees),
-                    axis: (x: 1, y: 0, z: 0),
-                    perspective: 0.55
-                )
-        }
-        .frame(width: theme.defaultSize, height: theme.defaultSize * 1.18)
-        .accessibilityLabel(geometry.face == .front ? "Toss coin front" : "Toss coin back")
-    }
-
-    private var coinBody: some View {
-        ZStack {
             CoinShadow(theme: theme)
-                .opacity(geometry.shadowOpacity)
-            CoinThickness(theme: theme, visibility: geometry.edgeVisibility)
-            coinFace
+            CoinBack(theme: theme)
+                .frame(width: theme.defaultSize, height: theme.defaultSize)
+                .rotation3DEffect(
+                    .degrees(effectiveRotationDegrees + 180),
+                    axis: (x: 1, y: 0, z: 0),
+                    perspective: 0.86
+                )
+                .zIndex(backFaceDepth)
+            CoinThickness(theme: theme)
+                .zIndex(edgeDepth)
+            CoinFront(theme: theme)
+                .frame(width: theme.defaultSize, height: theme.defaultSize)
+                .rotation3DEffect(
+                    .degrees(effectiveRotationDegrees),
+                    axis: (x: 1, y: 0, z: 0),
+                    perspective: 0.86
+                )
+                .zIndex(frontFaceDepth)
         }
         .frame(width: theme.defaultSize, height: theme.defaultSize)
-        .drawingGroup()
+        .frame(width: theme.defaultSize, height: theme.defaultSize * 1.18)
+        .accessibilityLabel(side == .front ? "Toss coin front" : "Toss coin back")
     }
 
-    private var coinFace: some View {
-        ZStack {
-            CoinBack(theme: theme)
-                .rotation3DEffect(.degrees(180), axis: (x: 1, y: 0, z: 0))
-                .opacity(geometry.backOpacity)
-            CoinFront(theme: theme)
-                .opacity(geometry.frontOpacity)
-        }
+    private var effectiveRotationDegrees: Double {
+        rotationDegrees + side.restingRotationDegrees
     }
 
-    private var geometry: CoinFlipGeometry {
-        CoinFlipGeometry(rotationDegrees: rotationDegrees, restingSide: side)
-    }
-}
-
-struct CoinFlipGeometry {
-    let rotationDegrees: Double
-    let restingSide: CoinSide
-
-    var effectiveRotationDegrees: Double {
-        rotationDegrees + restingSide.baseRotationDegrees
+    private var frontFaceDepth: Double {
+        cos(rotationRadians)
     }
 
-    var face: CoinSide {
-        switch normalizedHalfTurn {
-        case 90...270:
-            .back
-        default:
-            .front
-        }
+    private var backFaceDepth: Double {
+        -cos(rotationRadians)
     }
 
-    var frontOpacity: Double {
-        guard edgeVisibility < 0.94 else { return 0 }
-        return face == .front ? faceVisibility : 0
+    private var edgeDepth: Double {
+        abs(sin(rotationRadians)) + 0.2
     }
 
-    var backOpacity: Double {
-        guard edgeVisibility < 0.94 else { return 0 }
-        return face == .back ? faceVisibility : 0
-    }
-
-    var edgeVisibility: Double {
-        abs(sin(effectiveRotationDegrees * .pi / 180))
-    }
-
-    var shadowOpacity: Double {
-        0.78 - edgeVisibility * 0.18
-    }
-
-    private var normalizedHalfTurn: Double {
-        let degrees = effectiveRotationDegrees.truncatingRemainder(dividingBy: 360)
-        return degrees >= 0 ? degrees : degrees + 360
-    }
-
-    private var faceVisibility: Double {
-        max(0, 1 - edgeVisibility * 1.12)
+    private var rotationRadians: Double {
+        effectiveRotationDegrees * .pi / 180
     }
 }
 
 private extension CoinSide {
-    var baseRotationDegrees: Double {
+    var restingRotationDegrees: Double {
         switch self {
         case .front:
             0
@@ -108,43 +72,69 @@ private extension CoinSide {
 
 private struct CoinThickness: View {
     let theme: CoinTheme
-    let visibility: Double
 
     var body: some View {
-        ZStack {
-            Capsule()
-                .fill(edgeGradient)
-                .frame(width: theme.defaultSize * 0.96, height: edgeHeight)
-                .overlay(edgeHighlight)
-                .shadow(color: theme.shadowGold.opacity(0.20 * visibility), radius: 3, x: 0, y: 1)
-
-            Circle()
-                .strokeBorder(theme.deepGold.opacity(0.18 * visibility), lineWidth: 1.2)
+        VStack(spacing: 0) {
+            edgeHighlightStrip
+            edgeCore
+            edgeShadeStrip
         }
-        .opacity(0.18 + visibility * 0.82)
+        .frame(width: theme.defaultSize * 0.98, height: edgeHeight)
+        .clipShape(Capsule())
+        .overlay(edgeRim)
+        .shadow(color: theme.shadowGold.opacity(0.26), radius: 3, x: 0, y: 1)
         .allowsHitTesting(false)
     }
 
     private var edgeHeight: CGFloat {
-        theme.defaultSize * (0.035 + 0.075 * CGFloat(visibility))
+        theme.defaultSize * 0.16
+    }
+
+    private var edgeHighlightStrip: some View {
+        Rectangle()
+            .fill(theme.paleGold.opacity(0.76))
+            .frame(height: edgeHeight * 0.22)
+    }
+
+    private var edgeCore: some View {
+        Rectangle()
+            .fill(edgeGradient)
+    }
+
+    private var edgeShadeStrip: some View {
+        Rectangle()
+            .fill(theme.deepGold.opacity(0.74))
+            .frame(height: edgeHeight * 0.26)
     }
 
     private var edgeGradient: LinearGradient {
         LinearGradient(
             colors: [
-                theme.highlightGold.opacity(0.68),
+                theme.deepGold.opacity(0.88),
+                theme.highlightGold.opacity(0.80),
                 theme.warmGold,
-                theme.deepGold.opacity(0.90),
-                theme.paleGold.opacity(0.72)
+                theme.baseGold,
+                theme.deepGold.opacity(0.92)
             ],
             startPoint: .leading,
             endPoint: .trailing
         )
     }
 
-    private var edgeHighlight: some View {
+    private var edgeRim: some View {
         Capsule()
-            .strokeBorder(theme.coolReflection.opacity(0.22 * visibility), lineWidth: 1)
+            .strokeBorder(
+                LinearGradient(
+                    colors: [
+                        theme.coolReflection.opacity(0.28),
+                        theme.highlightGold.opacity(0.42),
+                        theme.shadowGold.opacity(0.38)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                ),
+                lineWidth: 1.2
+            )
     }
 }
 
