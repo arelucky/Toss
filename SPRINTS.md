@@ -42,7 +42,7 @@ refactor: organize project structure
 
 ## 状态
 
-🚧 开发中
+✅ 已完成
 
 ## 开发目标
 
@@ -165,7 +165,7 @@ fix: improve coin 3d flip rotation
 
 ---
 
-### Task 2-5（待开始）
+### Task 2-5（不再实施）
 
 **Coin Animation Player**
 
@@ -185,7 +185,7 @@ fix: improve coin 3d flip rotation
 
 状态：
 
-⬜ 未开始
+⏹️ 已由 RealityKit + USDZ 技术路线替代
 
 ---
 
@@ -262,6 +262,101 @@ feat: add RealityKit 3D coin preview
 
 ---
 
+### Task 2-8（已完成）
+
+**3D Coin Home Integration**
+
+目标：
+
+* 将 `Coin3DView` 整理为正式可复用组件
+* 优化首页硬币展示层结构
+* 支持 RealityKit 3D 硬币与旧 SwiftUI `CoinView` 切换
+* 为后续抛掷动画保留首页布局空间
+
+完成内容：
+
+* 新增 `CoinDisplayLayer`
+* 新增 `CoinDisplayMode`
+* 默认首页展示方案切换为 RealityKit 3D Coin
+* 保留 Debug 参数 `-showCoin3D` / `-showSwiftUICoin` 用于视觉验证与回退查看
+* `Coin3DView` 改为可复用组件，不再承担全屏测试页职责
+* 保留旧 SwiftUI `CoinView` 分支，不删除旧代码
+
+状态：
+
+✅ Completed
+
+---
+
+### Task 2-9（已完成）
+
+**Interactive 3D Coin Toss Experience**
+
+完成内容：
+
+* 支持触摸拖动 3D 硬币预览
+* 支持松手后的惯性旋转
+* 完成上滑 Toss 手势判断
+* 根据手势距离与速度计算抛掷轨迹
+* 完成 RealityKit 硬币旋转、位移、缩放与落地表现
+* 随机生成 heads / tails 结果
+* 结果保持后可再次上滑 Toss
+
+状态：
+
+✅ Completed
+
+---
+
+### Task 2-10（已完成）
+
+**Toss Feedback and Display Environment**
+
+完成内容：
+
+* 新增通用 `TossBackground`
+* 新增拖动、起抛、飞行与落地 Haptic 反馈
+* 新增抛出和空中旋转音效
+* 保持默认硬币离线可用
+
+状态：
+
+✅ Completed
+
+---
+
+### Task 2-11（已完成）
+
+**SwiftUI Fallback Coin Polish**
+
+完成内容：
+
+* 精修品牌 T 正面造型与浮雕层次
+* 精修同心圆背面、边缘、阴影与高光
+* 更新香槟金主题材质
+* 保留 `CoinView` 作为开发回退与兼容展示层
+
+状态：
+
+✅ Completed
+
+---
+
+### Task 2-12（已完成）
+
+**Build and Test Verification**
+
+完成内容：
+
+* Debug 模拟器构建成功
+* 完整测试套件 39 项通过
+
+状态：
+
+✅ Completed
+
+---
+
 # Sprint 3
 
 ## 状态
@@ -279,15 +374,19 @@ feat: add RealityKit 3D coin preview
 
 ## 状态
 
-⏳ 未开始
+🚧 开发中
 
-规划内容：
+已完成：
+
+* 随机结果
+* Haptic Feedback
+* 结果保持与再次 Toss
+
+待完成：
 
 * Cover to Reveal
 * 遮挡检测
 * Reveal 动画
-* 随机结果
-* Haptic Feedback
 
 ---
 
@@ -295,14 +394,17 @@ feat: add RealityKit 3D coin preview
 
 ## 状态
 
-⏳ 未开始
+🚧 开发中
 
-规划内容：
+已完成：
 
 * 金属材质优化
-* 光影动画
 * 音效
 * 细节打磨
+
+待完成：
+
+* 光影动画
 
 ---
 
@@ -318,3 +420,15 @@ feat: add RealityKit 3D coin preview
 * 设置页面
 * App Icon
 * 发布准备
+
+---
+
+# 后台阶段
+
+## 状态
+
+⏳ 待开始
+
+下一阶段：
+
+* 阶段 1：Supabase 基础
