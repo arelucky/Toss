@@ -209,7 +209,7 @@ Expected: CLI and Docker report versions and the worktree contains only changes 
 
 **Minimal implementation**
 
-- [ ] Run `supabase init`; bind local services to loopback and use `env()` for any local OAuth secret reference.
+- [ ] Run `supabase init`; use Supabase's recommended custom Docker network configured with `com.docker.network.bridge.host_binding_ipv4=127.0.0.1`, and use `env()` for any local OAuth secret reference. Supabase CLI 2.111.0 with Docker Desktop may still report published ports as `0.0.0.0`/`[::]`; do not introduce `pf`, proxy, custom Compose, or generated-file workarounds.
 - [ ] Keep `seed.sql` free of users and personal data; pgTAP creates transaction-scoped synthetic identities.
 - [ ] Read the existing `.gitignore` first and append only missing rules. Do not replace or reorder its current contents.
 - [ ] Ensure it ignores `/Configurations/LocalSecrets.xcconfig`, `supabase/.temp/`, and `supabase/.branches/`; never ignore migrations or examples.
@@ -220,14 +220,16 @@ Expected: CLI and Docker report versions and the worktree contains only changes 
 **Commands and expected result**
 
 ```bash
-supabase start
+docker network inspect toss-supabase-local >/dev/null 2>&1 || docker network create -o com.docker.network.bridge.host_binding_ipv4=127.0.0.1 toss-supabase-local
+supabase start --network-id toss-supabase-local
 supabase status
 supabase db reset --local
 xcodebuild test -project Toss.xcodeproj -scheme Toss -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.5' -only-testing:TossTests/SupabaseConfigurationTests
+supabase stop
 git diff --check
 ```
 
-Local services are healthy, empty reset and focused tests pass, and no credential appears in tracked changes. Launching without secrets still shows the default coin.
+Local services are healthy during the short validation window, empty reset and focused tests pass, `supabase stop` leaves the project containers stopped, and no credential appears in tracked changes. The custom Docker network is required even when Docker Desktop still displays published ports as `0.0.0.0`/`[::]`. On an untrusted network, disable network sharing or use the system firewall to restrict inbound access before starting the stack. Launching without secrets still shows the default coin.
 
 **Commit scope:** configuration/local Supabase files, loader/test, ignore rules, and only related project references.
 
