@@ -328,6 +328,7 @@ All schema/lifecycle/RLS tests pass with no introduced security warning.
 
 - [ ] At implementation time, open the current official Supabase Swift installation documentation and confirm the supported Swift Package URL instead of assuming a historical repository address remains valid.
 - [ ] Add the package with an explicitly reviewed same-major version range, record the exact version written to `Package.resolved`, and prohibit an unreviewed major-version upgrade.
+- [ ] For the current Xcode 15.4 / Swift 5.10 toolchain, resolve Supabase to 2.49.0 and pin `xctest-dynamic-overlay` to 1.9.0 in `Package.resolved`. Overlay 1.10.x enables upcoming-feature/public-import settings that do not compile with this toolchain. Revalidate and explicitly review this pin before upgrading Xcode or running Update Package Versions.
 - [ ] Prefer the officially supported `Supabase` product. Link Auth, PostgREST, Functions, or other component products separately only when the package manifest resolved at implementation time explicitly supports that composition.
 - [ ] Keep service-role/secret keys, database passwords, Apple credentials, and every other server credential out of Xcode build settings and configuration files.
 - [ ] Define protocol seams before concrete services; DTO conversion stays outside views.
