@@ -36,6 +36,15 @@
 		F5D33A02301A000100000001 /* TossResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5D33A01301A000100000001 /* TossResult.swift */; };
 		F5F100023025000100000001 /* SupabaseConfigurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F100013025000100000001 /* SupabaseConfigurationTests.swift */; };
 		F5F100043025000100000001 /* SupabaseConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F100033025000100000001 /* SupabaseConfiguration.swift */; };
+		F5F400013028000100000001 /* AccountStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F400023028000100000001 /* AccountStoreTests.swift */; };
+		F5F400033028000100000001 /* AccountTestDoubles.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F400043028000100000001 /* AccountTestDoubles.swift */; };
+		F5F401013028000100000001 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F401023028000100000001 /* AppEnvironment.swift */; };
+		F5F401033028000100000001 /* AppDependencies.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F401043028000100000001 /* AppDependencies.swift */; };
+		F5F401053028000100000001 /* AccountSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F401063028000100000001 /* AccountSession.swift */; };
+		F5F401073028000100000001 /* AccountAuthServicing.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F401083028000100000001 /* AccountAuthServicing.swift */; };
+		F5F401093028000100000001 /* AccountRepositories.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F4010A3028000100000001 /* AccountRepositories.swift */; };
+		F5F4010B3028000100000001 /* AccountDeletionServicing.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F4010C3028000100000001 /* AccountDeletionServicing.swift */; };
+		F5F4010D3028000100000001 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = F5F4010F3028000100000001 /* Supabase */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -91,6 +100,14 @@
 		F5F100053025000100000001 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		F5F100063025000100000001 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 		F5F100073025000100000001 /* LocalSecrets.xcconfig.example */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = LocalSecrets.xcconfig.example; sourceTree = "<group>"; };
+		F5F400023028000100000001 /* AccountStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/AccountStoreTests.swift; sourceTree = "<group>"; };
+		F5F400043028000100000001 /* AccountTestDoubles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestDoubles/AccountTestDoubles.swift; sourceTree = "<group>"; };
+		F5F401023028000100000001 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
+		F5F401043028000100000001 /* AppDependencies.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDependencies.swift; sourceTree = "<group>"; };
+		F5F401063028000100000001 /* AccountSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/AccountSession.swift; sourceTree = "<group>"; };
+		F5F401083028000100000001 /* AccountAuthServicing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/AccountAuthServicing.swift; sourceTree = "<group>"; };
+		F5F4010A3028000100000001 /* AccountRepositories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/AccountRepositories.swift; sourceTree = "<group>"; };
+		F5F4010C3028000100000001 /* AccountDeletionServicing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/AccountDeletionServicing.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -98,6 +115,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F5F4010D3028000100000001 /* Supabase in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -159,6 +177,7 @@
 				F5A43AB32FFFE90000F9D3AF /* Models */,
 				F5A43AB42FFFE90000F9D3AF /* ViewModels */,
 				F5A43AB52FFFE90000F9D3AF /* Services */,
+				F5F401103028000100000001 /* Repositories */,
 				F5A43A7F2FFFE85100F9D3AF /* Assets.xcassets */,
 				F5A43A812FFFE85100F9D3AF /* Preview Content */,
 			);
@@ -196,6 +215,8 @@
 			children = (
 				F5A43A8C2FFFE85100F9D3AF /* TossTests.swift */,
 				F5F100013025000100000001 /* SupabaseConfigurationTests.swift */,
+				F5F400023028000100000001 /* AccountStoreTests.swift */,
+				F5F400043028000100000001 /* AccountTestDoubles.swift */,
 			);
 			path = TossTests;
 			sourceTree = "<group>";
@@ -213,6 +234,8 @@
 			isa = PBXGroup;
 			children = (
 				F5A43A7B2FFFE85000F9D3AF /* TossApp.swift */,
+				F5F401023028000100000001 /* AppEnvironment.swift */,
+				F5F401043028000100000001 /* AppDependencies.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -249,6 +272,7 @@
 				F5C02A0D30190851001D0A7E /* TossGestureEvent.swift */,
 				F5C02A0F30190851001D0A7E /* CoinTossMotion.swift */,
 				F5D33A01301A000100000001 /* TossResult.swift */,
+				F5F401063028000100000001 /* AccountSession.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -267,8 +291,16 @@
 				F5C02A1130190851001D0A7E /* TossDebugLog.swift */,
 				F5E41002301B100100000001 /* SoundManager.swift */,
 				F5E41006301B200100000001 /* HapticManager.swift */,
+				F5F401083028000100000001 /* AccountAuthServicing.swift */,
+				F5F4010C3028000100000001 /* AccountDeletionServicing.swift */,
 			);
 			path = Services;
+			sourceTree = "<group>";
+		};
+		F5F401103028000100000001 /* Repositories */ = {
+			isa = PBXGroup;
+			children = ( F5F4010A3028000100000001 /* AccountRepositories.swift */, );
+			path = Repositories;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -287,6 +319,9 @@
 			dependencies = (
 			);
 			name = Toss;
+			packageProductDependencies = (
+				F5F4010F3028000100000001 /* Supabase */,
+			);
 			productName = Toss;
 			productReference = F5A43A782FFFE85000F9D3AF /* Toss.app */;
 			productType = "com.apple.product-type.application";
@@ -359,6 +394,9 @@
 				Base,
 			);
 			mainGroup = F5A43A6F2FFFE85000F9D3AF;
+			packageReferences = (
+				F5F4010E3028000100000001 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+			);
 			productRefGroup = F5A43A792FFFE85000F9D3AF /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -424,6 +462,12 @@
 				F5E41001301B100100000001 /* SoundManager.swift in Sources */,
 				F5E41005301B200100000001 /* HapticManager.swift in Sources */,
 				F5A43ABD2FFFEA0000F9D3AF /* CoinShadow.swift in Sources */,
+				F5F401013028000100000001 /* AppEnvironment.swift in Sources */,
+				F5F401033028000100000001 /* AppDependencies.swift in Sources */,
+				F5F401053028000100000001 /* AccountSession.swift in Sources */,
+				F5F401073028000100000001 /* AccountAuthServicing.swift in Sources */,
+				F5F401093028000100000001 /* AccountRepositories.swift in Sources */,
+				F5F4010B3028000100000001 /* AccountDeletionServicing.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -433,6 +477,8 @@
 			files = (
 				F5A43A8D2FFFE85100F9D3AF /* TossTests.swift in Sources */,
 				F5F100023025000100000001 /* SupabaseConfigurationTests.swift in Sources */,
+				F5F400013028000100000001 /* AccountStoreTests.swift in Sources */,
+				F5F400033028000100000001 /* AccountTestDoubles.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -459,6 +505,25 @@
 			targetProxy = F5A43A932FFFE85100F9D3AF /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F5F4010E3028000100000001 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		F5F4010F3028000100000001 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F5F4010E3028000100000001 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCBuildConfiguration section */
 		F5A43A9A2FFFE85100F9D3AF /* Debug */ = {
