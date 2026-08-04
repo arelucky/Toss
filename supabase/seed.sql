@@ -1,0 +1,1 @@
+-- Test identities are created inside transaction-scoped pgTAP tests.

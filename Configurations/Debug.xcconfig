@@ -1,0 +1,4 @@
+#include? "LocalSecrets.xcconfig"
+
+INFOPLIST_KEY_TossSupabaseURL = $(SUPABASE_URL)
+INFOPLIST_KEY_TossSupabasePublishableKey = $(SUPABASE_PUBLISHABLE_KEY)

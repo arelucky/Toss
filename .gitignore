@@ -14,10 +14,12 @@ DerivedData/
 .env
 .env.local
 LocalSecrets.xcconfig
+/Configurations/LocalSecrets.xcconfig
 *.p8
 
 # Supabase local state
 supabase/.temp/
+supabase/.branches/
 
 # Local archived design assets
 /LocalAssets/
