@@ -352,21 +352,22 @@ Package resolution, the focused tests, and the required independent Debug build 
 
 ## Task 5: Implement Native Apple Sign-In and Session State
 
-**Create:** entitlement, Apple/Auth service files, `UserProfile.swift`, `SupabaseUserProfileRepository.swift`, `AccountStore.swift`, and dedicated Apple/Auth/profile tests.
+**Create:** entitlement, Apple/Auth service files, `AccountStore.swift`, and dedicated Apple/Auth/store tests.
 
 **Modify:** `AppDependencies.swift`, `project.pbxproj`.
 
-**Inputs/outputs:** Native Apple authorization returns identity token, authorization code, raw nonce, and optional first-use display name. Supabase receives provider `.apple`, identity token, and original raw nonce. Store transitions guest → restoring → authenticated or guest. Cancellation maps to a normal no-op.
+**Inputs/outputs:** Native Apple authorization returns identity token, short-lived authorization code, raw nonce, and optional first-use display name. Supabase receives provider `.apple`, identity token, and original raw nonce. Task 5 passes the optional name only as an ephemeral credential result; it does not write profile data. Store transitions guest → restoring → authenticated or guest. Cancellation maps to a normal no-op.
 
 **Prerequisites:** Task 4; matching App ID capability and Supabase Apple provider configured outside Git.
 
 **Failing tests**
 
-- [ ] Test nonce generation/hash, credential extraction, missing values, cancellation, a first authorization that returns a name, and a later authorization that returns no name.
+- [ ] Test nonce generation/hash, credential extraction, missing or malformed identity tokens, cancellation, duplicate authorization callbacks resuming exactly once, a first authorization that returns a name, and a later authorization that returns no name.
 - [ ] Test restore success, expired/missing fallback, login success/failure, auth event updates, and logout.
-- [ ] Test that a non-empty first-use name is written only after Supabase authentication, the update is idempotent, and a nil/empty later name never overwrites an existing server name.
+- [ ] Test that a first authorization can carry an optional name as an ephemeral result and that a later authorization can return no name; do not test or implement profile persistence in this Task.
 - [ ] Test offline logout followed by a cold app restart remains guest.
 - [ ] Test all failures leave Toss usable in guest mode.
+- [ ] Test auth-state consumption updates the `@MainActor` store, observation cancellation releases its task, and replacing or recreating a store does not accumulate active observation tasks.
 - [ ] Confirm focused tests fail before implementations.
 
 **Minimal implementation**
@@ -375,20 +376,24 @@ Package resolution, the focused tests, and the required independent Debug build 
 - [ ] Wrap `ASAuthorizationController` in a main-actor continuation that resumes once.
 - [ ] Request `.fullName` only. Do not request email for Stage 1.
 - [ ] Use Supabase native `signInWithIdToken` with raw nonce; use the SDK's supported session persistence.
-- [ ] After Supabase authentication succeeds, normalize the Apple display name. If it is non-empty, call `UserProfileRepository.updateDisplayName(_:userID:)` for the authenticated UUID. Make the repository update idempotent; skip nil/empty names and never overwrite the stored name with an empty value. Do not rely on the Auth-user database trigger for this value.
+- [ ] Safely normalize an optional first-use Apple display name and carry it only in the transient authentication result. Task 5 must not write `user_profiles`; Task 6 performs the idempotent repository update after successful Supabase authentication, skips nil/empty names, and never overwrites a stored name with an empty value.
+- [ ] Treat the Apple authorization code as short-lived sensitive data: never log it or write it to UserDefaults, Keychain, a database, ordinary preferences, fixtures, or other persistence. Task 5 must not retain the login-time code for deletion; Task 8 obtains a fresh code through recent Apple reauthentication.
 - [ ] Observe auth-state changes in a cancellable task and update the main-actor store.
 - [ ] Keep `AccountStore` isolated to `@MainActor`; explicitly define actor crossings for Auth callbacks and cancel the auth-state observation task when its owner is released or the dependency graph is replaced.
+- [ ] Continue to create one shared `SupabaseClient`. Its constructor may start the SDK Auth listener and initial-session flow, load a persisted session, and refresh it when needed. Toss-owned code must not block launch on that background work. Task 5 consumes auth-state changes explicitly through one cancellable observation task and must not accumulate listeners when stores are recreated.
 - [ ] Log only Debug error categories, never credentials, metadata, or user IDs.
 - [ ] Implement `signOut()` so clearing the Supabase SDK's persisted local session is mandatory. Attempt server-session revocation when online as best effort, but return `.deferred` rather than failing logout when only remote revocation fails. Throw if local persisted-session removal fails; in that case the UI must not claim a safe logout.
 - [ ] Only after confirmed local-session removal, clear App account memory and restore anonymous local state. A network outage must not allow the just-signed-out account to restore after restart.
 
 ```bash
 xcodebuild test -project Toss.xcodeproj -scheme Toss -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.5' -only-testing:TossTests/NativeAppleSignInServiceTests -only-testing:TossTests/SupabaseAccountAuthServiceTests -only-testing:TossTests/AccountStoreTests
-xcodebuild build -project Toss.xcodeproj -scheme Toss -configuration Debug -destination 'generic/platform=iOS Simulator'
-rg -n "identityToken|authorizationCode|accessToken|refreshToken" Toss --glob '*.swift'
+xcodebuild test -project Toss.xcodeproj -scheme Toss -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.5'
+xcodebuild build -project Toss.xcodeproj -scheme Toss -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.5'
+rg -n "identityToken|authorizationCode|accessToken|refreshToken|BEGIN PRIVATE KEY|sb_secret_" Toss TossTests Toss.xcodeproj --glob '*.swift' --glob '*.pbxproj' --glob '*.entitlements'
+rg -n "com.apple.developer.applesignin|CODE_SIGN_ENTITLEMENTS|Toss.entitlements" Toss/Toss.entitlements Toss.xcodeproj/project.pbxproj
 ```
 
-Tests/build pass; search hits only credential handling, never logging/persistence. On a physical iOS 17.5+ device verify cancellation, successful login, cold-launch restoration, and offline Toss.
+Focused and complete automated tests pass; the iPhone 15 Pro / iOS 17.5 Debug simulator build and entitlement/project static checks pass. Credential searches may match only transient protocol/service handling and negative test assertions, never real values, logs, fixtures, or persistence. Task 5 does not add an Apple login button, account/settings UI, `AppRootView`, temporary Debug login UI, or any `ContentView.swift`/`TossApp.swift` account entry. It does not create a remote Auth user or require a real Apple authorization sheet. Physical-device end-to-end Apple authentication remains unverified until Task 7 supplies the real account entry and root integration.
 
 **Commit scope:** entitlement/capability, Apple/Auth/store implementations, tests.
 
@@ -396,7 +401,7 @@ Tests/build pass; search hits only credential handling, never logging/persistenc
 
 ## Task 6: Synchronize Profile and Preferences
 
-**Create:** `UserPreferences.swift`, concrete preference repository, `LocalPreferencesStore.swift`, and preference/store tests. Profile model/repository were created in Task 5 so Apple first-use name can be persisted immediately after authentication.
+**Create:** `UserProfile.swift`, `SupabaseUserProfileRepository.swift`, `UserPreferences.swift`, concrete preference repository, `LocalPreferencesStore.swift`, and profile/preference/store tests.
 
 **Modify:** `AccountStore.swift`, `AppDependencies.swift`, and only enablement hooks in `HapticManager.swift`/`SoundManager.swift`.
 
@@ -417,6 +422,7 @@ Tests/build pass; search hits only credential handling, never logging/persistenc
 **Minimal implementation**
 
 - [ ] Use explicit snake-case DTO mappings and fetch only Stage 1 columns.
+- [ ] After Supabase authentication succeeds, have the concrete `UserProfileRepository` idempotently save the first non-empty Apple display name for the authenticated UUID. Skip nil/empty names and never overwrite an existing server name with an empty value; do not request or persist Apple email.
 - [ ] Preserve one anonymous preference snapshot and restore it after logout.
 - [ ] Immediately after authentication, call `bootstrap(userID:guestPreferences:)`. The database transaction inserts the private bootstrap marker and uploads guest values only when no marker exists, returning `.uploadedGuestPreferences`; otherwise it leaves server values unchanged and returns `.existingAccount` with the current server row.
 - [ ] Treat `.uploadedGuestPreferences` as the explicit new-account path and `.existingAccount` as the explicit existing-account path. Never infer account age from timestamps, Auth event ordering, missing Apple name, or client-side timing.
@@ -462,6 +468,8 @@ Focused tests pass and selected-coin search is empty. A full build is included h
 - [ ] Keep account errors inside the sheet; never show launch alerts or login gates.
 - [ ] Request the auth service's sign-out operation and show success only after the SDK persisted local session is confirmed removed. Server revocation may be reported as deferred when offline; memory clearing and guest-setting restoration follow successful local removal.
 - [ ] Do not add deletion UI until Task 8; do not edit `ContentView.swift` or `TossTests.swift`.
+- [ ] On a physical iOS 17.5+ device, verify the real Apple login entry appears; cancellation returns to guest without interrupting Toss; first login succeeds; a cold launch restores the Session; authenticated and guest Toss both work; offline Toss remains available; and login failure never blocks Toss.
+- [ ] On the same device, verify logout followed by relaunch remains guest. In the Supabase Dashboard, confirm the login created only the expected Auth user, its Apple Auth identity, one `user_profiles` row, and one `user_preferences` row, with no extra users or business rows.
 
 ```bash
 xcodebuild test -project Toss.xcodeproj -scheme Toss -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.5' -only-testing:TossTests/AccountViewModelTests
@@ -469,7 +477,7 @@ xcodebuild test -project Toss.xcodeproj -scheme Toss -destination 'platform=iOS 
 xcodebuild build -project Toss.xcodeproj -scheme Toss -configuration Debug -destination 'generic/platform=iOS Simulator'
 ```
 
-All pass. Device checks cover placement, VoiceOver, cancellation, login, name, toggles, logout, relaunch, airplane-mode launch, and uninterrupted Toss.
+Automated tests and the Debug build pass. Task 7 is not complete, and the Apple login flow must not be described as end-to-end verified, until the physical-device checks cover the visible Apple entry, cancellation, first login, cold-launch restoration, authenticated/guest Toss, offline and failed-login resilience, logout followed by guest relaunch, placement, VoiceOver, name, toggles, and the expected Dashboard Auth/profile/preference records.
 
 **Commit scope:** app root/account UI/view model/tests and minimal entry/DI wiring.
 
