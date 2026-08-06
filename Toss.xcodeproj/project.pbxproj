@@ -48,11 +48,13 @@
 		F5F500013035000100000001 /* NonceGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F500023035000100000001 /* NonceGeneratorTests.swift */; };
 		F5F500033035000100000001 /* NativeAppleSignInServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F500043035000100000001 /* NativeAppleSignInServiceTests.swift */; };
 		F5F500053035000100000001 /* SupabaseAccountAuthServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F500063035000100000001 /* SupabaseAccountAuthServiceTests.swift */; };
+		F5F600013036000100000001 /* AuthSessionStorageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F600023036000100000001 /* AuthSessionStorageTests.swift */; };
 		F5F501013035000100000001 /* NonceGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F501023035000100000001 /* NonceGenerator.swift */; };
 		F5F501033035000100000001 /* AppleSignInServicing.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F501043035000100000001 /* AppleSignInServicing.swift */; };
 		F5F501053035000100000001 /* NativeAppleSignInService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F501063035000100000001 /* NativeAppleSignInService.swift */; };
 		F5F501073035000100000001 /* SupabaseAccountAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F501083035000100000001 /* SupabaseAccountAuthService.swift */; };
 		F5F501093035000100000001 /* AccountStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F5010A3035000100000001 /* AccountStore.swift */; };
+		F5F601013036000100000001 /* KeychainAuthLocalStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F601023036000100000001 /* KeychainAuthLocalStorage.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -119,12 +121,14 @@
 		F5F500023035000100000001 /* NonceGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/NonceGeneratorTests.swift; sourceTree = "<group>"; };
 		F5F500043035000100000001 /* NativeAppleSignInServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/NativeAppleSignInServiceTests.swift; sourceTree = "<group>"; };
 		F5F500063035000100000001 /* SupabaseAccountAuthServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/SupabaseAccountAuthServiceTests.swift; sourceTree = "<group>"; };
+		F5F600023036000100000001 /* AuthSessionStorageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/AuthSessionStorageTests.swift; sourceTree = "<group>"; };
 		F5F501023035000100000001 /* NonceGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/NonceGenerator.swift; sourceTree = "<group>"; };
 		F5F501043035000100000001 /* AppleSignInServicing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/AppleSignInServicing.swift; sourceTree = "<group>"; };
 		F5F501063035000100000001 /* NativeAppleSignInService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/NativeAppleSignInService.swift; sourceTree = "<group>"; };
 		F5F501083035000100000001 /* SupabaseAccountAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/SupabaseAccountAuthService.swift; sourceTree = "<group>"; };
 		F5F5010A3035000100000001 /* AccountStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountStore.swift; sourceTree = "<group>"; };
 		F5F5010B3035000100000001 /* Toss.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Toss.entitlements; sourceTree = "<group>"; };
+		F5F601023036000100000001 /* KeychainAuthLocalStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/KeychainAuthLocalStorage.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -239,6 +243,7 @@
 				F5F500023035000100000001 /* NonceGeneratorTests.swift */,
 				F5F500043035000100000001 /* NativeAppleSignInServiceTests.swift */,
 				F5F500063035000100000001 /* SupabaseAccountAuthServiceTests.swift */,
+				F5F600023036000100000001 /* AuthSessionStorageTests.swift */,
 			);
 			path = TossTests;
 			sourceTree = "<group>";
@@ -319,6 +324,7 @@
 				F5F501043035000100000001 /* AppleSignInServicing.swift */,
 				F5F501063035000100000001 /* NativeAppleSignInService.swift */,
 				F5F501083035000100000001 /* SupabaseAccountAuthService.swift */,
+				F5F601023036000100000001 /* KeychainAuthLocalStorage.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -504,6 +510,7 @@
 				F5F501033035000100000001 /* AppleSignInServicing.swift in Sources */,
 				F5F501053035000100000001 /* NativeAppleSignInService.swift in Sources */,
 				F5F501073035000100000001 /* SupabaseAccountAuthService.swift in Sources */,
+				F5F601013036000100000001 /* KeychainAuthLocalStorage.swift in Sources */,
 				F5F501093035000100000001 /* AccountStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -519,6 +526,7 @@
 				F5F500013035000100000001 /* NonceGeneratorTests.swift in Sources */,
 				F5F500033035000100000001 /* NativeAppleSignInServiceTests.swift in Sources */,
 				F5F500053035000100000001 /* SupabaseAccountAuthServiceTests.swift in Sources */,
+				F5F600013036000100000001 /* AuthSessionStorageTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -726,7 +734,6 @@
 				CODE_SIGN_ENTITLEMENTS = Toss/Toss.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Toss/Preview Content\"";
-				DEVELOPMENT_TEAM = 36ZQWSGBJ4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

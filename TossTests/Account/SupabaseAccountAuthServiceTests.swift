@@ -74,6 +74,27 @@ final class SupabaseAccountAuthServiceTests: XCTestCase {
 
         XCTAssertEqual(result, .deferred)
     }
+
+    func testLogoutRunsAfterInFlightLoginFinishes() async throws {
+        let backend = SupabaseAuthBackendDouble(signInUserID: UUID())
+        backend.shouldSuspendSignIn = true
+        let service = SupabaseAccountAuthService(backend: backend)
+        let login = Task {
+            try await service.signInWithApple(identityToken: "fictional-token", rawNonce: "fictional-nonce")
+        }
+        await backend.waitForSignInCall()
+
+        let logout = Task { try await service.signOut() }
+        await Task.yield()
+        backend.completeSignIn()
+        _ = try await login.value
+        _ = try await logout.value
+
+        XCTAssertEqual(
+            backend.operationLog,
+            ["login-start", "login-finish", "logout-start", "logout-finish"]
+        )
+    }
 }
 
 private final class SupabaseAuthBackendDouble: SupabaseAuthBackend {
@@ -82,6 +103,10 @@ private final class SupabaseAuthBackendDouble: SupabaseAuthBackend {
     var signOutResult: ServerSessionRevocation
     private(set) var receivedCredentials: OpenIDConnectCredentials?
     private(set) var activeObservationCount = 0
+    private(set) var operationLog: [String] = []
+    var shouldSuspendSignIn = false
+    private var signInContinuation: CheckedContinuation<Void, Never>?
+    private var signInCalledContinuation: CheckedContinuation<Void, Never>?
     private var continuations: [UUID: AsyncStream<AccountSession>.Continuation] = [:]
 
     init(
@@ -97,7 +122,14 @@ private final class SupabaseAuthBackendDouble: SupabaseAuthBackend {
     func restoredUserIDValue() async throws -> UUID? { restoredUserID }
 
     func signIn(credentials: OpenIDConnectCredentials) async throws -> UUID {
+        operationLog.append("login-start")
         receivedCredentials = credentials
+        signInCalledContinuation?.resume()
+        signInCalledContinuation = nil
+        if shouldSuspendSignIn {
+            await withCheckedContinuation { signInContinuation = $0 }
+        }
+        operationLog.append("login-finish")
         return signInUserID
     }
 
@@ -113,7 +145,21 @@ private final class SupabaseAuthBackendDouble: SupabaseAuthBackend {
         }
     }
 
-    func signOut() async throws -> ServerSessionRevocation { signOutResult }
+    func signOut() async throws -> ServerSessionRevocation {
+        operationLog.append("logout-start")
+        operationLog.append("logout-finish")
+        return signOutResult
+    }
+
+    func waitForSignInCall() async {
+        if operationLog.contains("login-start") { return }
+        await withCheckedContinuation { signInCalledContinuation = $0 }
+    }
+
+    func completeSignIn() {
+        signInContinuation?.resume()
+        signInContinuation = nil
+    }
 
     func yield(_ session: AccountSession) {
         continuations.values.forEach { $0.yield(session) }

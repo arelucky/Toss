@@ -1,21 +1,44 @@
 import AuthenticationServices
 import UIKit
 
+protocol AppleAuthorizationPerforming: AnyObject {
+    func perform()
+    func cancel()
+}
+
+typealias AppleAuthorizationCoordinatorFactory = (
+    _ request: ASAuthorizationAppleIDRequest,
+    _ rawNonce: String,
+    _ presentationAnchor: ASPresentationAnchor,
+    _ completionGate: AppleAuthorizationCompletionGate<AppleSignInCredential>
+) -> any AppleAuthorizationPerforming
+
 @MainActor
 final class NativeAppleSignInService: AppleSignInServicing {
     private let nonceGenerator: NonceGenerator
     private let presentationAnchor: () -> ASPresentationAnchor?
-    private var coordinator: AppleAuthorizationCoordinator?
+    private let coordinatorFactory: AppleAuthorizationCoordinatorFactory
+    private var coordinator: (any AppleAuthorizationPerforming)?
 
     init(
         nonceGenerator: NonceGenerator = NonceGenerator(),
-        presentationAnchor: (() -> ASPresentationAnchor?)? = nil
+        presentationAnchor: (() -> ASPresentationAnchor?)? = nil,
+        coordinatorFactory: AppleAuthorizationCoordinatorFactory? = nil
     ) {
         self.nonceGenerator = nonceGenerator
         self.presentationAnchor = presentationAnchor ?? Self.activePresentationAnchor
+        self.coordinatorFactory = coordinatorFactory ?? { request, rawNonce, anchor, gate in
+            AppleAuthorizationCoordinator(
+                request: request,
+                rawNonce: rawNonce,
+                presentationAnchor: anchor,
+                completionGate: gate
+            )
+        }
     }
 
     func signIn() async throws -> AppleSignInCredential {
+        try Task.checkCancellation()
         guard coordinator == nil else { throw AppleSignInError.requestInProgress }
         guard let anchor = presentationAnchor() else { throw AppleSignInError.missingPresentationAnchor }
 
@@ -25,21 +48,25 @@ final class NativeAppleSignInService: AppleSignInServicing {
         request.nonce = requestConfiguration.nonce
         request.requestedScopes = requestConfiguration.requestedScopes
 
-        return try await withCheckedThrowingContinuation { continuation in
-            let completionGate = AppleAuthorizationCompletionGate<AppleSignInCredential> { [weak self] result in
-                Task { @MainActor in
-                    self?.coordinator = nil
-                    continuation.resume(with: result)
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                let completionGate = AppleAuthorizationCompletionGate<AppleSignInCredential> { [weak self] result in
+                    Task { @MainActor in
+                        self?.coordinator = nil
+                        continuation.resume(with: result)
+                    }
+                }
+                let coordinator = coordinatorFactory(request, rawNonce, anchor, completionGate)
+                self.coordinator = coordinator
+                if Task.isCancelled {
+                    coordinator.cancel()
+                    self.coordinator = nil
+                } else {
+                    coordinator.perform()
                 }
             }
-            let coordinator = AppleAuthorizationCoordinator(
-                request: request,
-                rawNonce: rawNonce,
-                presentationAnchor: anchor,
-                completionGate: completionGate
-            )
-            self.coordinator = coordinator
-            coordinator.perform()
+        } onCancel: { [service = self] in
+            Task { @MainActor in service.cancelCurrentRequest() }
         }
     }
 
@@ -49,9 +76,15 @@ final class NativeAppleSignInService: AppleSignInServicing {
             .flatMap(\.windows)
             .first { $0.isKeyWindow }
     }
+
+    private func cancelCurrentRequest() {
+        coordinator?.cancel()
+        coordinator = nil
+    }
 }
 
 private final class AppleAuthorizationCoordinator: NSObject,
+    AppleAuthorizationPerforming,
     ASAuthorizationControllerDelegate,
     ASAuthorizationControllerPresentationContextProviding {
     private let controller: ASAuthorizationController
@@ -76,6 +109,11 @@ private final class AppleAuthorizationCoordinator: NSObject,
 
     func perform() {
         controller.performRequests()
+    }
+
+    func cancel() {
+        controller.cancel()
+        completionGate.resolve(.failure(CancellationError()))
     }
 
     func authorizationController(

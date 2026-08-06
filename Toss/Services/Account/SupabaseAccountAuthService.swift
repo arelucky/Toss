@@ -11,30 +11,60 @@ protocol SupabaseAuthBackend {
 final class SupabaseAccountAuthService: AccountAuthServicing, ClientEnvironmentBacked {
     let environment: AppEnvironment?
     private let backend: any SupabaseAuthBackend
+    private let lifecycleLock = AsyncOperationLock()
+    private let authStorage: KeychainAuthLocalStorage?
 
     init(environment: AppEnvironment) {
         self.environment = environment
-        backend = LiveSupabaseAuthBackend(client: environment.supabaseClient)
+        authStorage = environment.authStorage
+        backend = LiveSupabaseAuthBackend(
+            client: environment.supabaseClient,
+            signOutVerifier: VerifiedSessionSignOut(
+                storage: environment.authStorage,
+                storageKey: AppEnvironment.authStorageKey
+            )
+        )
     }
 
     init(backend: any SupabaseAuthBackend) {
         environment = nil
+        authStorage = nil
         self.backend = backend
     }
 
     func restoredSession() async throws -> AccountSession {
-        guard let userID = try await backend.restoredUserIDValue() else { return .guest }
-        return .authenticated(userID: userID)
+        try await lifecycleLock.withLock {
+            try Task.checkCancellation()
+            let restoreBlockedWritesOnFailure = authStorage?.sessionWritesAreBlocked == true
+            authStorage?.allowSessionWrites()
+            do {
+                guard let userID = try await backend.restoredUserIDValue() else { return .guest }
+                return .authenticated(userID: userID)
+            } catch {
+                if restoreBlockedWritesOnFailure { authStorage?.blockSessionWrites() }
+                throw error
+            }
+        }
     }
 
     func signInWithApple(identityToken: String, rawNonce: String) async throws -> AccountSession {
-        let credentials = OpenIDConnectCredentials(
-            provider: .apple,
-            idToken: identityToken,
-            nonce: rawNonce
-        )
-        let userID = try await backend.signIn(credentials: credentials)
-        return .authenticated(userID: userID)
+        try await lifecycleLock.withLock {
+            try Task.checkCancellation()
+            let restoreBlockedWritesOnFailure = authStorage?.sessionWritesAreBlocked == true
+            authStorage?.allowSessionWrites()
+            do {
+                let credentials = OpenIDConnectCredentials(
+                    provider: .apple,
+                    idToken: identityToken,
+                    nonce: rawNonce
+                )
+                let userID = try await backend.signIn(credentials: credentials)
+                return .authenticated(userID: userID)
+            } catch {
+                if restoreBlockedWritesOnFailure { authStorage?.blockSessionWrites() }
+                throw error
+            }
+        }
     }
 
     func sessionChanges() -> AsyncStream<AccountSession> {
@@ -42,15 +72,46 @@ final class SupabaseAccountAuthService: AccountAuthServicing, ClientEnvironmentB
     }
 
     func signOut() async throws -> ServerSessionRevocation {
-        try await backend.signOut()
+        try await lifecycleLock.withLock {
+            try await backend.signOut()
+        }
+    }
+}
+
+private actor AsyncOperationLock {
+    private var isLocked = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    func withLock<Value>(_ operation: () async throws -> Value) async rethrows -> Value {
+        await acquire()
+        defer { release() }
+        return try await operation()
+    }
+
+    private func acquire() async {
+        guard isLocked else {
+            isLocked = true
+            return
+        }
+        await withCheckedContinuation { waiters.append($0) }
+    }
+
+    private func release() {
+        guard !waiters.isEmpty else {
+            isLocked = false
+            return
+        }
+        waiters.removeFirst().resume()
     }
 }
 
 private final class LiveSupabaseAuthBackend: SupabaseAuthBackend {
     private let client: SupabaseClient
+    private let signOutVerifier: VerifiedSessionSignOut
 
-    init(client: SupabaseClient) {
+    init(client: SupabaseClient, signOutVerifier: VerifiedSessionSignOut) {
         self.client = client
+        self.signOutVerifier = signOutVerifier
     }
 
     func restoredUserIDValue() async throws -> UUID? {
@@ -84,21 +145,8 @@ private final class LiveSupabaseAuthBackend: SupabaseAuthBackend {
     }
 
     func signOut() async throws -> ServerSessionRevocation {
-        do {
+        try await signOutVerifier.perform {
             try await client.auth.signOut()
-            guard client.auth.currentSession == nil else {
-                throw AccountAuthError.localSessionNotCleared
-            }
-            return .revoked
-        } catch {
-            guard client.auth.currentSession == nil else {
-                throw AccountAuthError.localSessionNotCleared
-            }
-            return .deferred
         }
     }
-}
-
-enum AccountAuthError: Error, Equatable {
-    case localSessionNotCleared
 }
