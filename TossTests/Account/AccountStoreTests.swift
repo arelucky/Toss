@@ -16,6 +16,11 @@ final class AccountStoreTests: XCTestCase {
         XCTAssertEqual(dependencies.session, .guest)
         XCTAssertEqual(Set(dependencies.clientEnvironmentIdentities).count, 1)
         XCTAssertEqual(dependencies.clientEnvironmentIdentities.count, 4)
+        let firstGeneration = try XCTUnwrap(dependencies.environment?.generationProvider.current())
+        let secondGeneration = try dependencies.environment?.generationProvider.rotate(replacing: firstGeneration.id)
+        XCTAssertNotEqual(firstGeneration.id, secondGeneration?.id)
+        XCTAssertEqual(firstGeneration.lifecycle, .retired)
+        XCTAssertEqual(dependencies.environment?.generationProvider.current().id, secondGeneration?.id)
     }
 
     @MainActor
@@ -57,7 +62,7 @@ final class AccountStoreTests: XCTestCase {
 
         let restoredSession = try await doubles.authService.restoredSession()
 
-        XCTAssertEqual(restoredSession, .guest)
+        XCTAssertEqual(restoredSession.session, .guest)
         XCTAssertEqual(doubles.profileRepository.callCount, 0)
         XCTAssertEqual(doubles.preferencesRepository.callCount, 0)
         XCTAssertEqual(doubles.deletionService.callCount, 0)
@@ -141,6 +146,60 @@ final class AccountStoreTests: XCTestCase {
     }
 
     @MainActor
+    func testRetiredGenerationSignedOutEventCannotClearNewLoginOrPendingName() async {
+        let userID = UUID()
+        let authService = AccountAuthServiceDouble(
+            signInResult: .success(.authenticated(userID: userID))
+        )
+        let oldGenerationID = SupabaseClientGenerationID()
+        let store = AccountStore(authService: authService)
+        await store.signInWithApple(
+            using: AppleSignInServiceDouble(result: .success(.fixture(displayName: "Ada")))
+        )
+        store.applyAuthEvent(
+            AccountAuthEvent(
+                generationID: oldGenerationID,
+                kind: .signedOut,
+                session: .guest
+            )
+        )
+
+        XCTAssertEqual(store.session, .authenticated(userID: userID))
+        XCTAssertEqual(store.consumePendingDisplayName(for: userID), "Ada")
+    }
+
+    @MainActor
+    func testAllRetiredGenerationEventKindsAreIgnoredWhileCurrentRefreshIsAccepted() async {
+        let currentUserID = UUID()
+        let refreshedUserID = UUID()
+        let authService = AccountAuthServiceDouble(
+            signInResult: .success(.authenticated(userID: currentUserID))
+        )
+        let store = AccountStore(authService: authService)
+        await store.signInWithApple(
+            using: AppleSignInServiceDouble(result: .success(.fixture(displayName: "Ada")))
+        )
+        let retiredID = SupabaseClientGenerationID()
+
+        for kind in [AccountAuthEventKind.initialSession, .signedOut, .tokenRefreshed] {
+            store.applyAuthEvent(
+                AccountAuthEvent(generationID: retiredID, kind: kind, session: .guest)
+            )
+            XCTAssertEqual(store.session, .authenticated(userID: currentUserID))
+        }
+        store.applyAuthEvent(
+            AccountAuthEvent(
+                generationID: authService.currentGenerationID,
+                kind: .tokenRefreshed,
+                session: .authenticated(userID: refreshedUserID)
+            )
+        )
+
+        XCTAssertEqual(store.session, .authenticated(userID: refreshedUserID))
+        XCTAssertNil(store.consumePendingDisplayName(for: currentUserID))
+    }
+
+    @MainActor
     func testLoginFailureReturnsToGuestWithDiagnosticError() async {
         let authService = AccountAuthServiceDouble(signInResult: .failure(TestAccountError.expected))
         let credential = AppleSignInCredential(identityToken: "token", authorizationCode: "code", rawNonce: "nonce", displayName: nil)
@@ -190,6 +249,27 @@ final class AccountStoreTests: XCTestCase {
     }
 
     @MainActor
+    func testSuccessfulLoginRebindsObservationToCurrentGeneration() async {
+        let authService = AccountAuthServiceDouble(
+            signInResult: .success(.authenticated(userID: UUID()))
+        )
+        let store = AccountStore(authService: authService)
+        store.startObservingAuthState()
+        await authService.waitForObservationCount(1)
+        let replacementGenerationID = SupabaseClientGenerationID()
+        authService.generationID = replacementGenerationID
+
+        await store.signInWithApple(
+            using: AppleSignInServiceDouble(result: .success(.fixture()))
+        )
+        await authService.waitForObservationCount(1)
+
+        XCTAssertEqual(authService.observationCreationCount, 2)
+        XCTAssertEqual(authService.activeObservationCount, 1)
+        XCTAssertEqual(authService.currentGenerationID, replacementGenerationID)
+    }
+
+    @MainActor
     func testSignOutSuccessReturnsToGuest() async {
         let authService = AccountAuthServiceDouble(signOutResult: .success(.deferred))
         let store = AccountStore(authService: authService, initialSession: .authenticated(userID: UUID()))
@@ -230,6 +310,26 @@ final class AccountStoreTests: XCTestCase {
         await restore.value
 
         XCTAssertEqual(store.session, .authenticated(userID: loginUserID))
+    }
+
+    @MainActor
+    func testResultFromRetiredGenerationIsNotBoundToStore() async {
+        let retiredGenerationID = SupabaseClientGenerationID()
+        let authService = AccountAuthServiceDouble(
+            generationRestoredSessionResult: .success(
+                GenerationAccountSession(
+                    generationID: retiredGenerationID,
+                    session: .authenticated(userID: UUID())
+                )
+            )
+        )
+        authService.generationID = SupabaseClientGenerationID()
+        let store = AccountStore(authService: authService)
+
+        await store.restoreSession()
+
+        XCTAssertEqual(store.session, .guest)
+        XCTAssertNil(store.error)
     }
 
     @MainActor

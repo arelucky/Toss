@@ -3,32 +3,147 @@ import Foundation
 
 enum TestAccountError: Error { case expected }
 
+final class TestOperationGate: @unchecked Sendable {
+    private let lock = NSLock()
+    private var suspension: CheckedContinuation<Void, Never>?
+    private var startedWaiters: [CheckedContinuation<Void, Never>] = []
+    private var storedIsCompleted = false
+
+    var hasInstalledSuspension: Bool {
+        lock.withLock { suspension != nil }
+    }
+
+    var isCompleted: Bool {
+        lock.withLock { storedIsCompleted }
+    }
+
+    func suspend() async {
+        await withCheckedContinuation { continuation in
+            let result: (resumeOperation: Bool, started: [CheckedContinuation<Void, Never>]) = lock.withLock {
+                if storedIsCompleted {
+                    return (true, startedWaiters.removeAllAndReturn())
+                }
+                suspension = continuation
+                return (false, startedWaiters.removeAllAndReturn())
+            }
+            result.started.forEach { $0.resume() }
+            if result.resumeOperation { continuation.resume() }
+        }
+    }
+
+    func waitUntilStarted() async {
+        if lock.withLock({ suspension != nil }) { return }
+        await withCheckedContinuation { continuation in
+            let resumeImmediately = lock.withLock {
+                if suspension != nil { return true }
+                startedWaiters.append(continuation)
+                return false
+            }
+            if resumeImmediately { continuation.resume() }
+        }
+    }
+
+    func complete() {
+        let continuation = lock.withLock { () -> CheckedContinuation<Void, Never>? in
+            storedIsCompleted = true
+            defer { suspension = nil }
+            return suspension
+        }
+        continuation?.resume()
+    }
+
+    func tearDown() {
+        complete()
+        let waiters = lock.withLock { startedWaiters.removeAllAndReturn() }
+        waiters.forEach { $0.resume() }
+    }
+
+    deinit {
+        tearDown()
+    }
+}
+
+private extension Array {
+    mutating func removeAllAndReturn() -> [Element] {
+        defer { removeAll() }
+        return self
+    }
+}
+
 final class AccountAuthServiceDouble: AccountAuthServicing {
-    var restoredSessionResult: Result<AccountSession, Error>
-    var signInResult: Result<AccountSession, Error>
-    var signOutResult: Result<ServerSessionRevocation, Error>
-    var shouldSuspendRestore = false
-    var shouldSuspendSignIn = false
-    var shouldSuspendSignOut = false
-    private(set) var restoreCallCount = 0
-    private(set) var signInCallCount = 0
-    private(set) var signOutCallCount = 0
-    private(set) var operationLog: [String] = []
-    private(set) var receivedIdentityToken: String?
-    private(set) var receivedRawNonce: String?
-    private let observationLock = NSLock()
+    struct Snapshot {
+        let restoreCallCount: Int
+        let signInCallCount: Int
+        let signOutCallCount: Int
+        let activeObservationCount: Int
+        let observationCreationCount: Int
+        let operationLog: [String]
+    }
+
+    private var storedGenerationID = SupabaseClientGenerationID()
+    var generationID: SupabaseClientGenerationID {
+        get { stateLock.withLock { storedGenerationID } }
+        set { stateLock.withLock { storedGenerationID = newValue } }
+    }
+    var currentGenerationID: SupabaseClientGenerationID { generationID }
+    private let restoredSessionResult: Result<AccountSession, Error>
+    private let generationRestoredSessionResult: Result<GenerationAccountSession, Error>?
+    let signInResult: Result<AccountSession, Error>
+    let signOutResult: Result<ServerSessionRevocation, Error>
+    private let stateLock = NSLock()
+    private var storedShouldSuspendRestore = false
+    private var storedShouldSuspendSignIn = false
+    private var storedShouldSuspendSignOut = false
+    private var storedRestoreCallCount = 0
+    private var storedSignInCallCount = 0
+    private var storedSignOutCallCount = 0
+    private var storedOperationLog: [String] = []
+    private var storedReceivedIdentityToken: String?
+    private var storedReceivedRawNonce: String?
     private var storedActiveObservationCount = 0
-    private var restoreContinuation: CheckedContinuation<Void, Never>?
-    private var restoreCalledContinuation: CheckedContinuation<Void, Never>?
-    private var signInContinuations: [CheckedContinuation<Void, Never>] = []
-    private var signInCalledContinuation: CheckedContinuation<Void, Never>?
-    private var signOutContinuation: CheckedContinuation<Void, Never>?
-    private var signOutCalledContinuation: CheckedContinuation<Void, Never>?
-    private var observationContinuations: [UUID: AsyncStream<AccountSession>.Continuation] = [:]
+    private var storedObservationCreationCount = 0
+    private let restoreGate = TestOperationGate()
+    private let signInGate = TestOperationGate()
+    private let signOutGate = TestOperationGate()
+    private var observationContinuations: [UUID: AsyncStream<AccountAuthEvent>.Continuation] = [:]
     private var observationCountWaiters: [UUID: (expected: Int, continuation: CheckedContinuation<Void, Never>)] = [:]
 
     var activeObservationCount: Int {
-        observationLock.withLock { storedActiveObservationCount }
+        stateLock.withLock { storedActiveObservationCount }
+    }
+    var observationCreationCount: Int {
+        stateLock.withLock { storedObservationCreationCount }
+    }
+
+    var shouldSuspendRestore: Bool {
+        get { stateLock.withLock { storedShouldSuspendRestore } }
+        set { stateLock.withLock { storedShouldSuspendRestore = newValue } }
+    }
+    var shouldSuspendSignIn: Bool {
+        get { stateLock.withLock { storedShouldSuspendSignIn } }
+        set { stateLock.withLock { storedShouldSuspendSignIn = newValue } }
+    }
+    var shouldSuspendSignOut: Bool {
+        get { stateLock.withLock { storedShouldSuspendSignOut } }
+        set { stateLock.withLock { storedShouldSuspendSignOut = newValue } }
+    }
+    var restoreCallCount: Int { stateLock.withLock { storedRestoreCallCount } }
+    var signInCallCount: Int { stateLock.withLock { storedSignInCallCount } }
+    var signOutCallCount: Int { stateLock.withLock { storedSignOutCallCount } }
+    var operationLog: [String] { stateLock.withLock { storedOperationLog } }
+    var receivedIdentityToken: String? { stateLock.withLock { storedReceivedIdentityToken } }
+    var receivedRawNonce: String? { stateLock.withLock { storedReceivedRawNonce } }
+    var snapshot: Snapshot {
+        stateLock.withLock {
+            Snapshot(
+                restoreCallCount: storedRestoreCallCount,
+                signInCallCount: storedSignInCallCount,
+                signOutCallCount: storedSignOutCallCount,
+                activeObservationCount: storedActiveObservationCount,
+                observationCreationCount: storedObservationCreationCount,
+                operationLog: storedOperationLog
+            )
+        }
     }
 
     init(
@@ -37,43 +152,61 @@ final class AccountAuthServiceDouble: AccountAuthServicing {
         signOutResult: Result<ServerSessionRevocation, Error> = .success(.revoked)
     ) {
         self.restoredSessionResult = restoredSessionResult
+        generationRestoredSessionResult = nil
         self.signInResult = signInResult
         self.signOutResult = signOutResult
     }
 
-    func restoredSession() async throws -> AccountSession {
-        restoreCallCount += 1
-        operationLog.append("restore-start")
-        if shouldSuspendRestore {
-            await withCheckedContinuation {
-                restoreContinuation = $0
-                signalRestoreStarted()
-            }
-        } else {
-            signalRestoreStarted()
-        }
-        operationLog.append("restore-finish")
-        return try restoredSessionResult.get()
+    init(
+        generationRestoredSessionResult: Result<GenerationAccountSession, Error>,
+        signInResult: Result<AccountSession, Error> = .success(.guest),
+        signOutResult: Result<ServerSessionRevocation, Error> = .success(.revoked)
+    ) {
+        restoredSessionResult = .success(.guest)
+        self.generationRestoredSessionResult = generationRestoredSessionResult
+        self.signInResult = signInResult
+        self.signOutResult = signOutResult
     }
 
-    func signInWithApple(identityToken: String, rawNonce: String) async throws -> AccountSession {
-        signInCallCount += 1
-        operationLog.append("login-start")
-        receivedIdentityToken = identityToken
-        receivedRawNonce = rawNonce
-        signalSignInStarted()
-        if shouldSuspendSignIn {
-            await withCheckedContinuation { signInContinuations.append($0) }
+    func restoredSession() async throws -> GenerationAccountSession {
+        let shouldSuspend = stateLock.withLock {
+            storedRestoreCallCount += 1
+            storedOperationLog.append("restore-start")
+            return storedShouldSuspendRestore
         }
-        operationLog.append("login-finish")
-        return try signInResult.get()
+        if shouldSuspend { await restoreGate.suspend() }
+        stateLock.withLock { storedOperationLog.append("restore-finish") }
+        if let generationRestoredSessionResult {
+            return try generationRestoredSessionResult.get()
+        }
+        return GenerationAccountSession(
+            generationID: generationID,
+            session: try restoredSessionResult.get()
+        )
     }
 
-    func sessionChanges() -> AsyncStream<AccountSession> {
+    func signInWithApple(identityToken: String, rawNonce: String) async throws -> GenerationAccountSession {
+        let shouldSuspend = stateLock.withLock {
+            storedSignInCallCount += 1
+            storedOperationLog.append("login-start")
+            storedReceivedIdentityToken = identityToken
+            storedReceivedRawNonce = rawNonce
+            return storedShouldSuspendSignIn
+        }
+        if shouldSuspend { await signInGate.suspend() }
+        stateLock.withLock { storedOperationLog.append("login-finish") }
+        return GenerationAccountSession(
+            generationID: generationID,
+            session: try signInResult.get()
+        )
+    }
+
+    func sessionChanges() -> AsyncStream<AccountAuthEvent> {
         let id = UUID()
         return AsyncStream { continuation in
             updateObservations {
                 storedActiveObservationCount += 1
+                storedObservationCreationCount += 1
                 observationContinuations[id] = continuation
             }
             continuation.onTermination = { [weak self] _ in
@@ -86,46 +219,46 @@ final class AccountAuthServiceDouble: AccountAuthServicing {
         }
     }
 
+    func isCurrentGeneration(_ generationID: SupabaseClientGenerationID) -> Bool {
+        self.generationID == generationID
+    }
+
     func signOut() async throws -> ServerSessionRevocation {
-        signOutCallCount += 1
-        operationLog.append("logout-start")
-        signalSignOutStarted()
-        if shouldSuspendSignOut {
-            await withCheckedContinuation { signOutContinuation = $0 }
+        let shouldSuspend = stateLock.withLock {
+            storedSignOutCallCount += 1
+            storedOperationLog.append("logout-start")
+            return storedShouldSuspendSignOut
         }
-        operationLog.append("logout-finish")
+        if shouldSuspend { await signOutGate.suspend() }
+        stateLock.withLock { storedOperationLog.append("logout-finish") }
         return try signOutResult.get()
     }
 
     func waitForRestoreCall() async {
-        if restoreCallCount > 0 { return }
-        await withCheckedContinuation { restoreCalledContinuation = $0 }
+        if restoreCallCount > 0, !shouldSuspendRestore { return }
+        await restoreGate.waitUntilStarted()
     }
 
     func completeRestore() {
-        restoreContinuation?.resume()
-        restoreContinuation = nil
+        restoreGate.complete()
     }
 
     func waitForSignInCall() async {
-        if signInCallCount > 0 { return }
-        await withCheckedContinuation { signInCalledContinuation = $0 }
+        if signInCallCount > 0, !shouldSuspendSignIn { return }
+        await signInGate.waitUntilStarted()
     }
 
     func completeSignIn() {
-        let continuations = signInContinuations
-        signInContinuations.removeAll()
-        continuations.forEach { $0.resume() }
+        signInGate.complete()
     }
 
     func waitForSignOutCall() async {
-        if signOutCallCount > 0 { return }
-        await withCheckedContinuation { signOutCalledContinuation = $0 }
+        if signOutCallCount > 0, !shouldSuspendSignOut { return }
+        await signOutGate.waitUntilStarted()
     }
 
     func completeSignOut() {
-        signOutContinuation?.resume()
-        signOutContinuation = nil
+        signOutGate.complete()
     }
 
     func waitForObservation() async {
@@ -137,7 +270,7 @@ final class AccountAuthServiceDouble: AccountAuthServicing {
         await withCheckedContinuation { continuation in
             let id = UUID()
             var resumeImmediately = false
-            observationLock.withLock {
+            stateLock.withLock {
                 if storedActiveObservationCount == expected {
                     resumeImmediately = true
                 } else {
@@ -149,27 +282,17 @@ final class AccountAuthServiceDouble: AccountAuthServicing {
     }
 
     func yield(_ session: AccountSession) {
-        let continuations = observationLock.withLock { Array(observationContinuations.values) }
-        continuations.forEach { $0.yield(session) }
+        let kind: AccountAuthEventKind = session == .guest ? .signedOut : .userUpdated
+        yield(AccountAuthEvent(generationID: generationID, kind: kind, session: session))
     }
 
-    private func signalRestoreStarted() {
-        restoreCalledContinuation?.resume()
-        restoreCalledContinuation = nil
-    }
-
-    private func signalSignInStarted() {
-        signInCalledContinuation?.resume()
-        signInCalledContinuation = nil
-    }
-
-    private func signalSignOutStarted() {
-        signOutCalledContinuation?.resume()
-        signOutCalledContinuation = nil
+    func yield(_ event: AccountAuthEvent) {
+        let continuations = stateLock.withLock { Array(observationContinuations.values) }
+        continuations.forEach { $0.yield(event) }
     }
 
     private func updateObservations(_ update: () -> Void) {
-        let continuations: [CheckedContinuation<Void, Never>] = observationLock.withLock {
+        let continuations: [CheckedContinuation<Void, Never>] = stateLock.withLock {
             update()
             let matchingIDs = observationCountWaiters.compactMap { id, waiter in
                 waiter.expected == storedActiveObservationCount ? id : nil

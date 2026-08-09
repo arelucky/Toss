@@ -9,6 +9,7 @@ enum AccountStoreError: Error, Equatable {
 
 private struct PendingDisplayName: Equatable {
     let userID: UUID
+    let generationID: SupabaseClientGenerationID
     let displayName: String
 }
 
@@ -46,10 +47,16 @@ final class AccountStore: ObservableObject {
         session = .restoring
         error = nil
         do {
-            let restoredSession = try await authService.restoredSession()
+            let result = try await authService.restoredSession()
             guard lifecycleState == .restoring(operationID) else { return }
-            session = restoredSession
+            guard authService.isCurrentGeneration(result.generationID) else {
+                session = .guest
+                lifecycleState = .idle
+                return
+            }
+            session = result.session
             lifecycleState = .idle
+            startObservingAuthState()
         } catch is CancellationError {
             guard lifecycleState == .restoring(operationID) else { return }
             session = .guest
@@ -71,18 +78,29 @@ final class AccountStore: ObservableObject {
         do {
             let credential = try await appleService.signIn()
             try Task.checkCancellation()
-            let authenticatedSession = try await authService.signInWithApple(
+            let result = try await authService.signInWithApple(
                 identityToken: credential.identityToken,
                 rawNonce: credential.rawNonce
             )
             guard lifecycleState == .signingIn(operationID) else { return }
-            if case let .authenticated(userID) = authenticatedSession,
+            guard authService.isCurrentGeneration(result.generationID) else {
+                pendingDisplayName = nil
+                session = previousSession
+                lifecycleState = .idle
+                return
+            }
+            if case let .authenticated(userID) = result.session,
                let displayName = credential.displayName?.trimmingCharacters(in: .whitespacesAndNewlines),
                !displayName.isEmpty {
-                pendingDisplayName = PendingDisplayName(userID: userID, displayName: displayName)
+                pendingDisplayName = PendingDisplayName(
+                    userID: userID,
+                    generationID: result.generationID,
+                    displayName: displayName
+                )
             }
-            session = authenticatedSession
+            session = result.session
             lifecycleState = .idle
+            startObservingAuthState()
         } catch AppleSignInError.cancelled {
             guard lifecycleState == .signingIn(operationID) else { return }
             session = previousSession
@@ -103,13 +121,10 @@ final class AccountStore: ObservableObject {
         stopObservingAuthState()
         let changes = authService.sessionChanges()
         authObservationTask = Task { [weak self] in
-            for await session in changes {
+            for await event in changes {
                 guard !Task.isCancelled else { break }
                 guard let self else { break }
-                if case .signingOut = self.lifecycleState { continue }
-                if case .signedOut = self.lifecycleState, session != .guest { continue }
-                self.discardPendingDisplayName(ifItDoesNotMatch: session)
-                self.session = session
+                self.applyAuthEvent(event)
             }
         }
     }
@@ -122,6 +137,7 @@ final class AccountStore: ObservableObject {
     func signOut() async {
         if case .signingOut = lifecycleState { return }
         let operationID = beginOperation { .signingOut($0) }
+        stopObservingAuthState()
         error = nil
         do {
             _ = try await authService.signOut()
@@ -146,9 +162,20 @@ final class AccountStore: ObservableObject {
     }
 
     func consumePendingDisplayName(for userID: UUID) -> String? {
-        guard pendingDisplayName?.userID == userID else { return nil }
+        guard pendingDisplayName?.userID == userID,
+              let generationID = pendingDisplayName?.generationID,
+              authService.isCurrentGeneration(generationID) else { return nil }
         defer { pendingDisplayName = nil }
         return pendingDisplayName?.displayName
+    }
+
+    func applyAuthEvent(_ event: AccountAuthEvent) {
+        guard authService.isCurrentGeneration(event.generationID),
+              let eventSession = event.session else { return }
+        if case .signingOut = lifecycleState { return }
+        if case .signedOut = lifecycleState, eventSession != .guest { return }
+        discardPendingDisplayName(ifItDoesNotMatch: eventSession)
+        session = eventSession
     }
 
     private func discardPendingDisplayName(ifItDoesNotMatch session: AccountSession) {

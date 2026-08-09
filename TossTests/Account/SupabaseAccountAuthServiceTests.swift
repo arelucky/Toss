@@ -13,7 +13,8 @@ final class SupabaseAccountAuthServiceTests: XCTestCase {
             rawNonce: "raw-nonce"
         )
 
-        XCTAssertEqual(session, .authenticated(userID: userID))
+        XCTAssertEqual(session.session, .authenticated(userID: userID))
+        XCTAssertEqual(session.generationID, .legacy)
         XCTAssertEqual(backend.receivedCredentials?.provider, .apple)
         XCTAssertEqual(backend.receivedCredentials?.idToken, "identity-token")
         XCTAssertEqual(backend.receivedCredentials?.nonce, "raw-nonce")
@@ -27,7 +28,7 @@ final class SupabaseAccountAuthServiceTests: XCTestCase {
 
         let session = try await service.restoredSession()
 
-        XCTAssertEqual(session, .authenticated(userID: userID))
+        XCTAssertEqual(session.session, .authenticated(userID: userID))
     }
 
     func testMissingRestoredUserMapsToGuest() async throws {
@@ -37,7 +38,7 @@ final class SupabaseAccountAuthServiceTests: XCTestCase {
 
         let session = try await service.restoredSession()
 
-        XCTAssertEqual(session, .guest)
+        XCTAssertEqual(session.session, .guest)
     }
 
     func testSessionChangesAreForwarded() async {
@@ -45,11 +46,25 @@ final class SupabaseAccountAuthServiceTests: XCTestCase {
         let backend = SupabaseAuthBackendDouble()
         let service = SupabaseAccountAuthService(backend: backend)
         var iterator = service.sessionChanges().makeAsyncIterator()
+        let event = AccountAuthEvent(
+            generationID: service.currentGenerationID,
+            kind: .tokenRefreshed,
+            session: .authenticated(userID: userID)
+        )
 
-        backend.yield(.authenticated(userID: userID))
-        let session = await iterator.next()
+        backend.yield(event)
+        let receivedEvent = await iterator.next()
 
-        XCTAssertEqual(session, .authenticated(userID: userID))
+        XCTAssertEqual(receivedEvent, event)
+    }
+
+    func testSupabaseAuthKindsMapWithoutGuessingFromSession() {
+        XCTAssertEqual(AccountAuthEventKind(supabaseEvent: .initialSession), .initialSession)
+        XCTAssertEqual(AccountAuthEventKind(supabaseEvent: .signedIn), .signedIn)
+        XCTAssertEqual(AccountAuthEventKind(supabaseEvent: .signedOut), .signedOut)
+        XCTAssertEqual(AccountAuthEventKind(supabaseEvent: .tokenRefreshed), .tokenRefreshed)
+        XCTAssertEqual(AccountAuthEventKind(supabaseEvent: .userUpdated), .userUpdated)
+        XCTAssertNil(AccountAuthEventKind(supabaseEvent: .passwordRecovery))
     }
 
     func testCancellingSessionChangesStopsBackendObservation() async {
@@ -75,7 +90,7 @@ final class SupabaseAccountAuthServiceTests: XCTestCase {
         XCTAssertEqual(result, .deferred)
     }
 
-    func testLogoutRunsAfterInFlightLoginFinishes() async throws {
+    func testLogoutDoesNotWaitForInFlightLogin() async throws {
         let backend = SupabaseAuthBackendDouble(signInUserID: UUID())
         backend.shouldSuspendSignIn = true
         let service = SupabaseAccountAuthService(backend: backend)
@@ -85,29 +100,64 @@ final class SupabaseAccountAuthServiceTests: XCTestCase {
         await backend.waitForSignInCall()
 
         let logout = Task { try await service.signOut() }
-        await Task.yield()
+        let logoutResult = try await logout.value
+        XCTAssertEqual(logoutResult, .deferred)
+        XCTAssertEqual(backend.operationLog, ["login-start", "logout-start", "logout-finish"])
+
         backend.completeSignIn()
         _ = try await login.value
-        _ = try await logout.value
 
         XCTAssertEqual(
             backend.operationLog,
-            ["login-start", "login-finish", "logout-start", "logout-finish"]
+            ["login-start", "logout-start", "logout-finish", "login-finish"]
         )
+    }
+
+    func testBackendDoubleExposesOneLockedStateSnapshot() {
+        let backend = SupabaseAuthBackendDouble()
+
+        let snapshot = backend.snapshot
+
+        XCTAssertEqual(snapshot.activeObservationCount, 0)
+        XCTAssertTrue(snapshot.operationLog.isEmpty)
+        XCTAssertNil(snapshot.receivedCredentials)
     }
 }
 
 private final class SupabaseAuthBackendDouble: SupabaseAuthBackend {
-    var restoredUserID: UUID?
-    var signInUserID: UUID
-    var signOutResult: ServerSessionRevocation
-    private(set) var receivedCredentials: OpenIDConnectCredentials?
-    private(set) var activeObservationCount = 0
-    private(set) var operationLog: [String] = []
-    var shouldSuspendSignIn = false
-    private var signInContinuation: CheckedContinuation<Void, Never>?
-    private var signInCalledContinuation: CheckedContinuation<Void, Never>?
-    private var continuations: [UUID: AsyncStream<AccountSession>.Continuation] = [:]
+    struct Snapshot {
+        let receivedCredentials: OpenIDConnectCredentials?
+        let activeObservationCount: Int
+        let operationLog: [String]
+    }
+
+    let restoredUserID: UUID?
+    let signInUserID: UUID
+    let signOutResult: ServerSessionRevocation
+    private let lock = NSLock()
+    private var storedReceivedCredentials: OpenIDConnectCredentials?
+    private var storedActiveObservationCount = 0
+    private var storedOperationLog: [String] = []
+    private var storedShouldSuspendSignIn = false
+    private let signInGate = TestOperationGate()
+    private var continuations: [UUID: AsyncStream<AccountAuthEvent>.Continuation] = [:]
+
+    var receivedCredentials: OpenIDConnectCredentials? { lock.withLock { storedReceivedCredentials } }
+    var activeObservationCount: Int { lock.withLock { storedActiveObservationCount } }
+    var operationLog: [String] { lock.withLock { storedOperationLog } }
+    var shouldSuspendSignIn: Bool {
+        get { lock.withLock { storedShouldSuspendSignIn } }
+        set { lock.withLock { storedShouldSuspendSignIn = newValue } }
+    }
+    var snapshot: Snapshot {
+        lock.withLock {
+            Snapshot(
+                receivedCredentials: storedReceivedCredentials,
+                activeObservationCount: storedActiveObservationCount,
+                operationLog: storedOperationLog
+            )
+        }
+    }
 
     init(
         restoredUserID: UUID? = nil,
@@ -122,46 +172,53 @@ private final class SupabaseAuthBackendDouble: SupabaseAuthBackend {
     func restoredUserIDValue() async throws -> UUID? { restoredUserID }
 
     func signIn(credentials: OpenIDConnectCredentials) async throws -> UUID {
-        operationLog.append("login-start")
-        receivedCredentials = credentials
-        signInCalledContinuation?.resume()
-        signInCalledContinuation = nil
-        if shouldSuspendSignIn {
-            await withCheckedContinuation { signInContinuation = $0 }
+        let shouldSuspend = lock.withLock {
+            storedOperationLog.append("login-start")
+            storedReceivedCredentials = credentials
+            return storedShouldSuspendSignIn
         }
-        operationLog.append("login-finish")
+        if shouldSuspend {
+            await signInGate.suspend()
+        }
+        lock.withLock { storedOperationLog.append("login-finish") }
         return signInUserID
     }
 
-    func sessionChanges() -> AsyncStream<AccountSession> {
+    func sessionChanges() -> AsyncStream<AccountAuthEvent> {
         let id = UUID()
         return AsyncStream { continuation in
-            activeObservationCount += 1
-            continuations[id] = continuation
+            lock.withLock {
+                storedActiveObservationCount += 1
+                continuations[id] = continuation
+            }
             continuation.onTermination = { [weak self] _ in
-                self?.continuations[id] = nil
-                self?.activeObservationCount -= 1
+                guard let self else { return }
+                self.lock.withLock {
+                    guard self.continuations.removeValue(forKey: id) != nil else { return }
+                    self.storedActiveObservationCount -= 1
+                }
             }
         }
     }
 
     func signOut() async throws -> ServerSessionRevocation {
-        operationLog.append("logout-start")
-        operationLog.append("logout-finish")
+        lock.withLock {
+            storedOperationLog.append("logout-start")
+            storedOperationLog.append("logout-finish")
+        }
         return signOutResult
     }
 
     func waitForSignInCall() async {
-        if operationLog.contains("login-start") { return }
-        await withCheckedContinuation { signInCalledContinuation = $0 }
+        await signInGate.waitUntilStarted()
     }
 
     func completeSignIn() {
-        signInContinuation?.resume()
-        signInContinuation = nil
+        signInGate.complete()
     }
 
-    func yield(_ session: AccountSession) {
-        continuations.values.forEach { $0.yield(session) }
+    func yield(_ event: AccountAuthEvent) {
+        let currentContinuations = lock.withLock { Array(continuations.values) }
+        currentContinuations.forEach { $0.yield(event) }
     }
 }

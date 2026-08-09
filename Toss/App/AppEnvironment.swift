@@ -3,21 +3,18 @@ import Supabase
 final class AppEnvironment {
     static let authStorageKey = "com.zhaoheng.Toss.supabase.auth.session"
 
-    let supabaseClient: SupabaseClient
     let authStorage: KeychainAuthLocalStorage
+    let generationProvider: SupabaseClientGenerationProvider
+
+    var supabaseClient: SupabaseClient { generationProvider.current().client }
 
     init(configuration: SupabaseConfiguration) {
         let authStorage = KeychainAuthLocalStorage()
         self.authStorage = authStorage
-        supabaseClient = SupabaseClient(
-            supabaseURL: configuration.url,
-            supabaseKey: configuration.publishableKey,
-            options: SupabaseClientOptions(
-                auth: .init(
-                    storage: authStorage,
-                    storageKey: Self.authStorageKey
-                )
-            )
+        generationProvider = SupabaseClientGenerationProvider(
+            configuration: configuration,
+            storageBackend: authStorage,
+            storageKey: Self.authStorageKey
         )
     }
 }

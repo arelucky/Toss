@@ -120,12 +120,6 @@ final class KeychainAuthLocalStorage: AuthLocalStorage, @unchecked Sendable {
         return checkpoint
     }
 
-    func allowSessionWrites() {
-        lock.lock()
-        deletionState.writesBlocked = false
-        lock.unlock()
-    }
-
     var sessionWritesAreBlocked: Bool {
         lock.lock()
         defer { lock.unlock() }

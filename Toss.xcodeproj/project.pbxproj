@@ -55,6 +55,11 @@
 		F5F501073035000100000001 /* SupabaseAccountAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F501083035000100000001 /* SupabaseAccountAuthService.swift */; };
 		F5F501093035000100000001 /* AccountStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F5010A3035000100000001 /* AccountStore.swift */; };
 		F5F601013036000100000001 /* KeychainAuthLocalStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F601023036000100000001 /* KeychainAuthLocalStorage.swift */; };
+		F5F700013040000100000001 /* SupabaseClientGenerationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F700023040000100000001 /* SupabaseClientGenerationTests.swift */; };
+		F5F701013040000100000001 /* GenerationBoundAuthLocalStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F701023040000100000001 /* GenerationBoundAuthLocalStorage.swift */; };
+		F5F702013040000100000001 /* SupabaseClientGeneration.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F702023040000100000001 /* SupabaseClientGeneration.swift */; };
+		F5F703013040000100000001 /* SupabaseClientGenerationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F703023040000100000001 /* SupabaseClientGenerationProvider.swift */; };
+		F5F704013040000100000001 /* TestDoubleIsolationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F704023040000100000001 /* TestDoubleIsolationTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -129,6 +134,11 @@
 		F5F5010A3035000100000001 /* AccountStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountStore.swift; sourceTree = "<group>"; };
 		F5F5010B3035000100000001 /* Toss.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Toss.entitlements; sourceTree = "<group>"; };
 		F5F601023036000100000001 /* KeychainAuthLocalStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/KeychainAuthLocalStorage.swift; sourceTree = "<group>"; };
+		F5F700023040000100000001 /* SupabaseClientGenerationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/SupabaseClientGenerationTests.swift; sourceTree = "<group>"; };
+		F5F701023040000100000001 /* GenerationBoundAuthLocalStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/GenerationBoundAuthLocalStorage.swift; sourceTree = "<group>"; };
+		F5F702023040000100000001 /* SupabaseClientGeneration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/SupabaseClientGeneration.swift; sourceTree = "<group>"; };
+		F5F703023040000100000001 /* SupabaseClientGenerationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/SupabaseClientGenerationProvider.swift; sourceTree = "<group>"; };
+		F5F704023040000100000001 /* TestDoubleIsolationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/TestDoubleIsolationTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -244,6 +254,8 @@
 				F5F500043035000100000001 /* NativeAppleSignInServiceTests.swift */,
 				F5F500063035000100000001 /* SupabaseAccountAuthServiceTests.swift */,
 				F5F600023036000100000001 /* AuthSessionStorageTests.swift */,
+				F5F700023040000100000001 /* SupabaseClientGenerationTests.swift */,
+				F5F704023040000100000001 /* TestDoubleIsolationTests.swift */,
 			);
 			path = TossTests;
 			sourceTree = "<group>";
@@ -325,6 +337,9 @@
 				F5F501063035000100000001 /* NativeAppleSignInService.swift */,
 				F5F501083035000100000001 /* SupabaseAccountAuthService.swift */,
 				F5F601023036000100000001 /* KeychainAuthLocalStorage.swift */,
+				F5F701023040000100000001 /* GenerationBoundAuthLocalStorage.swift */,
+				F5F702023040000100000001 /* SupabaseClientGeneration.swift */,
+				F5F703023040000100000001 /* SupabaseClientGenerationProvider.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -511,6 +526,9 @@
 				F5F501053035000100000001 /* NativeAppleSignInService.swift in Sources */,
 				F5F501073035000100000001 /* SupabaseAccountAuthService.swift in Sources */,
 				F5F601013036000100000001 /* KeychainAuthLocalStorage.swift in Sources */,
+				F5F701013040000100000001 /* GenerationBoundAuthLocalStorage.swift in Sources */,
+				F5F702013040000100000001 /* SupabaseClientGeneration.swift in Sources */,
+				F5F703013040000100000001 /* SupabaseClientGenerationProvider.swift in Sources */,
 				F5F501093035000100000001 /* AccountStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -527,6 +545,8 @@
 				F5F500033035000100000001 /* NativeAppleSignInServiceTests.swift in Sources */,
 				F5F500053035000100000001 /* SupabaseAccountAuthServiceTests.swift in Sources */,
 				F5F600013036000100000001 /* AuthSessionStorageTests.swift in Sources */,
+				F5F700013040000100000001 /* SupabaseClientGenerationTests.swift in Sources */,
+				F5F704013040000100000001 /* TestDoubleIsolationTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

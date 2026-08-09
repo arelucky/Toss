@@ -88,6 +88,12 @@ final class AppleAuthorizationCompletionGate<Value> {
         self.completion = completion
     }
 
+    var isResolved: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return completion == nil
+    }
+
     func resolve(_ result: Result<Value, Error>) {
         lock.lock()
         let completion = completion

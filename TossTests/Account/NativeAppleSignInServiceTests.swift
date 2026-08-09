@@ -162,6 +162,46 @@ final class NativeAppleSignInServiceTests: XCTestCase {
         XCTAssertEqual(controller.cancelCount, 1)
         XCTAssertTrue(controller.didReceiveLateCallback)
     }
+
+    @MainActor
+    func testCompletedRequestCanStartReplacementBeforeDelayedCleanupRuns() async throws {
+        let factory = AppleAuthorizationControllerFactoryDouble()
+        let service = NativeAppleSignInService(
+            presentationAnchor: { UIWindow() },
+            coordinatorFactory: factory.make
+        )
+        let first = Task { try await service.signIn() }
+        let firstController = await factory.nextController()
+        firstController.cancel()
+        factory.nextPerformResult = .success(.fixture())
+
+        let replacementCredential = try await service.signIn()
+
+        XCTAssertEqual(replacementCredential, .fixture())
+        _ = await first.result
+        XCTAssertEqual(factory.createdCount, 2)
+    }
+
+    @MainActor
+    func testBackgroundCallbackSafelyHopsToMainActor() async throws {
+        let factory = AppleAuthorizationControllerFactoryDouble()
+        let service = NativeAppleSignInService(
+            presentationAnchor: { UIWindow() },
+            coordinatorFactory: factory.make
+        )
+        let task = Task { try await service.signIn() }
+        let controller = await factory.nextController()
+        let credential = AppleSignInCredential.fixture()
+
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global().async {
+                controller.succeed(with: credential)
+                continuation.resume()
+            }
+        }
+
+        _ = try await task.value
+    }
 }
 
 @MainActor
@@ -169,6 +209,7 @@ private final class AppleAuthorizationControllerFactoryDouble {
     private var available: [AppleAuthorizationControllerDouble] = []
     private var waiting: [CheckedContinuation<AppleAuthorizationControllerDouble, Never>] = []
     private(set) var createdCount = 0
+    var nextPerformResult: Result<AppleSignInCredential, Error>?
 
     func make(
         request: ASAuthorizationAppleIDRequest,
@@ -176,7 +217,11 @@ private final class AppleAuthorizationControllerFactoryDouble {
         presentationAnchor: ASPresentationAnchor,
         completionGate: AppleAuthorizationCompletionGate<AppleSignInCredential>
     ) -> any AppleAuthorizationPerforming {
-        let controller = AppleAuthorizationControllerDouble(completionGate: completionGate)
+        let controller = AppleAuthorizationControllerDouble(
+            completionGate: completionGate,
+            performResult: nextPerformResult
+        )
+        nextPerformResult = nil
         createdCount += 1
         if !waiting.isEmpty {
             waiting.removeFirst().resume(returning: controller)
@@ -197,12 +242,19 @@ private final class AppleAuthorizationControllerDouble: AppleAuthorizationPerfor
     private(set) var cancelCount = 0
     private(set) var didReceiveLateCallback = false
     private var completed = false
+    private let performResult: Result<AppleSignInCredential, Error>?
 
-    init(completionGate: AppleAuthorizationCompletionGate<AppleSignInCredential>) {
+    init(
+        completionGate: AppleAuthorizationCompletionGate<AppleSignInCredential>,
+        performResult: Result<AppleSignInCredential, Error>? = nil
+    ) {
         self.completionGate = completionGate
+        self.performResult = performResult
     }
 
-    func perform() {}
+    func perform() {
+        if let performResult { completionGate.resolve(performResult) }
+    }
 
     func cancel() {
         cancelCount += 1

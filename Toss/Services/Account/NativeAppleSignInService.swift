@@ -15,10 +15,16 @@ typealias AppleAuthorizationCoordinatorFactory = (
 
 @MainActor
 final class NativeAppleSignInService: AppleSignInServicing {
+    private struct ActiveRequest {
+        let id: UUID
+        let coordinator: any AppleAuthorizationPerforming
+        let completionGate: AppleAuthorizationCompletionGate<AppleSignInCredential>
+    }
+
     private let nonceGenerator: NonceGenerator
     private let presentationAnchor: () -> ASPresentationAnchor?
     private let coordinatorFactory: AppleAuthorizationCoordinatorFactory
-    private var coordinator: (any AppleAuthorizationPerforming)?
+    private var activeRequest: ActiveRequest?
 
     init(
         nonceGenerator: NonceGenerator = NonceGenerator(),
@@ -39,8 +45,12 @@ final class NativeAppleSignInService: AppleSignInServicing {
 
     func signIn() async throws -> AppleSignInCredential {
         try Task.checkCancellation()
-        guard coordinator == nil else { throw AppleSignInError.requestInProgress }
+        if activeRequest?.completionGate.isResolved == true {
+            activeRequest = nil
+        }
+        guard activeRequest == nil else { throw AppleSignInError.requestInProgress }
         guard let anchor = presentationAnchor() else { throw AppleSignInError.missingPresentationAnchor }
+        let requestID = UUID()
 
         let rawNonce = try nonceGenerator.generate()
         let requestConfiguration = AppleAuthorizationRequestConfiguration(rawNonce: rawNonce)
@@ -52,21 +62,25 @@ final class NativeAppleSignInService: AppleSignInServicing {
             try await withCheckedThrowingContinuation { continuation in
                 let completionGate = AppleAuthorizationCompletionGate<AppleSignInCredential> { [weak self] result in
                     Task { @MainActor in
-                        self?.coordinator = nil
+                        self?.clearRequest(matching: requestID)
                         continuation.resume(with: result)
                     }
                 }
                 let coordinator = coordinatorFactory(request, rawNonce, anchor, completionGate)
-                self.coordinator = coordinator
+                self.activeRequest = ActiveRequest(
+                    id: requestID,
+                    coordinator: coordinator,
+                    completionGate: completionGate
+                )
                 if Task.isCancelled {
                     coordinator.cancel()
-                    self.coordinator = nil
+                    self.clearRequest(matching: requestID)
                 } else {
                     coordinator.perform()
                 }
             }
         } onCancel: { [service = self] in
-            Task { @MainActor in service.cancelCurrentRequest() }
+            Task { @MainActor in service.cancelRequest(matching: requestID) }
         }
     }
 
@@ -77,9 +91,16 @@ final class NativeAppleSignInService: AppleSignInServicing {
             .first { $0.isKeyWindow }
     }
 
-    private func cancelCurrentRequest() {
+    private func cancelRequest(matching requestID: UUID) {
+        guard activeRequest?.id == requestID else { return }
+        let coordinator = activeRequest?.coordinator
+        activeRequest = nil
         coordinator?.cancel()
-        coordinator = nil
+    }
+
+    private func clearRequest(matching requestID: UUID) {
+        guard activeRequest?.id == requestID else { return }
+        activeRequest = nil
     }
 }
 

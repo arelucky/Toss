@@ -65,9 +65,9 @@ private struct ClientBackedAccountDeletionService: AccountDeletionServicing, Cli
 }
 
 private struct OfflineAccountDependencies: AccountAuthServicing, AppleSignInServicing, UserProfileRepository, UserPreferencesRepository, AccountDeletionServicing {
-    func restoredSession() async throws -> AccountSession { throw AccountDependencyError.unavailable }
-    func signInWithApple(identityToken: String, rawNonce: String) async throws -> AccountSession { throw AccountDependencyError.unavailable }
-    func sessionChanges() -> AsyncStream<AccountSession> { AsyncStream { $0.finish() } }
+    func restoredSession() async throws -> GenerationAccountSession { throw AccountDependencyError.unavailable }
+    func signInWithApple(identityToken: String, rawNonce: String) async throws -> GenerationAccountSession { throw AccountDependencyError.unavailable }
+    func sessionChanges() -> AsyncStream<AccountAuthEvent> { AsyncStream { $0.finish() } }
     func signOut() async throws -> ServerSessionRevocation { throw AccountDependencyError.unavailable }
     func signIn() async throws -> AppleSignInCredential { throw AccountDependencyError.unavailable }
     func fetch(userID: UUID) async throws -> UserProfile { throw AccountDependencyError.unavailable }
