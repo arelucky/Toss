@@ -320,7 +320,7 @@ struct CancellingAppleSignInServiceDouble: AppleSignInServicing {
 final class UserProfileRepositoryDouble: UserProfileRepository {
     private(set) var callCount = 0
     func fetch(userID: UUID) async throws -> UserProfile { callCount += 1; throw AccountDependencyError.unavailable }
-    func updateDisplayName(_ displayName: String?, userID: UUID) async throws -> UserProfile { callCount += 1; throw AccountDependencyError.unavailable }
+    func saveInitialDisplayName(_ displayName: String, userID: UUID) async throws -> UserProfile { callCount += 1; throw AccountDependencyError.unavailable }
 }
 
 final class UserPreferencesRepositoryDouble: UserPreferencesRepository {

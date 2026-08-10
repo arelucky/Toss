@@ -37,7 +37,7 @@ final class HapticManager {
     let tossFlightInitialDelay: TimeInterval = 0.1
     let tossFlightPulseInterval: TimeInterval = 0.2
 
-    private let isEnabled: Bool
+    private(set) var isEnabled: Bool
     private var lastPreviewSpinDate: Date?
     private var tossFlightGeneration = 0
     private lazy var previewGenerator = UIImpactFeedbackGenerator(style: previewSpinFeedbackStyle.uiKitStyle)
@@ -47,6 +47,11 @@ final class HapticManager {
 
     init(isEnabled: Bool = true) {
         self.isEnabled = isEnabled
+    }
+
+    func setEnabled(_ enabled: Bool) {
+        isEnabled = enabled
+        if !enabled { stopTossFlightFeedback() }
     }
 
     func prepare() {

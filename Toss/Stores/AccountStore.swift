@@ -7,14 +7,14 @@ enum AccountStoreError: Error, Equatable {
     case signOutFailed
 }
 
-private struct PendingDisplayName: Equatable {
+struct PendingDisplayNameCandidate: Equatable {
     let userID: UUID
     let generationID: SupabaseClientGenerationID
     let displayName: String
 }
 
 @MainActor
-final class AccountStore: ObservableObject {
+final class AccountStore: ObservableObject, PendingDisplayNameStoring {
     private enum LifecycleState: Equatable {
         case idle
         case restoring(UInt64)
@@ -25,7 +25,7 @@ final class AccountStore: ObservableObject {
 
     @Published private(set) var session: AccountSession
     @Published private(set) var error: AccountStoreError?
-    private var pendingDisplayName: PendingDisplayName?
+    private var pendingDisplayName: PendingDisplayNameCandidate?
 
     private let authService: any AccountAuthServicing
     private var authObservationTask: Task<Void, Never>?
@@ -92,7 +92,7 @@ final class AccountStore: ObservableObject {
             if case let .authenticated(userID) = result.session,
                let displayName = credential.displayName?.trimmingCharacters(in: .whitespacesAndNewlines),
                !displayName.isEmpty {
-                pendingDisplayName = PendingDisplayName(
+                pendingDisplayName = PendingDisplayNameCandidate(
                     userID: userID,
                     generationID: result.generationID,
                     displayName: displayName
@@ -167,6 +167,18 @@ final class AccountStore: ObservableObject {
               authService.isCurrentGeneration(generationID) else { return nil }
         defer { pendingDisplayName = nil }
         return pendingDisplayName?.displayName
+    }
+
+    func pendingDisplayName(for userID: UUID) -> PendingDisplayNameCandidate? {
+        guard pendingDisplayName?.userID == userID,
+              let generationID = pendingDisplayName?.generationID,
+              authService.isCurrentGeneration(generationID) else { return nil }
+        return pendingDisplayName
+    }
+
+    func markPendingDisplayNameConsumed(_ candidate: PendingDisplayNameCandidate) {
+        guard pendingDisplayName == candidate else { return }
+        pendingDisplayName = nil
     }
 
     func applyAuthEvent(_ event: AccountAuthEvent) {

@@ -12,19 +12,25 @@ struct AppDependencies {
     let profileRepository: any UserProfileRepository
     let preferencesRepository: any UserPreferencesRepository
     let deletionService: any AccountDeletionServicing
+    let localPreferences: LocalPreferencesStore
+    let feedbackPreferences: any FeedbackPreferenceApplying
 
     @MainActor
     static func live(configuration: SupabaseConfiguration?) -> Self {
         guard let configuration else { return offline() }
         let environment = AppEnvironment(configuration: configuration)
+        let localPreferences = LocalPreferencesStore()
+        let feedbackPreferences = AppFeedbackPreferencesController()
         return Self(
             session: .guest,
             environment: environment,
             authService: SupabaseAccountAuthService(environment: environment),
             appleSignInService: NativeAppleSignInService(),
-            profileRepository: ClientBackedUserProfileRepository(environment: environment),
-            preferencesRepository: ClientBackedUserPreferencesRepository(environment: environment),
-            deletionService: ClientBackedAccountDeletionService(environment: environment)
+            profileRepository: SupabaseUserProfileRepository(environment: environment),
+            preferencesRepository: SupabaseUserPreferencesRepository(environment: environment),
+            deletionService: ClientBackedAccountDeletionService(environment: environment),
+            localPreferences: localPreferences,
+            feedbackPreferences: feedbackPreferences
         )
     }
 
@@ -40,23 +46,21 @@ struct AppDependencies {
     }
 
     @MainActor
+    func makeAccountSyncCoordinator(accountStore: AccountStore) -> AccountSyncCoordinator {
+        AccountSyncCoordinator(
+            profileRepository: profileRepository,
+            preferencesRepository: preferencesRepository,
+            localPreferences: localPreferences,
+            feedback: feedbackPreferences,
+            pendingNameStore: accountStore
+        )
+    }
+
+    @MainActor
     private static func offline() -> Self {
         let service = OfflineAccountDependencies()
-        return Self(session: .guest, environment: nil, authService: service, appleSignInService: service, profileRepository: service, preferencesRepository: service, deletionService: service)
+        return Self(session: .guest, environment: nil, authService: service, appleSignInService: service, profileRepository: service, preferencesRepository: service, deletionService: service, localPreferences: LocalPreferencesStore(), feedbackPreferences: AppFeedbackPreferencesController())
     }
-}
-
-private struct ClientBackedUserProfileRepository: UserProfileRepository, ClientEnvironmentBacked {
-    let environment: AppEnvironment?
-    func fetch(userID: UUID) async throws -> UserProfile { throw AccountDependencyError.unavailable }
-    func updateDisplayName(_ displayName: String?, userID: UUID) async throws -> UserProfile { throw AccountDependencyError.unavailable }
-}
-
-private struct ClientBackedUserPreferencesRepository: UserPreferencesRepository, ClientEnvironmentBacked {
-    let environment: AppEnvironment?
-    func fetch(userID: UUID) async throws -> UserPreferences { throw AccountDependencyError.unavailable }
-    func update(_ preferences: UserPreferences) async throws -> UserPreferences { throw AccountDependencyError.unavailable }
-    func bootstrap(userID: UUID, guestPreferences: LocalPreferences) async throws -> PreferenceBootstrapResult { throw AccountDependencyError.unavailable }
 }
 
 private struct ClientBackedAccountDeletionService: AccountDeletionServicing, ClientEnvironmentBacked {
@@ -71,7 +75,7 @@ private struct OfflineAccountDependencies: AccountAuthServicing, AppleSignInServ
     func signOut() async throws -> ServerSessionRevocation { throw AccountDependencyError.unavailable }
     func signIn() async throws -> AppleSignInCredential { throw AccountDependencyError.unavailable }
     func fetch(userID: UUID) async throws -> UserProfile { throw AccountDependencyError.unavailable }
-    func updateDisplayName(_ displayName: String?, userID: UUID) async throws -> UserProfile { throw AccountDependencyError.unavailable }
+    func saveInitialDisplayName(_ displayName: String, userID: UUID) async throws -> UserProfile { throw AccountDependencyError.unavailable }
     func fetch(userID: UUID) async throws -> UserPreferences { throw AccountDependencyError.unavailable }
     func update(_ preferences: UserPreferences) async throws -> UserPreferences { throw AccountDependencyError.unavailable }
     func bootstrap(userID: UUID, guestPreferences: LocalPreferences) async throws -> PreferenceBootstrapResult { throw AccountDependencyError.unavailable }

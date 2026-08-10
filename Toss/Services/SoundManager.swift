@@ -18,14 +18,22 @@ final class SoundManager {
     static let shared = SoundManager()
 
     private let bundle: Bundle
+    private(set) var isEnabled: Bool
     private var players: [TossSoundEffect: AVAudioPlayer] = [:]
     private var isAudioSessionConfigured = false
 
-    private init(bundle: Bundle = .main) {
+    init(bundle: Bundle = .main, isEnabled: Bool = true) {
         self.bundle = bundle
+        self.isEnabled = isEnabled
+    }
+
+    func setEnabled(_ enabled: Bool) {
+        isEnabled = enabled
+        if !enabled { players.values.forEach { $0.stop() } }
     }
 
     func prepare(_ effects: [TossSoundEffect] = TossSoundEffect.allCases) {
+        guard isEnabled else { return }
         configureAudioSessionIfNeeded()
 
         for effect in effects where players[effect] == nil {
@@ -35,6 +43,7 @@ final class SoundManager {
     }
 
     func play(_ effect: TossSoundEffect) {
+        guard isEnabled else { return }
         configureAudioSessionIfNeeded()
 
         let player = players[effect] ?? makePlayer(for: effect)

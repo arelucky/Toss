@@ -60,6 +60,13 @@
 		F5F702013040000100000001 /* SupabaseClientGeneration.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F702023040000100000001 /* SupabaseClientGeneration.swift */; };
 		F5F703013040000100000001 /* SupabaseClientGenerationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F703023040000100000001 /* SupabaseClientGenerationProvider.swift */; };
 		F5F704013040000100000001 /* TestDoubleIsolationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F704023040000100000001 /* TestDoubleIsolationTests.swift */; };
+		F5F800013050000100000001 /* AccountSyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F800023050000100000001 /* AccountSyncTests.swift */; };
+		F5F810013050000100000001 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F810023050000100000001 /* UserProfile.swift */; };
+		F5F811013050000100000001 /* UserPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F811023050000100000001 /* UserPreferences.swift */; };
+		F5F812013050000100000001 /* SupabaseUserProfileRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F812023050000100000001 /* SupabaseUserProfileRepository.swift */; };
+		F5F813013050000100000001 /* SupabaseUserPreferencesRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F813023050000100000001 /* SupabaseUserPreferencesRepository.swift */; };
+		F5F814013050000100000001 /* LocalPreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F814023050000100000001 /* LocalPreferencesStore.swift */; };
+		F5F815013050000100000001 /* AccountSyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F815023050000100000001 /* AccountSyncCoordinator.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -139,6 +146,13 @@
 		F5F702023040000100000001 /* SupabaseClientGeneration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/SupabaseClientGeneration.swift; sourceTree = "<group>"; };
 		F5F703023040000100000001 /* SupabaseClientGenerationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/SupabaseClientGenerationProvider.swift; sourceTree = "<group>"; };
 		F5F704023040000100000001 /* TestDoubleIsolationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/TestDoubleIsolationTests.swift; sourceTree = "<group>"; };
+		F5F800023050000100000001 /* AccountSyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/AccountSyncTests.swift; sourceTree = "<group>"; };
+		F5F810023050000100000001 /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/UserProfile.swift; sourceTree = "<group>"; };
+		F5F811023050000100000001 /* UserPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/UserPreferences.swift; sourceTree = "<group>"; };
+		F5F812023050000100000001 /* SupabaseUserProfileRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/SupabaseUserProfileRepository.swift; sourceTree = "<group>"; };
+		F5F813023050000100000001 /* SupabaseUserPreferencesRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/SupabaseUserPreferencesRepository.swift; sourceTree = "<group>"; };
+		F5F814023050000100000001 /* LocalPreferencesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalPreferencesStore.swift; sourceTree = "<group>"; };
+		F5F815023050000100000001 /* AccountSyncCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/AccountSyncCoordinator.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -256,6 +270,7 @@
 				F5F600023036000100000001 /* AuthSessionStorageTests.swift */,
 				F5F700023040000100000001 /* SupabaseClientGenerationTests.swift */,
 				F5F704023040000100000001 /* TestDoubleIsolationTests.swift */,
+				F5F800023050000100000001 /* AccountSyncTests.swift */,
 			);
 			path = TossTests;
 			sourceTree = "<group>";
@@ -312,6 +327,8 @@
 				F5C02A0F30190851001D0A7E /* CoinTossMotion.swift */,
 				F5D33A01301A000100000001 /* TossResult.swift */,
 				F5F401063028000100000001 /* AccountSession.swift */,
+				F5F810023050000100000001 /* UserProfile.swift */,
+				F5F811023050000100000001 /* UserPreferences.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -340,19 +357,27 @@
 				F5F701023040000100000001 /* GenerationBoundAuthLocalStorage.swift */,
 				F5F702023040000100000001 /* SupabaseClientGeneration.swift */,
 				F5F703023040000100000001 /* SupabaseClientGenerationProvider.swift */,
+				F5F815023050000100000001 /* AccountSyncCoordinator.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
 		};
 		F5F401103028000100000001 /* Repositories */ = {
 			isa = PBXGroup;
-			children = ( F5F4010A3028000100000001 /* AccountRepositories.swift */, );
+			children = (
+				F5F4010A3028000100000001 /* AccountRepositories.swift */,
+				F5F812023050000100000001 /* SupabaseUserProfileRepository.swift */,
+				F5F813023050000100000001 /* SupabaseUserPreferencesRepository.swift */,
+			);
 			path = Repositories;
 			sourceTree = "<group>";
 		};
 		F5F5010C3035000100000001 /* Stores */ = {
 			isa = PBXGroup;
-			children = ( F5F5010A3035000100000001 /* AccountStore.swift */, );
+			children = (
+				F5F5010A3035000100000001 /* AccountStore.swift */,
+				F5F814023050000100000001 /* LocalPreferencesStore.swift */,
+			);
 			path = Stores;
 			sourceTree = "<group>";
 		};
@@ -530,6 +555,12 @@
 				F5F702013040000100000001 /* SupabaseClientGeneration.swift in Sources */,
 				F5F703013040000100000001 /* SupabaseClientGenerationProvider.swift in Sources */,
 				F5F501093035000100000001 /* AccountStore.swift in Sources */,
+				F5F810013050000100000001 /* UserProfile.swift in Sources */,
+				F5F811013050000100000001 /* UserPreferences.swift in Sources */,
+				F5F812013050000100000001 /* SupabaseUserProfileRepository.swift in Sources */,
+				F5F813013050000100000001 /* SupabaseUserPreferencesRepository.swift in Sources */,
+				F5F814013050000100000001 /* LocalPreferencesStore.swift in Sources */,
+				F5F815013050000100000001 /* AccountSyncCoordinator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -547,6 +578,7 @@
 				F5F600013036000100000001 /* AuthSessionStorageTests.swift in Sources */,
 				F5F700013040000100000001 /* SupabaseClientGenerationTests.swift in Sources */,
 				F5F704013040000100000001 /* TestDoubleIsolationTests.swift in Sources */,
+				F5F800013050000100000001 /* AccountSyncTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
