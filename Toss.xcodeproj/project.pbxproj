@@ -67,6 +67,12 @@
 		F5F813013050000100000001 /* SupabaseUserPreferencesRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F813023050000100000001 /* SupabaseUserPreferencesRepository.swift */; };
 		F5F814013050000100000001 /* LocalPreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F814023050000100000001 /* LocalPreferencesStore.swift */; };
 		F5F815013050000100000001 /* AccountSyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F815023050000100000001 /* AccountSyncCoordinator.swift */; };
+		F5F900013060000100000001 /* AccountViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F900023060000100000001 /* AccountViewModelTests.swift */; };
+		F5F910013060000100000001 /* AccountViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F910023060000100000001 /* AccountViewModel.swift */; };
+		F5F911013060000100000001 /* AppRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F911023060000100000001 /* AppRootView.swift */; };
+		F5F912013060000100000001 /* AccountSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F912023060000100000001 /* AccountSheetView.swift */; };
+		F5F913013060000100000001 /* GuestAccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F913023060000100000001 /* GuestAccountView.swift */; };
+		F5F914013060000100000001 /* AuthenticatedAccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F914023060000100000001 /* AuthenticatedAccountView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -153,6 +159,12 @@
 		F5F813023050000100000001 /* SupabaseUserPreferencesRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/SupabaseUserPreferencesRepository.swift; sourceTree = "<group>"; };
 		F5F814023050000100000001 /* LocalPreferencesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalPreferencesStore.swift; sourceTree = "<group>"; };
 		F5F815023050000100000001 /* AccountSyncCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/AccountSyncCoordinator.swift; sourceTree = "<group>"; };
+		F5F900023060000100000001 /* AccountViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/AccountViewModelTests.swift; sourceTree = "<group>"; };
+		F5F910023060000100000001 /* AccountViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/AccountViewModel.swift; sourceTree = "<group>"; };
+		F5F911023060000100000001 /* AppRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRootView.swift; sourceTree = "<group>"; };
+		F5F912023060000100000001 /* AccountSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountSheetView.swift; sourceTree = "<group>"; };
+		F5F913023060000100000001 /* GuestAccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuestAccountView.swift; sourceTree = "<group>"; };
+		F5F914023060000100000001 /* AuthenticatedAccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticatedAccountView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -271,6 +283,7 @@
 				F5F700023040000100000001 /* SupabaseClientGenerationTests.swift */,
 				F5F704023040000100000001 /* TestDoubleIsolationTests.swift */,
 				F5F800023050000100000001 /* AccountSyncTests.swift */,
+				F5F900023060000100000001 /* AccountViewModelTests.swift */,
 			);
 			path = TossTests;
 			sourceTree = "<group>";
@@ -298,6 +311,10 @@
 			isa = PBXGroup;
 			children = (
 				F5A43A7D2FFFE85000F9D3AF /* ContentView.swift */,
+				F5F911023060000100000001 /* AppRootView.swift */,
+				F5F912023060000100000001 /* AccountSheetView.swift */,
+				F5F913023060000100000001 /* GuestAccountView.swift */,
+				F5F914023060000100000001 /* AuthenticatedAccountView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -337,6 +354,7 @@
 			isa = PBXGroup;
 			children = (
 				F5A43AC62FFFEA1000F9D3AF /* CoinTossViewModel.swift */,
+				F5F910023060000100000001 /* AccountViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -561,6 +579,11 @@
 				F5F813013050000100000001 /* SupabaseUserPreferencesRepository.swift in Sources */,
 				F5F814013050000100000001 /* LocalPreferencesStore.swift in Sources */,
 				F5F815013050000100000001 /* AccountSyncCoordinator.swift in Sources */,
+				F5F910013060000100000001 /* AccountViewModel.swift in Sources */,
+				F5F911013060000100000001 /* AppRootView.swift in Sources */,
+				F5F912013060000100000001 /* AccountSheetView.swift in Sources */,
+				F5F913013060000100000001 /* GuestAccountView.swift in Sources */,
+				F5F914013060000100000001 /* AuthenticatedAccountView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -579,6 +602,7 @@
 				F5F700013040000100000001 /* SupabaseClientGenerationTests.swift in Sources */,
 				F5F704013040000100000001 /* TestDoubleIsolationTests.swift in Sources */,
 				F5F800013050000100000001 /* AccountSyncTests.swift in Sources */,
+				F5F900013060000100000001 /* AccountViewModelTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

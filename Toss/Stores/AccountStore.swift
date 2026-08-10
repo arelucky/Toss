@@ -134,24 +134,27 @@ final class AccountStore: ObservableObject, PendingDisplayNameStoring {
         authObservationTask = nil
     }
 
-    func signOut() async {
-        if case .signingOut = lifecycleState { return }
+    func signOut() async -> ServerSessionRevocation? {
+        if case .signingOut = lifecycleState { return nil }
         let operationID = beginOperation { .signingOut($0) }
         stopObservingAuthState()
         error = nil
         do {
-            _ = try await authService.signOut()
-            guard lifecycleState == .signingOut(operationID) else { return }
+            let result = try await authService.signOut()
+            guard lifecycleState == .signingOut(operationID) else { return nil }
             pendingDisplayName = nil
             session = .guest
             lifecycleState = .signedOut(operationID)
+            return result
         } catch is CancellationError {
-            guard lifecycleState == .signingOut(operationID) else { return }
+            guard lifecycleState == .signingOut(operationID) else { return nil }
             lifecycleState = .idle
+            return nil
         } catch {
-            guard lifecycleState == .signingOut(operationID) else { return }
+            guard lifecycleState == .signingOut(operationID) else { return nil }
             self.error = .signOutFailed
             lifecycleState = .idle
+            return nil
         }
     }
 
