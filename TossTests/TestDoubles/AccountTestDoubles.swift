@@ -332,7 +332,18 @@ final class UserPreferencesRepositoryDouble: UserPreferencesRepository {
 
 final class AccountDeletionServiceDouble: AccountDeletionServicing {
     private(set) var callCount = 0
-    func deleteAccount(authorizationCode: String, requestID: UUID) async throws -> AccountDeletionResult { callCount += 1; throw AccountDependencyError.unavailable }
+    var result: Result<AccountDeletionResult, Error>
+    private(set) var requestIDs: [UUID] = []
+
+    init(result: Result<AccountDeletionResult, Error> = .failure(AccountDependencyError.unavailable)) {
+        self.result = result
+    }
+
+    func deleteAccount(authorizationCode: String, requestID: UUID) async throws -> AccountDeletionResult {
+        callCount += 1
+        requestIDs.append(requestID)
+        return try result.get()
+    }
 }
 
 struct AccountTestDoubles {

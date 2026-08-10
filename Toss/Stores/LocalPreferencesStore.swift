@@ -42,4 +42,8 @@ final class LocalPreferencesStore {
         guard let data = store.object(forKey: Keys.account(userID)) as? Data else { return nil }
         return try? JSONDecoder().decode(LocalPreferences.self, from: data)
     }
+
+    func removeCachedPreferences(for userID: UUID) {
+        store.set(nil, forKey: Keys.account(userID))
+    }
 }

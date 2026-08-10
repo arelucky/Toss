@@ -13,6 +13,8 @@ enum AccountNotice: Equatable {
     case syncDeferred
     case remoteSignOutDeferred
     case signOutFailed
+    case accountDeletionFailed
+    case appleRevocationManualRequired
 
     var message: String {
         switch self {
@@ -21,6 +23,8 @@ enum AccountNotice: Equatable {
         case .syncDeferred: "Changes are saved on this device and will sync when connection returns."
         case .remoteSignOutDeferred: "Signed out on this device. Remote session cleanup will finish later."
         case .signOutFailed: "Couldn’t safely sign out on this device. Your account remains signed in."
+        case .accountDeletionFailed: "Your account wasn’t deleted. Please try again."
+        case .appleRevocationManualRequired: "Your Toss account was deleted. In Apple ID settings, stop using Apple Sign In for Toss."
         }
     }
 }
@@ -35,9 +39,13 @@ final class AccountViewModel: ObservableObject {
     @Published private(set) var notice: AccountNotice?
     @Published private(set) var isSigningIn = false
     @Published private(set) var isSigningOut = false
+    @Published private(set) var isDeleting = false
+    @Published var isDeleteConfirmationPresented = false
 
     private let accountStore: AccountStore
     private let appleSignInService: any AppleSignInServicing
+    private let deletionService: any AccountDeletionServicing
+    private let deletionRequestStore: AccountDeletionRequestStore
     private let profileRepository: any UserProfileRepository
     private let syncCoordinator: AccountSyncCoordinator
     private let localPreferences: LocalPreferencesStore
@@ -56,6 +64,8 @@ final class AccountViewModel: ObservableObject {
     init(
         accountStore: AccountStore,
         appleSignInService: any AppleSignInServicing,
+        deletionService: any AccountDeletionServicing,
+        deletionRequestStore: AccountDeletionRequestStore,
         profileRepository: any UserProfileRepository,
         syncCoordinator: AccountSyncCoordinator,
         localPreferences: LocalPreferencesStore,
@@ -63,6 +73,8 @@ final class AccountViewModel: ObservableObject {
     ) {
         self.accountStore = accountStore
         self.appleSignInService = appleSignInService
+        self.deletionService = deletionService
+        self.deletionRequestStore = deletionRequestStore
         self.profileRepository = profileRepository
         self.syncCoordinator = syncCoordinator
         self.localPreferences = localPreferences
@@ -145,6 +157,40 @@ final class AccountViewModel: ObservableObject {
         soundEnabled = guest.soundEnabled
         hapticEnabled = guest.hapticEnabled
         notice = result == .deferred ? .remoteSignOutDeferred : nil
+    }
+
+    func requestAccountDeletion() {
+        guard !isDeleting else { return }
+        isDeleteConfirmationPresented = true
+    }
+
+    func cancelAccountDeletion() {
+        isDeleteConfirmationPresented = false
+    }
+
+    func confirmAccountDeletion() async {
+        guard !isDeleting, case let .authenticated(userID) = accountStore.session else { return }
+        isDeleteConfirmationPresented = false
+        isDeleting = true
+        notice = nil
+        defer { isDeleting = false }
+        let requestID = deletionRequestStore.currentOrCreate()
+        let result = await accountStore.deleteAccount(
+            using: appleSignInService,
+            deletionService: deletionService,
+            requestID: requestID
+        )
+        guard let result, accountStore.session == .guest else {
+            if accountStore.error == .deletionFailed { notice = .accountDeletionFailed }
+            return
+        }
+        deletionRequestStore.clear()
+        syncCoordinator.didDelete(userID: userID)
+        displayName = nil
+        let guest = localPreferences.guestPreferences
+        soundEnabled = guest.soundEnabled
+        hapticEnabled = guest.hapticEnabled
+        notice = result.appleRevocation == .manualRequired ? .appleRevocationManualRequired : nil
     }
 
     func clearNotice() {

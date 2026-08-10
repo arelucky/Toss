@@ -34,6 +34,16 @@ struct AuthenticatedAccountView: View {
                     ProgressView("Signing out securely…")
                 }
             }
+            Section {
+                Button("Delete Account", role: .destructive) { viewModel.requestAccountDeletion() }
+                    .disabled(viewModel.isDeleting || viewModel.isSigningOut)
+                    .accessibilityHint("Permanently deletes your Toss account after Apple reauthentication")
+                if viewModel.isDeleting {
+                    ProgressView("Deleting account securely…")
+                }
+            } footer: {
+                Text("This permanently deletes your Toss account and synced settings.")
+            }
         }
         .confirmationDialog("Sign out of Toss?", isPresented: $confirmsSignOut) {
             Button("Sign Out", role: .destructive) {
@@ -42,6 +52,14 @@ struct AuthenticatedAccountView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Your guest sound and haptic settings will be restored on this device.")
+        }
+        .confirmationDialog("Permanently delete your Toss account?", isPresented: $viewModel.isDeleteConfirmationPresented) {
+            Button("Delete Account", role: .destructive) {
+                Task { await viewModel.confirmAccountDeletion() }
+            }
+            Button("Cancel", role: .cancel) { viewModel.cancelAccountDeletion() }
+        } message: {
+            Text("You’ll be asked to reauthenticate with Apple. This action cannot be undone.")
         }
     }
 }

@@ -18,6 +18,8 @@ struct AppRootView: View {
         _accountViewModel = StateObject(wrappedValue: AccountViewModel(
             accountStore: store,
             appleSignInService: dependencies.appleSignInService,
+            deletionService: dependencies.deletionService,
+            deletionRequestStore: dependencies.deletionRequestStore,
             profileRepository: dependencies.profileRepository,
             syncCoordinator: sync,
             localPreferences: dependencies.localPreferences,

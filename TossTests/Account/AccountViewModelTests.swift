@@ -88,6 +88,51 @@ final class AccountViewModelTests: XCTestCase {
         XCTAssertEqual(subject.viewModel.presentation, .authenticated(displayName: "Toss Account"))
     }
 
+    func testDeletionConfirmationCanBeCancelledWithoutCallingServices() {
+        let subject = makeSubject(session: .authenticated(userID: UUID()))
+        subject.viewModel.requestAccountDeletion()
+        XCTAssertTrue(subject.viewModel.isDeleteConfirmationPresented)
+
+        subject.viewModel.cancelAccountDeletion()
+
+        XCTAssertFalse(subject.viewModel.isDeleteConfirmationPresented)
+        XCTAssertEqual(subject.deletion.callCount, 0)
+    }
+
+    func testManualRequiredDeletionEntersGuestClearsRequestAndRestoresGuestPreferences() async {
+        let userID = UUID()
+        let subject = makeSubject(
+            session: .authenticated(userID: userID),
+            deletion: .success(.init(deleted: true, appleRevocation: .manualRequired))
+        )
+        subject.local.saveGuest(.init(soundEnabled: false, hapticEnabled: true))
+        subject.local.cache(.init(soundEnabled: true, hapticEnabled: false), for: userID)
+
+        await subject.viewModel.confirmAccountDeletion()
+
+        XCTAssertEqual(subject.viewModel.presentation, .guest)
+        XCTAssertEqual(subject.viewModel.notice, .appleRevocationManualRequired)
+        XCTAssertNil(subject.requestStore.current)
+        XCTAssertNil(subject.local.cachedPreferences(for: userID))
+        XCTAssertEqual(subject.feedback.applied.last, .init(soundEnabled: false, hapticEnabled: true))
+    }
+
+    func testFailedDeletionKeepsAccountAndReusesRequestID() async {
+        let userID = UUID()
+        let subject = makeSubject(
+            session: .authenticated(userID: userID),
+            deletion: .failure(ViewModelTestError.expected)
+        )
+
+        await subject.viewModel.confirmAccountDeletion()
+        let firstRequestID = subject.requestStore.current
+        await subject.viewModel.confirmAccountDeletion()
+
+        XCTAssertEqual(subject.viewModel.presentation, .authenticated(displayName: "Toss Account"))
+        XCTAssertEqual(subject.viewModel.notice, .accountDeletionFailed)
+        XCTAssertEqual(subject.deletion.requestIDs, [firstRequestID, firstRequestID].compactMap { $0 })
+    }
+
     private func makeSubject(
         session: AccountSession = .guest,
         profileName: String? = nil,
@@ -98,16 +143,19 @@ final class AccountViewModelTests: XCTestCase {
             displayName: nil
         )),
         authSignIn: Result<AccountSession, Error>? = nil,
-        signOut: Result<ServerSessionRevocation, Error> = .success(.revoked)
+        signOut: Result<ServerSessionRevocation, Error> = .success(.revoked),
+        deletion: Result<AccountDeletionResult, Error> = .failure(AccountDependencyError.unavailable)
     ) -> Subject {
         let userID = UUID()
-        let resolvedSession = authSignIn ?? .success(.authenticated(userID: userID))
+        let resolvedSession = authSignIn ?? .success(.authenticated(userID: session.userID ?? userID))
         let auth = AccountAuthServiceDouble(signInResult: resolvedSession, signOutResult: signOut)
         let accountStore = AccountStore(authService: auth, initialSession: session)
         let profile = ViewModelProfileRepository(userID: session.userID ?? userID, displayName: profileName)
         let preferences = ViewModelPreferencesRepository(userID: session.userID ?? userID)
         let local = LocalPreferencesStore(store: ViewModelKeyValueStore())
         let feedback = ViewModelFeedback()
+        let deletionService = AccountDeletionServiceDouble(result: deletion)
+        let requestStore = AccountDeletionRequestStore(store: ViewModelKeyValueStore())
         let sync = AccountSyncCoordinator(
             profileRepository: profile,
             preferencesRepository: preferences,
@@ -118,12 +166,14 @@ final class AccountViewModelTests: XCTestCase {
         let viewModel = AccountViewModel(
             accountStore: accountStore,
             appleSignInService: AppleSignInServiceDouble(result: appleResult),
+            deletionService: deletionService,
+            deletionRequestStore: requestStore,
             profileRepository: profile,
             syncCoordinator: sync,
             localPreferences: local,
             feedbackPreferences: feedback
         )
-        return Subject(userID: userID, auth: auth, accountStore: accountStore, profile: profile, preferences: preferences, local: local, feedback: feedback, viewModel: viewModel)
+        return Subject(userID: userID, auth: auth, accountStore: accountStore, profile: profile, preferences: preferences, deletion: deletionService, requestStore: requestStore, local: local, feedback: feedback, viewModel: viewModel)
     }
 }
 
@@ -133,6 +183,8 @@ private struct Subject {
     let accountStore: AccountStore
     let profile: ViewModelProfileRepository
     let preferences: ViewModelPreferencesRepository
+    let deletion: AccountDeletionServiceDouble
+    let requestStore: AccountDeletionRequestStore
     let local: LocalPreferencesStore
     let feedback: ViewModelFeedback
     let viewModel: AccountViewModel

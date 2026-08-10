@@ -96,6 +96,13 @@ final class AccountSyncCoordinator {
         preferenceWriteTask = nil
         feedback.apply(localPreferences.guestPreferences)
     }
+
+    func didDelete(userID: UUID) {
+        preferenceWriteTask?.cancel()
+        preferenceWriteTask = nil
+        localPreferences.removeCachedPreferences(for: userID)
+        feedback.apply(localPreferences.guestPreferences)
+    }
 }
 
 @MainActor

@@ -12,6 +12,7 @@ struct AppDependencies {
     let profileRepository: any UserProfileRepository
     let preferencesRepository: any UserPreferencesRepository
     let deletionService: any AccountDeletionServicing
+    let deletionRequestStore: AccountDeletionRequestStore
     let localPreferences: LocalPreferencesStore
     let feedbackPreferences: any FeedbackPreferenceApplying
 
@@ -28,7 +29,8 @@ struct AppDependencies {
             appleSignInService: NativeAppleSignInService(),
             profileRepository: SupabaseUserProfileRepository(environment: environment),
             preferencesRepository: SupabaseUserPreferencesRepository(environment: environment),
-            deletionService: ClientBackedAccountDeletionService(environment: environment),
+            deletionService: SupabaseAccountDeletionService(environment: environment),
+            deletionRequestStore: AccountDeletionRequestStore(),
             localPreferences: localPreferences,
             feedbackPreferences: feedbackPreferences
         )
@@ -59,13 +61,8 @@ struct AppDependencies {
     @MainActor
     private static func offline() -> Self {
         let service = OfflineAccountDependencies()
-        return Self(session: .guest, environment: nil, authService: service, appleSignInService: service, profileRepository: service, preferencesRepository: service, deletionService: service, localPreferences: LocalPreferencesStore(), feedbackPreferences: AppFeedbackPreferencesController())
+        return Self(session: .guest, environment: nil, authService: service, appleSignInService: service, profileRepository: service, preferencesRepository: service, deletionService: service, deletionRequestStore: AccountDeletionRequestStore(), localPreferences: LocalPreferencesStore(), feedbackPreferences: AppFeedbackPreferencesController())
     }
-}
-
-private struct ClientBackedAccountDeletionService: AccountDeletionServicing, ClientEnvironmentBacked {
-    let environment: AppEnvironment?
-    func deleteAccount(authorizationCode: String, requestID: UUID) async throws -> AccountDeletionResult { throw AccountDependencyError.unavailable }
 }
 
 private struct OfflineAccountDependencies: AccountAuthServicing, AppleSignInServicing, UserProfileRepository, UserPreferencesRepository, AccountDeletionServicing {

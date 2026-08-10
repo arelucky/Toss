@@ -68,6 +68,9 @@
 		F5F814013050000100000001 /* LocalPreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F814023050000100000001 /* LocalPreferencesStore.swift */; };
 		F5F815013050000100000001 /* AccountSyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F815023050000100000001 /* AccountSyncCoordinator.swift */; };
 		F5F900013060000100000001 /* AccountViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F900023060000100000001 /* AccountViewModelTests.swift */; };
+		F5FA00013070000100000001 /* AccountDeletionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FA00023070000100000001 /* AccountDeletionTests.swift */; };
+		F5FA00033070000100000001 /* AccountDeletionRequestStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FA00043070000100000001 /* AccountDeletionRequestStore.swift */; };
+		F5FA00053070000100000001 /* SupabaseAccountDeletionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FA00063070000100000001 /* SupabaseAccountDeletionService.swift */; };
 		F5F910013060000100000001 /* AccountViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F910023060000100000001 /* AccountViewModel.swift */; };
 		F5F911013060000100000001 /* AppRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F911023060000100000001 /* AppRootView.swift */; };
 		F5F912013060000100000001 /* AccountSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F912023060000100000001 /* AccountSheetView.swift */; };
@@ -160,6 +163,9 @@
 		F5F814023050000100000001 /* LocalPreferencesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalPreferencesStore.swift; sourceTree = "<group>"; };
 		F5F815023050000100000001 /* AccountSyncCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/AccountSyncCoordinator.swift; sourceTree = "<group>"; };
 		F5F900023060000100000001 /* AccountViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/AccountViewModelTests.swift; sourceTree = "<group>"; };
+		F5FA00023070000100000001 /* AccountDeletionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/AccountDeletionTests.swift; sourceTree = "<group>"; };
+		F5FA00043070000100000001 /* AccountDeletionRequestStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/AccountDeletionRequestStore.swift; sourceTree = "<group>"; };
+		F5FA00063070000100000001 /* SupabaseAccountDeletionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/SupabaseAccountDeletionService.swift; sourceTree = "<group>"; };
 		F5F910023060000100000001 /* AccountViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/AccountViewModel.swift; sourceTree = "<group>"; };
 		F5F911023060000100000001 /* AppRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRootView.swift; sourceTree = "<group>"; };
 		F5F912023060000100000001 /* AccountSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountSheetView.swift; sourceTree = "<group>"; };
@@ -284,6 +290,7 @@
 				F5F704023040000100000001 /* TestDoubleIsolationTests.swift */,
 				F5F800023050000100000001 /* AccountSyncTests.swift */,
 				F5F900023060000100000001 /* AccountViewModelTests.swift */,
+				F5FA00023070000100000001 /* AccountDeletionTests.swift */,
 			);
 			path = TossTests;
 			sourceTree = "<group>";
@@ -367,6 +374,8 @@
 				F5E41006301B200100000001 /* HapticManager.swift */,
 				F5F401083028000100000001 /* AccountAuthServicing.swift */,
 				F5F4010C3028000100000001 /* AccountDeletionServicing.swift */,
+				F5FA00043070000100000001 /* AccountDeletionRequestStore.swift */,
+				F5FA00063070000100000001 /* SupabaseAccountDeletionService.swift */,
 				F5F501023035000100000001 /* NonceGenerator.swift */,
 				F5F501043035000100000001 /* AppleSignInServicing.swift */,
 				F5F501063035000100000001 /* NativeAppleSignInService.swift */,
@@ -564,6 +573,8 @@
 				F5F401073028000100000001 /* AccountAuthServicing.swift in Sources */,
 				F5F401093028000100000001 /* AccountRepositories.swift in Sources */,
 				F5F4010B3028000100000001 /* AccountDeletionServicing.swift in Sources */,
+				F5FA00033070000100000001 /* AccountDeletionRequestStore.swift in Sources */,
+				F5FA00053070000100000001 /* SupabaseAccountDeletionService.swift in Sources */,
 				F5F501013035000100000001 /* NonceGenerator.swift in Sources */,
 				F5F501033035000100000001 /* AppleSignInServicing.swift in Sources */,
 				F5F501053035000100000001 /* NativeAppleSignInService.swift in Sources */,
@@ -603,6 +614,7 @@
 				F5F704013040000100000001 /* TestDoubleIsolationTests.swift in Sources */,
 				F5F800013050000100000001 /* AccountSyncTests.swift in Sources */,
 				F5F900013060000100000001 /* AccountViewModelTests.swift in Sources */,
+				F5FA00013070000100000001 /* AccountDeletionTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -5,6 +5,7 @@ enum AccountStoreError: Error, Equatable {
     case restorationFailed
     case signInFailed
     case signOutFailed
+    case deletionFailed
 }
 
 struct PendingDisplayNameCandidate: Equatable {
@@ -21,6 +22,7 @@ final class AccountStore: ObservableObject, PendingDisplayNameStoring {
         case signingIn(UInt64)
         case signingOut(UInt64)
         case signedOut(UInt64)
+        case deleting(UInt64)
     }
 
     @Published private(set) var session: AccountSession
@@ -158,6 +160,57 @@ final class AccountStore: ObservableObject, PendingDisplayNameStoring {
         }
     }
 
+    func deleteAccount(
+        using appleService: any AppleSignInServicing,
+        deletionService: any AccountDeletionServicing,
+        requestID: UUID
+    ) async -> AccountDeletionResult? {
+        guard case let .authenticated(currentUserID) = session else { return nil }
+        if case .deleting = lifecycleState { return nil }
+        let operationID = beginOperation { .deleting($0) }
+        stopObservingAuthState()
+        error = nil
+        do {
+            let credential = try await appleService.signIn()
+            try Task.checkCancellation()
+            let reauthenticated = try await authService.signInWithApple(
+                identityToken: credential.identityToken,
+                rawNonce: credential.rawNonce
+            )
+            guard lifecycleState == .deleting(operationID),
+                  authService.isCurrentGeneration(reauthenticated.generationID),
+                  reauthenticated.session == .authenticated(userID: currentUserID) else {
+                throw AccountDeletionServiceError.staleGeneration
+            }
+            let result = try await deletionService.deleteAccount(
+                authorizationCode: credential.authorizationCode,
+                requestID: requestID
+            )
+            guard lifecycleState == .deleting(operationID), result.deleted else { return nil }
+            pendingDisplayName = nil
+            session = .guest
+            lifecycleState = .signedOut(operationID)
+            return result
+        } catch AppleSignInError.cancelled {
+            guard lifecycleState == .deleting(operationID) else { return nil }
+            lifecycleState = .idle
+            startObservingAuthState()
+            return nil
+        } catch is CancellationError {
+            guard lifecycleState == .deleting(operationID) else { return nil }
+            lifecycleState = .idle
+            startObservingAuthState()
+            return nil
+        } catch {
+            guard lifecycleState == .deleting(operationID) else { return nil }
+            self.error = .deletionFailed
+            session = .authenticated(userID: currentUserID)
+            lifecycleState = .idle
+            startObservingAuthState()
+            return nil
+        }
+    }
+
     private func beginOperation(_ state: (UInt64) -> LifecycleState) -> UInt64 {
         nextOperationID &+= 1
         lifecycleState = state(nextOperationID)
@@ -188,6 +241,7 @@ final class AccountStore: ObservableObject, PendingDisplayNameStoring {
         guard authService.isCurrentGeneration(event.generationID),
               let eventSession = event.session else { return }
         if case .signingOut = lifecycleState { return }
+        if case .deleting = lifecycleState { return }
         if case .signedOut = lifecycleState, eventSession != .guest { return }
         discardPendingDisplayName(ifItDoesNotMatch: eventSession)
         session = eventSession
