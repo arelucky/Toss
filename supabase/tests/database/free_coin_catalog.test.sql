@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(37);
+select plan(59);
 
 select has_table('public', 'coins', 'coins table exists');
 select has_table('public', 'coin_versions', 'coin_versions table exists');
@@ -273,6 +273,175 @@ select lives_ok(
   $$update public.coins set active_version_id = '40000000-0000-0000-0000-000000000001' where id = '30000000-0000-0000-0000-000000000001'$$,
   'published version from the same coin can be active'
 );
+
+select ok(
+  exists (select 1 from storage.buckets where id = 'coin-previews'),
+  'coin-previews bucket exists'
+);
+select ok(
+  exists (select 1 from storage.buckets where id = 'coin-models-free'),
+  'coin-models-free bucket exists'
+);
+select ok(
+  exists (select 1 from storage.buckets where id = 'coin-staging'),
+  'coin-staging bucket exists'
+);
+select is(
+  (select public from storage.buckets where id = 'coin-previews'),
+  true,
+  'coin-previews is public'
+);
+select is(
+  (select public from storage.buckets where id = 'coin-models-free'),
+  true,
+  'coin-models-free is public'
+);
+select is(
+  (select public from storage.buckets where id = 'coin-staging'),
+  false,
+  'coin-staging is private'
+);
+select is(
+  (select file_size_limit from storage.buckets where id = 'coin-previews'),
+  2097152::bigint,
+  'coin previews are limited to 2 MiB'
+);
+select is(
+  (select file_size_limit from storage.buckets where id = 'coin-models-free'),
+  52428800::bigint,
+  'free coin models are limited to 50 MiB'
+);
+select is(
+  (select file_size_limit from storage.buckets where id = 'coin-staging'),
+  52428800::bigint,
+  'coin staging is limited to 50 MiB'
+);
+select is(
+  (
+    select count(*)::integer
+    from pg_catalog.pg_policies
+    where schemaname = 'storage'
+      and tablename = 'objects'
+      and policyname = 'free coin assets are publicly readable'
+      and cmd = 'SELECT'
+      and roles @> array['anon'::name, 'authenticated'::name]
+  ),
+  1,
+  'public free coin assets have one client read policy'
+);
+
+do $$
+begin
+  if (
+    select count(*) = 3
+    from storage.buckets
+    where id in ('coin-previews', 'coin-models-free', 'coin-staging')
+  ) then
+    insert into storage.objects (bucket_id, name)
+    values
+      ('coin-previews', 'coins/classic-gold/v1/preview.webp'),
+      ('coin-models-free', 'coins/classic-gold/v1/model.usdz'),
+      ('coin-staging', 'coins/classic-gold/v1/model.usdz');
+  end if;
+end;
+$$;
+
+set local role anon;
+
+select is(
+  (
+    select array_agg(bucket_id order by bucket_id)::text[]
+    from storage.objects
+    where bucket_id in ('coin-previews', 'coin-models-free', 'coin-staging')
+  ),
+  array['coin-models-free', 'coin-previews']::text[],
+  'anon can read public assets but not staging objects'
+);
+select throws_ok(
+  $$insert into storage.objects (bucket_id, name) values ('coin-previews', 'coins/anon/v1/preview.webp')$$,
+  '42501',
+  null,
+  'anon cannot insert preview objects'
+);
+select throws_ok(
+  $$insert into storage.objects (bucket_id, name) values ('coin-models-free', 'coins/anon/v1/model.usdz')$$,
+  '42501',
+  null,
+  'anon cannot insert model objects'
+);
+select throws_ok(
+  $$insert into storage.objects (bucket_id, name) values ('coin-staging', 'coins/anon/v1/model.usdz')$$,
+  '42501',
+  null,
+  'anon cannot insert staging objects'
+);
+with changed as (
+  update storage.objects
+  set name = name || '.anon-updated'
+  where bucket_id in ('coin-previews', 'coin-models-free', 'coin-staging')
+  returning 1
+)
+select is(
+  (select count(*)::integer from changed),
+  0,
+  'anon cannot update free coin objects'
+);
+select throws_ok(
+  $$delete from storage.objects where bucket_id in ('coin-previews', 'coin-models-free', 'coin-staging')$$,
+  '42501',
+  'Direct deletion from storage tables is not allowed. Use the Storage API instead.',
+  'anon cannot directly delete free coin objects'
+);
+
+reset role;
+set local role authenticated;
+
+select is(
+  (
+    select array_agg(bucket_id order by bucket_id)::text[]
+    from storage.objects
+    where bucket_id in ('coin-previews', 'coin-models-free', 'coin-staging')
+  ),
+  array['coin-models-free', 'coin-previews']::text[],
+  'authenticated can read public assets but not staging objects'
+);
+select throws_ok(
+  $$insert into storage.objects (bucket_id, name) values ('coin-previews', 'coins/authenticated/v1/preview.webp')$$,
+  '42501',
+  null,
+  'authenticated cannot insert preview objects'
+);
+select throws_ok(
+  $$insert into storage.objects (bucket_id, name) values ('coin-models-free', 'coins/authenticated/v1/model.usdz')$$,
+  '42501',
+  null,
+  'authenticated cannot insert model objects'
+);
+select throws_ok(
+  $$insert into storage.objects (bucket_id, name) values ('coin-staging', 'coins/authenticated/v1/model.usdz')$$,
+  '42501',
+  null,
+  'authenticated cannot insert staging objects'
+);
+with changed as (
+  update storage.objects
+  set name = name || '.authenticated-updated'
+  where bucket_id in ('coin-previews', 'coin-models-free', 'coin-staging')
+  returning 1
+)
+select is(
+  (select count(*)::integer from changed),
+  0,
+  'authenticated cannot update free coin objects'
+);
+select throws_ok(
+  $$delete from storage.objects where bucket_id in ('coin-previews', 'coin-models-free', 'coin-staging')$$,
+  '42501',
+  'Direct deletion from storage tables is not allowed. Use the Storage API instead.',
+  'authenticated cannot directly delete free coin objects'
+);
+
+reset role;
 
 select * from finish();
 rollback;
