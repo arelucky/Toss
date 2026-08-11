@@ -11,7 +11,7 @@ export interface AccountDeletionRequestRecord {
 
 export interface VerifiedCaller {
   userID: string;
-  appleSubject: string;
+  appleSubjects: string[];
   authenticatedAt: Date;
 }
 

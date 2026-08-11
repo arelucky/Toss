@@ -1,4 +1,4 @@
-import { createClient, type SupabaseClient, type User } from "npm:@supabase/supabase-js@2.49.8";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.49.8";
 import {
   createRemoteJWKSet,
   decodeJwt,
@@ -42,11 +42,25 @@ function mapRecord(record: DatabaseRecord): AccountDeletionRequestRecord {
   };
 }
 
-function appleIdentity(user: User) {
-  const identity = user.identities?.find((candidate) => candidate.provider === "apple");
-  const subject = identity?.identity_id ?? identity?.id;
-  if (!subject) throw new Error("Apple identity required");
-  return subject;
+type IdentityCandidate = {
+  provider?: unknown;
+  identity_data?: Record<string, unknown> | null;
+};
+
+export function appleProviderSubjects(identities: readonly IdentityCandidate[] | null | undefined) {
+  return (identities ?? []).flatMap((identity) => {
+    if (identity.provider !== "apple") return [];
+    const subject = identity.identity_data?.sub;
+    if (typeof subject !== "string") return [];
+    return subject.trim().length > 0 ? [subject] : [];
+  });
+}
+
+export function matchesAppleProviderSubject(
+  providerSubjects: readonly string[],
+  tokenSubject: unknown,
+) {
+  return typeof tokenSubject === "string" && providerSubjects.includes(tokenSubject);
 }
 
 async function createAppleClientSecret(now: Date) {
@@ -102,7 +116,8 @@ async function revokeApple(
       issuer: APPLE_ISSUER,
       audience: clientID,
     });
-    if (verifiedAppleToken.payload.sub !== caller.appleSubject) throw identityMismatch();
+    const tokenSubject = verifiedAppleToken.payload.sub;
+    if (!matchesAppleProviderSubject(caller.appleSubjects, tokenSubject)) throw identityMismatch();
     const revoke = await postApple(APPLE_REVOKE_URL, {
       client_id: clientID,
       client_secret: clientSecret,
@@ -204,9 +219,11 @@ export function createLiveDependencies(): AccountDeletionDependencies {
       const hasAppleProvider = data.user.app_metadata.provider === "apple" ||
         (Array.isArray(providers) && providers.includes("apple"));
       if (!hasAppleProvider) throw new Error("Recent Apple authentication required");
+      const appleSubjects = appleProviderSubjects(data.user.identities);
+      if (appleSubjects.length === 0) throw new Error("Apple identity required");
       return {
         userID: data.user.id,
-        appleSubject: appleIdentity(data.user),
+        appleSubjects,
         authenticatedAt: new Date(payload.iat * 1_000),
       };
     },

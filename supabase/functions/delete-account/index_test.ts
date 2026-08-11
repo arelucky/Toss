@@ -36,7 +36,7 @@ function makeDependencies(overrides: Partial<AccountDeletionDependencies> = {}) 
   const logs: string[] = [];
   const caller: VerifiedCaller = {
     userID,
-    appleSubject: "fictional-apple-subject",
+    appleSubjects: ["fictional-apple-subject"],
     authenticatedAt: new Date("2026-08-10T07:00:00Z"),
   };
   const dependencies: AccountDeletionDependencies = {
@@ -110,7 +110,7 @@ Deno.test("rejects stale Apple reauthentication evidence", async () => {
   const subject = makeDependencies({
     authenticate: async () => ({
       userID,
-      appleSubject: "fictional-apple-subject",
+      appleSubjects: ["fictional-apple-subject"],
       authenticatedAt: new Date("2026-08-10T06:00:00Z"),
     }),
   });
@@ -126,6 +126,9 @@ Deno.test("rejects Apple identity mismatch without deleting data", async () => {
   const response = await subject.handler(jsonRequest());
   assertEquals(response.status, 422);
   assertEquals(subject.calls.deleteUser, 0);
+  assertEquals(subject.records.get(requestID)?.status, "requested");
+  assertEquals(subject.records.get(requestID)?.appleRevocationStatus, "pending");
+  assertEquals(subject.records.get(requestID)?.completedAt, null);
 });
 
 Deno.test("revokes Apple and completes Toss deletion", async () => {
