@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(33);
+select plan(34);
 
 select has_table('public', 'account_deletion_requests', 'server-only deletion request table exists');
 select columns_are(
@@ -31,8 +31,8 @@ select ok(
   'deletion requests enable and force RLS'
 );
 select ok(
-  not has_table_privilege('anon', 'public.account_deletion_requests', 'SELECT, INSERT, UPDATE, DELETE')
-  and not has_table_privilege('authenticated', 'public.account_deletion_requests', 'SELECT, INSERT, UPDATE, DELETE'),
+  not has_table_privilege('anon', 'public.account_deletion_requests', 'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')
+  and not has_table_privilege('authenticated', 'public.account_deletion_requests', 'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER'),
   'client roles have no deletion request table privileges'
 );
 select is(
@@ -42,7 +42,7 @@ select is(
     cross join lateral aclexplode(coalesce(c.relacl, acldefault('r', c.relowner))) acl
     where c.oid = 'public.account_deletion_requests'::regclass
       and acl.grantee = 0
-      and acl.privilege_type = any(array['SELECT', 'INSERT', 'UPDATE', 'DELETE'])
+      and acl.privilege_type = any(array['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER'])
   ),
   0,
   'PUBLIC has no deletion request table privileges'
@@ -50,6 +50,10 @@ select is(
 select ok(
   has_table_privilege('service_role', 'public.account_deletion_requests', 'SELECT, INSERT, UPDATE, DELETE'),
   'service role has the required request lifecycle privileges'
+);
+select ok(
+  not has_table_privilege('service_role', 'public.account_deletion_requests', 'TRUNCATE, REFERENCES, TRIGGER'),
+  'service role has no destructive or schema-coupling privileges'
 );
 select is(
   (
