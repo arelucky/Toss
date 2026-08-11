@@ -11,6 +11,7 @@ struct AppDependencies {
     let appleSignInService: any AppleSignInServicing
     let profileRepository: any UserProfileRepository
     let preferencesRepository: any UserPreferencesRepository
+    let selectedCoinPreferenceRepository: any SelectedCoinPreferenceServicing
     let deletionService: any AccountDeletionServicing
     let deletionRequestStore: AccountDeletionRequestStore
     let localPreferences: LocalPreferencesStore
@@ -29,6 +30,7 @@ struct AppDependencies {
             appleSignInService: NativeAppleSignInService(),
             profileRepository: SupabaseUserProfileRepository(environment: environment),
             preferencesRepository: SupabaseUserPreferencesRepository(environment: environment),
+            selectedCoinPreferenceRepository: SupabaseSelectedCoinPreferenceRepository(environment: environment),
             deletionService: SupabaseAccountDeletionService(environment: environment),
             deletionRequestStore: AccountDeletionRequestStore(),
             localPreferences: localPreferences,
@@ -42,7 +44,7 @@ struct AppDependencies {
     }
 
     var clientEnvironmentIdentities: [ObjectIdentifier] {
-        [authService, profileRepository, preferencesRepository, deletionService]
+        [authService, profileRepository, preferencesRepository, selectedCoinPreferenceRepository, deletionService]
             .compactMap { ($0 as? any ClientEnvironmentBacked)?.environment }
             .map(ObjectIdentifier.init)
     }
@@ -61,11 +63,11 @@ struct AppDependencies {
     @MainActor
     private static func offline() -> Self {
         let service = OfflineAccountDependencies()
-        return Self(session: .guest, environment: nil, authService: service, appleSignInService: service, profileRepository: service, preferencesRepository: service, deletionService: service, deletionRequestStore: AccountDeletionRequestStore(), localPreferences: LocalPreferencesStore(), feedbackPreferences: AppFeedbackPreferencesController())
+        return Self(session: .guest, environment: nil, authService: service, appleSignInService: service, profileRepository: service, preferencesRepository: service, selectedCoinPreferenceRepository: service, deletionService: service, deletionRequestStore: AccountDeletionRequestStore(), localPreferences: LocalPreferencesStore(), feedbackPreferences: AppFeedbackPreferencesController())
     }
 }
 
-private struct OfflineAccountDependencies: AccountAuthServicing, AppleSignInServicing, UserProfileRepository, UserPreferencesRepository, AccountDeletionServicing {
+private struct OfflineAccountDependencies: AccountAuthServicing, AppleSignInServicing, UserProfileRepository, UserPreferencesRepository, SelectedCoinPreferenceServicing, AccountDeletionServicing {
     func restoredSession() async throws -> GenerationAccountSession { throw AccountDependencyError.unavailable }
     func signInWithApple(identityToken: String, rawNonce: String) async throws -> GenerationAccountSession { throw AccountDependencyError.unavailable }
     func sessionChanges() -> AsyncStream<AccountAuthEvent> { AsyncStream { $0.finish() } }
@@ -76,5 +78,7 @@ private struct OfflineAccountDependencies: AccountAuthServicing, AppleSignInServ
     func fetch(userID: UUID) async throws -> UserPreferences { throw AccountDependencyError.unavailable }
     func update(_ preferences: UserPreferences) async throws -> UserPreferences { throw AccountDependencyError.unavailable }
     func bootstrap(userID: UUID, guestPreferences: LocalPreferences) async throws -> PreferenceBootstrapResult { throw AccountDependencyError.unavailable }
+    func fetchSelectedCoinID(for userID: UUID, generationID: UUID) async throws -> UUID? { throw AccountDependencyError.unavailable }
+    func updateSelectedCoinID(_ coinID: UUID?, for userID: UUID, generationID: UUID) async throws { throw AccountDependencyError.unavailable }
     func deleteAccount(authorizationCode: String, requestID: UUID) async throws -> AccountDeletionResult { throw AccountDependencyError.unavailable }
 }
