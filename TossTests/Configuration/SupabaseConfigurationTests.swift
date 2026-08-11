@@ -94,6 +94,29 @@ final class SupabaseConfigurationTests: XCTestCase {
         )
     }
 
+    func testSourceInfoPlistUsesBuildSettingReferences() throws {
+        let repositoryRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let infoURL = repositoryRoot.appendingPathComponent("Toss/Info.plist")
+        let data = try Data(contentsOf: infoURL)
+        let info = try XCTUnwrap(
+            PropertyListSerialization.propertyList(from: data, format: nil) as? [String: String]
+        )
+        let source = try String(contentsOf: infoURL, encoding: .utf8)
+
+        XCTAssertEqual(info["TossSupabaseURL"], "$(SUPABASE_URL)")
+        XCTAssertEqual(
+            info["TossSupabasePublishableKey"],
+            "$(SUPABASE_PUBLISHABLE_KEY)"
+        )
+        XCTAssertFalse(source.contains(".supabase.co"))
+        XCTAssertFalse(source.contains("sb_publishable_"))
+        XCTAssertFalse(source.contains("sb_secret_"))
+        XCTAssertFalse(source.lowercased().contains("service_role"))
+    }
+
     private func makeBundle(info: [String: String]) throws -> Bundle {
         let bundleURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)

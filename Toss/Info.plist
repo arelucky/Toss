@@ -3,8 +3,8 @@
 <plist version="1.0">
 <dict>
 	<key>TossSupabasePublishableKey</key>
-	<string>sb_publishable_0HAG6C6vlF0HETJQ9eFyFA_2loKyZ-5</string>
+	<string>$(SUPABASE_PUBLISHABLE_KEY)</string>
 	<key>TossSupabaseURL</key>
-	<string>https:/$()/pqbhjtyiqksmfcgxdxyf.supabase.co</string>
+	<string>$(SUPABASE_URL)</string>
 </dict>
 </plist>
