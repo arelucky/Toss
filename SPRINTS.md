@@ -412,12 +412,17 @@ feat: add RealityKit 3D coin preview
 
 ## 状态
 
-⏳ 未开始
+🚧 开发中
 
-规划内容：
+已完成：
+
+* 账户入口与设置页面
+* 声音和触觉偏好开关
+* Apple 登录、登出与删除账户交互
+
+待完成：
 
 * 完整 UI
-* 设置页面
 * App Icon
 * 发布准备
 
@@ -427,8 +432,46 @@ feat: add RealityKit 3D coin preview
 
 ## 状态
 
-⏳ 待开始
+✅ 阶段 1 已完成
 
-下一阶段：
+### 阶段 1：Supabase Foundation
 
-* 阶段 1：Supabase 基础
+完成内容：
+
+* 建立 Supabase 本地环境、构建配置和密钥边界
+* 创建账户资料、偏好、生命周期与删除请求迁移
+* 完成 RLS、列级授权、函数 ACL 和服务端最小权限
+* 接入 Supabase Swift 2.49.0 与共享 Client Generation 架构
+* 完成原生 Sign in with Apple、Session 恢复和安全登出
+* 完成用户资料、guest/账户偏好同步及声音、触觉开关
+* 完成首页账户入口、账户设置和删除账户流程
+* 部署四项数据库迁移和 `delete-account` Edge Function 到开发项目
+* 修正 Apple provider subject 比较，使用 Apple identity 的 `identity_data.sub`
+* 真机验证登录、恢复、偏好、离线 Toss、登出和安全删除
+* 最终删除请求为 completed，Apple 撤销为 revoked，账户关联数据已清除
+* 冷启动保持 Guest，Guest Toss 正常
+
+验证结果：
+
+* 154 项 TossTests 通过
+* 174 项数据库 pgTAP 通过
+* 15 项 Edge Function 测试通过
+* Debug 模拟器构建成功
+* 无签名 Release 编译成功
+* 数据库 lint 无错误
+
+验证限制：
+
+* Xcode 15.4 存在 UI Test runner teardown/materialization 卡住问题，本轮未重复运行 UI Tests
+* 跨两台真机的偏好同步留待发布前验收
+
+### 后续阶段
+
+状态：⏳ 未开始
+
+* Cover to Reveal
+* 动态硬币目录与 USDZ 下载
+* StoreKit 非消耗型购买
+* Storage 正式资源系统
+* Vue 管理后台
+* 生产项目与 App 发布

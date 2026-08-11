@@ -331,3 +331,42 @@ Task 2-7A / 2-7B / 2-7C 验证了 `TossCoin.usdz` 可以通过 RealityKit 在 iO
 - 在视觉确认完成前，不直接替换首页正式 `CoinView`。
 - SwiftUI `CoinView` 保持可运行，作为快速预览、旧方案和回退参考。
 - 后续若进入正式首页替换，应作为独立 Task 完成并单独验证。
+
+---
+
+# Decision 005：Supabase Foundation 与账户边界
+
+## 日期
+
+2026-08-11
+
+## 决策
+
+Toss 采用 guest-first 账户体验：默认硬币和完整 Toss 流程无需登录，App 启动不等待 Supabase、Session 恢复或网络结果。账户服务不可用时只影响账户区域，不影响 RealityKit、手势、动画、结果、Haptic 和音效。
+
+阶段 1 后台使用：
+
+- Supabase Auth
+- Supabase PostgreSQL
+- Supabase Edge Functions
+- Supabase Swift 2.49.0
+
+`auth.users.id` 是业务表唯一用户标识。Apple 身份由 Supabase Auth identities 管理，`user_profiles` 不重复保存 Apple subject。用户偏好在阶段 1 仅同步声音和触觉；动态硬币相关字段留到后续阶段。
+
+账户数据通过 RLS、列级授权和服务端函数边界保护：客户端只能读取自己的资料和偏好，并只能更新允许的字段。账户删除请求表仅向受信任服务端开放最小 CRUD 权限。
+
+删除账户必须先完成近期 Apple 重新认证。Edge Function 在服务端生成短期 Apple client secret、尝试交换并撤销 Apple Token，然后删除 Supabase Auth 用户并依靠外键级联清理账户数据。Apple 撤销失败不能阻止 Toss/Supabase 数据删除；只有数据删除失败才视为删除未完成。
+
+Apple 身份一致性比较使用经过验证的 Apple `id_token.sub` 与 Supabase Apple identity 的 provider subject（`identity_data.sub`）。不得将 Supabase 内部 `identity_id` 当作 Apple provider subject，也不得记录或持久化 subject、token 或 authorization code。
+
+## 工具链兼容决定
+
+当前开发工具链为 Xcode 15.4 / Swift 5.10。Supabase Swift 固定为 2.49.0，传递依赖 `xctest-dynamic-overlay` 固定为 1.9.0；1.10.x 使用当前 Xcode 无法编译。升级 Xcode 或更新 Package Versions 前必须重新验证并审查该锁定。
+
+## 验收边界
+
+阶段 1 已部署到 Supabase 开发项目并完成 Apple 登录、Session 恢复、偏好、登出和账户删除真机验收。最终删除请求进入 `completed`，Apple 撤销结果为 `revoked`，Auth 用户及关联资料、偏好和 bootstrap 数据均清除；冷启动保持 Guest，Guest Toss 正常。
+
+UI Tests 未作为本轮最终门禁重复执行，因为 Xcode 15.4 存在 runner teardown/materialization 卡住问题。账户关键路径已由单元测试与真机验收覆盖；跨两台真机的偏好同步仍需在后续发布验收中补充确认。
+
+阶段 1 不包含生产项目、App 发布、手机号登录、动态硬币、StoreKit、Storage 正式资源系统、Vue 管理后台或 Cover to Reveal。
