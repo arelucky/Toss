@@ -12,6 +12,8 @@ struct AppDependencies {
     let profileRepository: any UserProfileRepository
     let preferencesRepository: any UserPreferencesRepository
     let selectedCoinPreferenceRepository: any SelectedCoinPreferenceServicing
+    let coinCatalogRepository: any CoinCatalogServicing
+    let coinCatalogCache: CoinCatalogCache
     let deletionService: any AccountDeletionServicing
     let deletionRequestStore: AccountDeletionRequestStore
     let localPreferences: LocalPreferencesStore
@@ -23,6 +25,7 @@ struct AppDependencies {
         let environment = AppEnvironment(configuration: configuration)
         let localPreferences = LocalPreferencesStore()
         let feedbackPreferences = AppFeedbackPreferencesController()
+        let coinCatalogCache = CoinCatalogCache()
         return Self(
             session: .guest,
             environment: environment,
@@ -31,6 +34,8 @@ struct AppDependencies {
             profileRepository: SupabaseUserProfileRepository(environment: environment),
             preferencesRepository: SupabaseUserPreferencesRepository(environment: environment),
             selectedCoinPreferenceRepository: SupabaseSelectedCoinPreferenceRepository(environment: environment),
+            coinCatalogRepository: SupabaseCoinCatalogRepository(environment: environment, cache: coinCatalogCache),
+            coinCatalogCache: coinCatalogCache,
             deletionService: SupabaseAccountDeletionService(environment: environment),
             deletionRequestStore: AccountDeletionRequestStore(),
             localPreferences: localPreferences,
@@ -63,8 +68,14 @@ struct AppDependencies {
     @MainActor
     private static func offline() -> Self {
         let service = OfflineAccountDependencies()
-        return Self(session: .guest, environment: nil, authService: service, appleSignInService: service, profileRepository: service, preferencesRepository: service, selectedCoinPreferenceRepository: service, deletionService: service, deletionRequestStore: AccountDeletionRequestStore(), localPreferences: LocalPreferencesStore(), feedbackPreferences: AppFeedbackPreferencesController())
+        let coinCatalogCache = CoinCatalogCache()
+        return Self(session: .guest, environment: nil, authService: service, appleSignInService: service, profileRepository: service, preferencesRepository: service, selectedCoinPreferenceRepository: service, coinCatalogRepository: OfflineCoinCatalogService(cache: coinCatalogCache), coinCatalogCache: coinCatalogCache, deletionService: service, deletionRequestStore: AccountDeletionRequestStore(), localPreferences: LocalPreferencesStore(), feedbackPreferences: AppFeedbackPreferencesController())
     }
+}
+
+private struct OfflineCoinCatalogService: CoinCatalogServicing {
+    let cache: CoinCatalogCache
+    func fetchPublishedCatalog() async throws -> [CoinCatalogItem] { cache.load() }
 }
 
 private struct OfflineAccountDependencies: AccountAuthServicing, AppleSignInServicing, UserProfileRepository, UserPreferencesRepository, SelectedCoinPreferenceServicing, AccountDeletionServicing {

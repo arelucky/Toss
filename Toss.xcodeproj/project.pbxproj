@@ -74,6 +74,12 @@
 		F5FB00013080000100000001 /* SelectedCoinPreferenceRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FB00023080000100000001 /* SelectedCoinPreferenceRepositoryTests.swift */; };
 		F5FB00033080000100000001 /* SelectedCoinPreferenceServicing.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FB00043080000100000001 /* SelectedCoinPreferenceServicing.swift */; };
 		F5FB00053080000100000001 /* SupabaseSelectedCoinPreferenceRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FB00063080000100000001 /* SupabaseSelectedCoinPreferenceRepository.swift */; };
+		F5FC00013090000100000001 /* CoinCatalogRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FC00023090000100000001 /* CoinCatalogRepositoryTests.swift */; };
+		F5FC00033090000100000001 /* CoinCatalogCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FC00043090000100000001 /* CoinCatalogCacheTests.swift */; };
+		F5FC00053090000100000001 /* CoinCatalogItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FC00063090000100000001 /* CoinCatalogItem.swift */; };
+		F5FC00073090000100000001 /* CoinCatalogServicing.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FC00083090000100000001 /* CoinCatalogServicing.swift */; };
+		F5FC00093090000100000001 /* SupabaseCoinCatalogRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FC000A3090000100000001 /* SupabaseCoinCatalogRepository.swift */; };
+		F5FC000B3090000100000001 /* CoinCatalogCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FC000C3090000100000001 /* CoinCatalogCache.swift */; };
 		F5F910013060000100000001 /* AccountViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F910023060000100000001 /* AccountViewModel.swift */; };
 		F5F911013060000100000001 /* AppRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F911023060000100000001 /* AppRootView.swift */; };
 		F5F912013060000100000001 /* AccountSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F912023060000100000001 /* AccountSheetView.swift */; };
@@ -172,6 +178,12 @@
 		F5FB00023080000100000001 /* SelectedCoinPreferenceRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coins/SelectedCoinPreferenceRepositoryTests.swift; sourceTree = "<group>"; };
 		F5FB00043080000100000001 /* SelectedCoinPreferenceServicing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coins/SelectedCoinPreferenceServicing.swift; sourceTree = "<group>"; };
 		F5FB00063080000100000001 /* SupabaseSelectedCoinPreferenceRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coins/SupabaseSelectedCoinPreferenceRepository.swift; sourceTree = "<group>"; };
+		F5FC00023090000100000001 /* CoinCatalogRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coins/CoinCatalogRepositoryTests.swift; sourceTree = "<group>"; };
+		F5FC00043090000100000001 /* CoinCatalogCacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coins/CoinCatalogCacheTests.swift; sourceTree = "<group>"; };
+		F5FC00063090000100000001 /* CoinCatalogItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinCatalogItem.swift; sourceTree = "<group>"; };
+		F5FC00083090000100000001 /* CoinCatalogServicing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coins/CoinCatalogServicing.swift; sourceTree = "<group>"; };
+		F5FC000A3090000100000001 /* SupabaseCoinCatalogRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coins/SupabaseCoinCatalogRepository.swift; sourceTree = "<group>"; };
+		F5FC000C3090000100000001 /* CoinCatalogCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coins/CoinCatalogCache.swift; sourceTree = "<group>"; };
 		F5F910023060000100000001 /* AccountViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account/AccountViewModel.swift; sourceTree = "<group>"; };
 		F5F911023060000100000001 /* AppRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRootView.swift; sourceTree = "<group>"; };
 		F5F912023060000100000001 /* AccountSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountSheetView.swift; sourceTree = "<group>"; };
@@ -298,6 +310,8 @@
 				F5F900023060000100000001 /* AccountViewModelTests.swift */,
 				F5FA00023070000100000001 /* AccountDeletionTests.swift */,
 				F5FB00023080000100000001 /* SelectedCoinPreferenceRepositoryTests.swift */,
+				F5FC00023090000100000001 /* CoinCatalogRepositoryTests.swift */,
+				F5FC00043090000100000001 /* CoinCatalogCacheTests.swift */,
 			);
 			path = TossTests;
 			sourceTree = "<group>";
@@ -360,6 +374,7 @@
 				F5F401063028000100000001 /* AccountSession.swift */,
 				F5F810023050000100000001 /* UserProfile.swift */,
 				F5F811023050000100000001 /* UserPreferences.swift */,
+				F5FC00063090000100000001 /* CoinCatalogItem.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -394,6 +409,9 @@
 				F5F815023050000100000001 /* AccountSyncCoordinator.swift */,
 				F5FB00043080000100000001 /* SelectedCoinPreferenceServicing.swift */,
 				F5FB00063080000100000001 /* SupabaseSelectedCoinPreferenceRepository.swift */,
+				F5FC00083090000100000001 /* CoinCatalogServicing.swift */,
+				F5FC000A3090000100000001 /* SupabaseCoinCatalogRepository.swift */,
+				F5FC000C3090000100000001 /* CoinCatalogCache.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -595,12 +613,16 @@
 				F5F501093035000100000001 /* AccountStore.swift in Sources */,
 				F5F810013050000100000001 /* UserProfile.swift in Sources */,
 				F5F811013050000100000001 /* UserPreferences.swift in Sources */,
+				F5FC00053090000100000001 /* CoinCatalogItem.swift in Sources */,
 				F5F812013050000100000001 /* SupabaseUserProfileRepository.swift in Sources */,
 				F5F813013050000100000001 /* SupabaseUserPreferencesRepository.swift in Sources */,
 				F5F814013050000100000001 /* LocalPreferencesStore.swift in Sources */,
 				F5F815013050000100000001 /* AccountSyncCoordinator.swift in Sources */,
 				F5FB00033080000100000001 /* SelectedCoinPreferenceServicing.swift in Sources */,
 				F5FB00053080000100000001 /* SupabaseSelectedCoinPreferenceRepository.swift in Sources */,
+				F5FC00073090000100000001 /* CoinCatalogServicing.swift in Sources */,
+				F5FC00093090000100000001 /* SupabaseCoinCatalogRepository.swift in Sources */,
+				F5FC000B3090000100000001 /* CoinCatalogCache.swift in Sources */,
 				F5F910013060000100000001 /* AccountViewModel.swift in Sources */,
 				F5F911013060000100000001 /* AppRootView.swift in Sources */,
 				F5F912013060000100000001 /* AccountSheetView.swift in Sources */,
@@ -627,6 +649,8 @@
 				F5F900013060000100000001 /* AccountViewModelTests.swift in Sources */,
 				F5FA00013070000100000001 /* AccountDeletionTests.swift in Sources */,
 				F5FB00013080000100000001 /* SelectedCoinPreferenceRepositoryTests.swift in Sources */,
+				F5FC00013090000100000001 /* CoinCatalogRepositoryTests.swift in Sources */,
+				F5FC00033090000100000001 /* CoinCatalogCacheTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
