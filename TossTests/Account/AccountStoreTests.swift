@@ -15,7 +15,7 @@ final class AccountStoreTests: XCTestCase {
         XCTAssertNotNil(dependencies.environment)
         XCTAssertEqual(dependencies.session, .guest)
         XCTAssertEqual(Set(dependencies.clientEnvironmentIdentities).count, 1)
-        XCTAssertEqual(dependencies.clientEnvironmentIdentities.count, 4)
+        XCTAssertEqual(dependencies.clientEnvironmentIdentities.count, 5)
         let firstGeneration = try XCTUnwrap(dependencies.environment?.generationProvider.current())
         let secondGeneration = try dependencies.environment?.generationProvider.rotate(replacing: firstGeneration.id)
         XCTAssertNotEqual(firstGeneration.id, secondGeneration?.id)
