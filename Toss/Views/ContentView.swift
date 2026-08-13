@@ -21,17 +21,25 @@ struct ContentView: View {
     @State private var previewInertiaTrigger = 0
     @State private var dragStartTime: Date?
     @StateObject private var viewModel: CoinTossViewModel
+    @StateObject private var coinLibraryViewModel: CoinLibraryViewModel
+    @State private var isCoinLibraryPresented = false
 
+    @MainActor
     init(
         coinSide: CoinSide = .front,
         coinDisplayMode: CoinDisplayMode = .resolved(),
         viewModel: CoinTossViewModel = CoinTossViewModel(),
+        coinLibraryViewModel: CoinLibraryViewModel? = nil,
         onToss: @escaping (TossGestureEvent) -> Void = { _ in }
     ) {
         self.coinSide = coinSide
         self.coinDisplayMode = coinDisplayMode
         self.onToss = onToss
         _viewModel = StateObject(wrappedValue: viewModel)
+        _coinLibraryViewModel = StateObject(
+            wrappedValue: coinLibraryViewModel
+                ?? AppDependencies.makeOfflineCoinLibraryViewModel()
+        )
     }
 
     var body: some View {
@@ -40,6 +48,16 @@ struct ContentView: View {
 
             coinInputLayer
             .offset(y: coinVerticalOffset)
+
+            VStack {
+                HStack {
+                    coinLibraryButton
+                    Spacer()
+                }
+                Spacer()
+            }
+            .padding(.top, 8)
+            .padding(.leading, 16)
         }
         .onChange(of: viewModel.state) { _, state in
             debugLog("state changed: \(state)")
@@ -51,6 +69,22 @@ struct ContentView: View {
             SoundManager.shared.prepare()
             HapticManager.shared.prepare()
         }
+        .fullScreenCover(isPresented: $isCoinLibraryPresented) {
+            CoinLibraryView(viewModel: coinLibraryViewModel) { isCoinLibraryPresented = false }
+        }
+    }
+
+    private var coinLibraryButton: some View {
+        Button { isCoinLibraryPresented = true } label: {
+            Image(systemName: "circle.grid.2x2.fill")
+                .font(.system(size: 18, weight: .medium))
+                .frame(width: 44, height: 44)
+                .background(.ultraThinMaterial, in: Circle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.primary.opacity(0.82))
+        .accessibilityLabel("Coins")
+        .accessibilityHint("Opens the coin library")
     }
 
     private var coinInputLayer: some View {
