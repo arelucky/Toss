@@ -7,6 +7,7 @@ final class CoinLibraryViewModelTests: XCTestCase {
     func testStartsWithClassicFirst() {
         let subject = Subject()
         XCTAssertEqual(subject.viewModel.items.map(\.id), [.classic])
+        XCTAssertEqual(subject.viewModel.selectedModelSource, .bundledClassic)
     }
 
     func testShowsCachedCatalogBeforeMergingRemoteRefresh() async {
@@ -44,6 +45,42 @@ final class CoinLibraryViewModelTests: XCTestCase {
         await subject.viewModel.select(.coin(coin.id))
         XCTAssertEqual(subject.selection.selectedItems, [coin.id])
         XCTAssertEqual(subject.viewModel.selectedID, .coin(coin.id))
+        XCTAssertEqual(
+            subject.viewModel.selectedModelSource,
+            .downloaded(URL(fileURLWithPath: "/tmp/\(coin.id).usdz"))
+        )
+    }
+
+    func testCachedRemoteSelectionUsesCachedLocalModelURL() async {
+        let coin = makeItem()
+        let subject = Subject(cached: [coin], cachedAssetIDs: [coin.id])
+        await subject.viewModel.updateAvailability()
+
+        await subject.viewModel.select(.coin(coin.id))
+
+        XCTAssertEqual(
+            subject.viewModel.selectedModelSource,
+            .downloaded(URL(fileURLWithPath: "/tmp/\(coin.id).usdz"))
+        )
+    }
+
+    func testFailedRemoteDownloadKeepsCurrentModelSource() async {
+        let coin = makeItem()
+        let subject = Subject(cached: [coin], downloadError: TestError.expected)
+
+        await subject.viewModel.select(.coin(coin.id))
+
+        XCTAssertEqual(subject.viewModel.selectedModelSource, .bundledClassic)
+    }
+
+    func testLibraryPreviewSourceUsesStaticClassicAndRemotePreviewURL() {
+        let coin = makeItem()
+
+        XCTAssertEqual(CoinLibraryPreviewSource(item: .init(id: .classic, coin: nil)), .bundledClassic)
+        XCTAssertEqual(
+            CoinLibraryPreviewSource(item: .init(id: .coin(coin.id), coin: coin)),
+            .remote(coin.version.previewURL)
+        )
     }
 
     func testDownloadFailureShowsNonBlockingMessage() async {

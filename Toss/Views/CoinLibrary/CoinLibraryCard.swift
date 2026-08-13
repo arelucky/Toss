@@ -1,5 +1,20 @@
 import SwiftUI
 
+enum CoinLibraryPreviewSource: Equatable {
+    case bundledClassic
+    case remote(URL)
+
+    init(item: CoinLibraryItem) {
+        if item.id == .classic {
+            self = .bundledClassic
+        } else if let previewURL = item.coin?.version.previewURL {
+            self = .remote(previewURL)
+        } else {
+            self = .bundledClassic
+        }
+    }
+}
+
 struct CoinLibraryCard: View {
     let item: CoinLibraryItem
     let isSelected: Bool
@@ -46,10 +61,12 @@ struct CoinLibraryCard: View {
 
     @ViewBuilder
     private var coinPreview: some View {
-        if item.id == .classic {
-            CoinView()
-                .scaleEffect(0.56)
-        } else if let previewURL = item.coin?.version.previewURL {
+        switch CoinLibraryPreviewSource(item: item) {
+        case .bundledClassic:
+            Image("ClassicCoinPreview")
+                .resizable()
+                .scaledToFit()
+        case let .remote(previewURL):
             AsyncImage(url: previewURL) { image in
                 image.resizable().scaledToFit()
             } placeholder: {

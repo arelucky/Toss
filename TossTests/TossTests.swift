@@ -36,6 +36,39 @@ final class TossTests: XCTestCase {
         XCTAssertEqual(material.roughness, 0.28, accuracy: 0.001)
     }
 
+    @MainActor
+    func testCoinLoadStateNotifierSendsSuccessForCurrentSource() async {
+        var receivedStates: [Bool] = []
+        let notifier = CoinLoadStateNotifier { receivedStates.append($0) }
+
+        notifier.notifyLoaded(.bundledClassic, currentSource: { .bundledClassic })
+        await Task.yield()
+
+        XCTAssertEqual(receivedStates, [true])
+    }
+
+    @MainActor
+    func testCoinLoadStateNotifierIgnoresStaleSource() async {
+        var receivedStates: [Bool] = []
+        let staleURL = URL(fileURLWithPath: "/tmp/stale.usdz")
+        let notifier = CoinLoadStateNotifier { receivedStates.append($0) }
+
+        notifier.notifyLoaded(.bundledClassic, currentSource: { .downloaded(staleURL) })
+        await Task.yield()
+
+        XCTAssertTrue(receivedStates.isEmpty)
+    }
+
+    @MainActor
+    func testCoinLibraryHeroUsesDedicatedTargetSize() throws {
+        XCTAssertGreaterThan(
+            Coin3DViewStyle.libraryHero.targetSize,
+            Coin3DViewStyle.home.targetSize
+        )
+        XCTAssertEqual(Coin3DViewStyle.home.targetSize, 0.90, accuracy: 0.001)
+        XCTAssertEqual(Coin3DViewStyle.libraryHero.materialStyle, .champagneGold)
+    }
+
     func testTossBackgroundUsesNeutralDisplayEnvironment() throws {
         let style = TossBackgroundStyle.defaultDisplay
 

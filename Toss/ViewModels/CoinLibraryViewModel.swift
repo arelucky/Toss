@@ -30,6 +30,7 @@ final class CoinLibraryViewModel: ObservableObject {
     @Published private(set) var selectedID: CoinLibraryItemID = .classic
     @Published private(set) var downloadingIDs: Set<CoinLibraryItemID> = []
     @Published private(set) var cachedIDs: Set<CoinLibraryItemID> = [.classic]
+    @Published private(set) var selectedModelSource: CoinModelSource = .bundledClassic
     @Published var notice: String?
 
     private let catalog: any CoinCatalogServicing
@@ -39,6 +40,7 @@ final class CoinLibraryViewModel: ObservableObject {
     private let generationID: () -> UUID
     private let isOnline: () -> Bool
     private var catalogItems: [CoinCatalogItem]
+    private var cachedModelURLs: [UUID: URL] = [:]
 
     init(cachedCatalog: () -> [CoinCatalogItem], catalog: any CoinCatalogServicing, assets: any CoinAssetCaching, selection: any CoinSelecting, session: @escaping () -> AccountSession, generationID: @escaping () -> UUID, isOnline: @escaping () -> Bool, tossState: @escaping () -> CoinTossState) {
         let cached = cachedCatalog()
@@ -68,10 +70,15 @@ final class CoinLibraryViewModel: ObservableObject {
 
     func updateAvailability() async {
         var available: Set<CoinLibraryItemID> = [.classic]
-        for item in catalogItems where await assets.cachedModelURL(for: item) != nil {
-            available.insert(.coin(item.id))
+        var localURLs: [UUID: URL] = [:]
+        for item in catalogItems {
+            if let localURL = await assets.cachedModelURL(for: item) {
+                available.insert(.coin(item.id))
+                localURLs[item.id] = localURL
+            }
         }
         cachedIDs = available
+        cachedModelURLs = localURLs
     }
 
     func isEnabled(_ id: CoinLibraryItemID) -> Bool {
@@ -83,23 +90,29 @@ final class CoinLibraryViewModel: ObservableObject {
         if id == .classic {
             await selection.selectClassic(session: session(), generationID: generationID())
             selectedID = .classic
+            selectedModelSource = .bundledClassic
             return
         }
         guard case let .coin(coinID) = id,
               let item = catalogItems.first(where: { $0.id == coinID }) else { return }
-        if !cachedIDs.contains(id) {
+        var localModelURL = cachedModelURLs[coinID]
+        if localModelURL == nil {
             downloadingIDs.insert(id)
             defer { downloadingIDs.remove(id) }
             do {
-                _ = try await assets.downloadAndValidate(item)
+                let downloadedURL = try await assets.downloadAndValidate(item)
                 cachedIDs.insert(id)
+                cachedModelURLs[coinID] = downloadedURL
+                localModelURL = downloadedURL
             } catch {
                 notice = "The coin could not be downloaded. Please try again."
                 return
             }
         }
+        guard let localModelURL else { return }
         await selection.select(item, session: session(), generationID: generationID())
         selectedID = id
+        selectedModelSource = .downloaded(localModelURL)
     }
 
     private static func libraryItems(from catalog: [CoinCatalogItem]) -> [CoinLibraryItem] {

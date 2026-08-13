@@ -3,6 +3,11 @@ import SwiftUI
 struct CoinLibraryView: View {
     @ObservedObject var viewModel: CoinLibraryViewModel
     let dismiss: () -> Void
+    @State private var previewRotation: CoinPreviewRotation = .zero
+    @State private var previewInertia: CoinPreviewInertia?
+    @State private var previewInertiaTrigger = 0
+    @State private var dragStartTime: Date?
+    @State private var isHeroLoaded = false
 
     private let columns = [
         GridItem(.flexible(), spacing: 36),
@@ -15,14 +20,27 @@ struct CoinLibraryView: View {
 
             VStack(spacing: 0) {
                 navigationHeader
-                selectedCoinStage
-                divider
-                libraryGrid
+                GeometryReader { proxy in
+                    let heroHeight = min(max(proxy.size.height * 0.48, 270), 360)
+
+                    VStack(spacing: 0) {
+                        selectedCoinStage(containerHeight: heroHeight)
+                            .frame(height: heroHeight)
+                        divider
+                        libraryGrid
+                            .frame(maxHeight: .infinity)
+                    }
+                }
             }
         }
         .ignoresSafeArea(edges: .bottom)
         .preferredColorScheme(.dark)
         .task { await viewModel.refresh() }
+        .onChange(of: viewModel.selectedID) { _, _ in
+            isHeroLoaded = false
+            resetPreview()
+        }
+        .onDisappear(perform: resetPreview)
         .alert(
             "Download unavailable",
             isPresented: Binding(
@@ -74,29 +92,62 @@ struct CoinLibraryView: View {
         .frame(height: 58)
     }
 
-    private var selectedCoinStage: some View {
-        selectedCoinPreview
+    private func selectedCoinStage(containerHeight: CGFloat) -> some View {
+        selectedCoinPreview(size: min(292, max(250, containerHeight - 28)))
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .frame(minHeight: 360)
             .padding(.bottom, 14)
+            .contentShape(Rectangle())
+            .gesture(previewGesture)
     }
 
     @ViewBuilder
-    private var selectedCoinPreview: some View {
-        if viewModel.selectedID == .classic {
-            CoinView()
-                .scaleEffect(1.28)
-                .frame(width: 292, height: 292)
-        } else if let selectedItem = viewModel.items.first(where: { $0.id == viewModel.selectedID }),
-                  let previewURL = selectedItem.coin?.version.previewURL {
-            AsyncImage(url: previewURL) { image in
-                image.resizable().scaledToFit()
-            } placeholder: {
-                ProgressView().tint(.white)
+    private func selectedCoinPreview(size: CGFloat) -> some View {
+        ZStack {
+            Coin3DView(
+                source: viewModel.selectedModelSource,
+                style: .libraryHero,
+                previewRotation: previewRotation,
+                previewInertia: previewInertia,
+                previewInertiaTrigger: previewInertiaTrigger,
+                onLoadStateChange: { isHeroLoaded = $0 }
+            )
+            .frame(width: size, height: size)
+
+            if !isHeroLoaded {
+                ProgressView()
+                    .controlSize(.large)
+                    .tint(.white.opacity(0.78))
             }
-            .frame(width: 292, height: 292)
-            .clipShape(Circle())
         }
+    }
+
+    private var previewGesture: some Gesture {
+        DragGesture(minimumDistance: 12)
+            .onChanged { value in
+                if dragStartTime == nil {
+                    dragStartTime = value.time
+                    previewInertia = nil
+                }
+                previewRotation = CoinPreviewRotation(translation: value.translation)
+            }
+            .onEnded { value in
+                let duration = value.time.timeIntervalSince(dragStartTime ?? value.time)
+                previewInertia = CoinPreviewInertia(
+                    translation: value.translation,
+                    duration: duration,
+                    initialRotation: previewRotation
+                )
+                previewInertiaTrigger += 1
+                previewRotation = .zero
+                dragStartTime = nil
+            }
+    }
+
+    private func resetPreview() {
+        previewRotation = .zero
+        previewInertia = nil
+        previewInertiaTrigger += 1
+        dragStartTime = nil
     }
 
     private var divider: some View {
@@ -131,6 +182,5 @@ struct CoinLibraryView: View {
             .padding(.top, 24)
             .padding(.bottom, 40)
         }
-        .frame(maxHeight: 330)
     }
 }
