@@ -549,13 +549,15 @@ Expected: StoreKit 匹配只允许出现在既有文档；新增生产代码不�
 ### Task 9: 实现单管理员 Edge Function
 
 **Files:**
+- Prerequisite: `supabase/migrations/20260811101500_add_admin_coin_version_rpcs.sql`
+- Prerequisite test: `supabase/tests/database/admin_coin_version_transitions.test.sql`
 - Create: `supabase/functions/admin-coins/index.ts`
 - Create: `supabase/functions/admin-coins/handler.ts`
 - Create: `supabase/functions/admin-coins/live_dependencies.ts`
 - Create: `supabase/functions/admin-coins/index_test.ts`
 
 **Interfaces:**
-- Consumes: `TOSS_ADMIN_USER_ID` secret、Task 1/2 schema 与 buckets。
+- Consumes: `TOSS_ADMIN_USER_ID` secret、Task 1/2 schema 与 buckets，以及原子 `admin_publish_coin_version` / `admin_rollback_coin_version` RPC prerequisite。
 - Produces: `listDrafts`、`createCoin`、`updateCoin`、`createVersion`、`createUploadURL`、`publishVersion`、`rollbackVersion`、`hideCoin` 动作。
 
 - [ ] **Step 1: 写 RED Edge 测试**
