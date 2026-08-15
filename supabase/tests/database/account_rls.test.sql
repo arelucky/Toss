@@ -61,8 +61,8 @@ select is(
       and table_name = 'user_preferences'
       and privilege_type = 'UPDATE'
   ),
-  array['haptic_enabled', 'sound_enabled']::text[],
-  'authenticated can update only sound and haptic preferences'
+  array['haptic_enabled', 'selected_coin_id', 'sound_enabled']::text[],
+  'authenticated can update only sound, haptic, and selected coin preferences'
 );
 select ok(
   not has_table_privilege('authenticated', 'public.user_profiles', 'INSERT, DELETE')

@@ -17,8 +17,8 @@ select columns_are(
 select columns_are(
   'public',
   'user_preferences',
-  array['user_id', 'sound_enabled', 'haptic_enabled', 'created_at', 'updated_at'],
-  'user_preferences has only the Stage 1 columns'
+  array['user_id', 'sound_enabled', 'haptic_enabled', 'created_at', 'updated_at', 'selected_coin_id'],
+  'user_preferences has the account and selected coin columns'
 );
 select columns_are(
   'private',
@@ -71,12 +71,11 @@ select is(
       and column_name = any(array[
         'apple_' || 'subject',
         'provider_' || 'subject',
-        'selected_' || 'coin_slug',
-        'selected_' || 'coin_id'
+        'selected_' || 'coin_slug'
       ])
   ),
   0,
-  'provider subject and selected coin columns do not exist'
+  'provider subject and selected coin slug columns do not exist'
 );
 
 select * from finish();
