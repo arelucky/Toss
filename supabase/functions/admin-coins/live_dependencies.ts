@@ -118,7 +118,7 @@ export function createLiveDependencies(): AdminCoinDependencies {
     },
     adminUserID: () => configuredAdminID,
     listDrafts: async () => {
-      const { data, error } = await serviceClient.from("coins").select("*,coin_versions(*)").neq("status", "published").order("sort_order").order("slug");
+      const { data, error } = await serviceClient.from("coins").select("*,coin_versions!coin_versions_coin_id_fkey(*)").neq("status", "published").order("sort_order").order("slug");
       if (error) throw new Error("admin dependency failed");
       return data ?? [];
     },
