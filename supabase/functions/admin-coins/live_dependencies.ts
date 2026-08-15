@@ -41,6 +41,17 @@ function requiredEnvironment(name: string) {
   return value;
 }
 
+export function replaceSignedUploadURLOrigin(
+  signedURL: string,
+  publicSupabaseURL: string,
+) {
+  const result = new URL(signedURL);
+  const publicURL = new URL(publicSupabaseURL);
+  result.protocol = publicURL.protocol;
+  result.host = publicURL.host;
+  return result.toString();
+}
+
 function mapCoin(row: CoinRow): CoinRecord {
   return {
     id: row.id,
@@ -100,6 +111,8 @@ async function requireUpdatedCoin(client: SupabaseClient, input: Record<string, 
 
 export function createLiveDependencies(): AdminCoinDependencies {
   const supabaseURL = requiredEnvironment("SUPABASE_URL");
+  const publicSupabaseURL = Deno.env.get("TOSS_PUBLIC_SUPABASE_URL")?.trim() ||
+    supabaseURL;
   const publishableKey = requiredEnvironment("SUPABASE_ANON_KEY");
   const serviceRoleKey = requiredEnvironment("SUPABASE_SERVICE_ROLE_KEY");
   const configuredAdminID = requiredEnvironment("TOSS_ADMIN_USER_ID");
@@ -170,7 +183,7 @@ export function createLiveDependencies(): AdminCoinDependencies {
     createSignedUploadURL: async (bucket, path) => {
       const { data, error } = await serviceClient.storage.from(bucket).createSignedUploadUrl(path, { upsert: false });
       if (error || !data?.signedUrl) throw new Error("admin dependency failed");
-      return data.signedUrl;
+      return replaceSignedUploadURLOrigin(data.signedUrl, publicSupabaseURL);
     },
     objectExists: async (bucket, path) => {
       const separator = path.lastIndexOf("/");
