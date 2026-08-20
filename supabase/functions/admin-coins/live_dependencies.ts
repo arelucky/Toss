@@ -19,6 +19,7 @@ type CoinRow = {
   status: string;
   active_version_id?: string | null;
   published_at?: string | null;
+  coin_versions?: VersionRow[];
 };
 
 type VersionRow = {
@@ -52,7 +53,7 @@ export function replaceSignedUploadURLOrigin(
   return result.toString();
 }
 
-function mapCoin(row: CoinRow): CoinRecord {
+export function mapCoin(row: CoinRow): CoinRecord & { versions: CoinVersionRecord[] } {
   return {
     id: row.id,
     slug: row.slug,
@@ -63,6 +64,7 @@ function mapCoin(row: CoinRow): CoinRecord {
     isFeatured: row.is_featured,
     activeVersionID: row.active_version_id,
     publishedAt: row.published_at,
+    versions: (row.coin_versions ?? []).map(mapVersion),
   };
 }
 
@@ -133,7 +135,7 @@ export function createLiveDependencies(): AdminCoinDependencies {
     listDrafts: async () => {
       const { data, error } = await serviceClient.from("coins").select("*,coin_versions!coin_versions_coin_id_fkey(*)").neq("status", "published").order("sort_order").order("slug");
       if (error) throw new Error("admin dependency failed");
-      return data ?? [];
+      return (data ?? []).map(mapCoin);
     },
     createCoin: async (input: CreateCoinInput) => {
       const { data, error } = await serviceClient.from("coins").insert({
