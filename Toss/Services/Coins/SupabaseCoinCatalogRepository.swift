@@ -8,8 +8,8 @@ enum CoinCatalogError: Error, Equatable {
 struct CoinCatalogVersionRow: Decodable, Equatable, Sendable {
     let id: UUID
     let versionNumber: Int
-    let modelURL: String
-    let previewURL: String
+    let modelPath: String
+    let previewPath: String
     let modelByteSize: Int64
     let modelSHA256: String
     let minAppVersion: String
@@ -19,8 +19,8 @@ struct CoinCatalogVersionRow: Decodable, Equatable, Sendable {
     enum CodingKeys: String, CodingKey {
         case id
         case versionNumber = "version_number"
-        case modelURL = "model_url"
-        case previewURL = "preview_url"
+        case modelPath = "model_path"
+        case previewPath = "preview_path"
         case modelByteSize = "model_byte_size"
         case modelSHA256 = "model_sha256"
         case minAppVersion = "min_app_version"
@@ -52,7 +52,7 @@ struct CoinCatalogRow: Decodable, Equatable, Sendable {
         case version = "coin_versions"
     }
 
-    func catalogItem() throws -> CoinCatalogItem {
+    func catalogItem(supabaseBaseURL: URL) throws -> CoinCatalogItem {
         guard status == "published",
               version.status == "published",
               activeVersionID == version.id,
@@ -61,10 +61,16 @@ struct CoinCatalogRow: Decodable, Equatable, Sendable {
                 of: "^[0-9a-f]{64}$",
                 options: .regularExpression
               ) != nil,
-              let modelURL = URL(string: version.modelURL),
-              modelURL.scheme?.lowercased() == "https",
-              let previewURL = URL(string: version.previewURL),
-              previewURL.scheme?.lowercased() == "https" else {
+              let modelURL = CoinAssetURLSafety.publicStorageURL(
+                supabaseBaseURL: supabaseBaseURL,
+                bucket: CoinAssetURLSafety.modelBucket,
+                path: version.modelPath
+              ),
+              let previewURL = CoinAssetURLSafety.publicStorageURL(
+                supabaseBaseURL: supabaseBaseURL,
+                bucket: CoinAssetURLSafety.previewBucket,
+                path: version.previewPath
+              ) else {
             throw CoinCatalogError.invalidCatalogData
         }
         return CoinCatalogItem(
@@ -93,14 +99,16 @@ typealias CoinCatalogFetchRows = @Sendable () async throws -> [CoinCatalogRow]
 final class SupabaseCoinCatalogRepository: CoinCatalogServicing, @unchecked Sendable {
     private let fetchRows: CoinCatalogFetchRows
     private let cache: CoinCatalogCache
+    private let supabaseBaseURL: URL
 
     init(environment: AppEnvironment, cache: CoinCatalogCache) {
         let client = environment.supabaseClient
+        supabaseBaseURL = environment.supabaseBaseURL
         fetchRows = {
             try await client
                 .from("coins")
                 .select(
-                    "id,slug,display_name,description,sort_order,is_featured,status,active_version_id,coin_versions!coins_active_version_id_fkey(id,version_number,model_url,preview_url,model_byte_size,model_sha256,min_app_version,asset_schema_version,status)"
+                    "id,slug,display_name,description,sort_order,is_featured,status,active_version_id,coin_versions!coins_active_version_id_fkey(id,version_number,model_path,preview_path,model_byte_size,model_sha256,min_app_version,asset_schema_version,status)"
                 )
                 .execute()
                 .value
@@ -108,9 +116,14 @@ final class SupabaseCoinCatalogRepository: CoinCatalogServicing, @unchecked Send
         self.cache = cache
     }
 
-    init(fetchRows: @escaping CoinCatalogFetchRows, cache: CoinCatalogCache) {
+    init(
+        fetchRows: @escaping CoinCatalogFetchRows,
+        cache: CoinCatalogCache,
+        supabaseBaseURL: URL
+    ) {
         self.fetchRows = fetchRows
         self.cache = cache
+        self.supabaseBaseURL = supabaseBaseURL
     }
 
     func fetchPublishedCatalog() async throws -> [CoinCatalogItem] {
@@ -126,7 +139,7 @@ final class SupabaseCoinCatalogRepository: CoinCatalogServicing, @unchecked Send
                     && $0.version.status == "published"
                     && $0.activeVersionID == $0.version.id
             }
-            .map { try $0.catalogItem() }
+            .map { try $0.catalogItem(supabaseBaseURL: supabaseBaseURL) }
             .sorted {
                 ($0.sortOrder, $0.slug) < ($1.sortOrder, $1.slug)
             }

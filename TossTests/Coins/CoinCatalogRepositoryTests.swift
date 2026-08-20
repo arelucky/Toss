@@ -2,6 +2,66 @@ import XCTest
 @testable import Toss
 
 final class CoinCatalogRepositoryTests: XCTestCase {
+    func testDecodesStoragePathsAndBuildsPublicAssetURLs() throws {
+        let row = try JSONDecoder().decode(
+            CoinCatalogRow.self,
+            from: Data(
+                """
+                {
+                  "id": "10000000-0000-4000-8000-000000000001",
+                  "slug": "gold",
+                  "display_name": "Gold",
+                  "description": null,
+                  "sort_order": 0,
+                  "is_featured": false,
+                  "status": "published",
+                  "active_version_id": "20000000-0000-4000-8000-000000000001",
+                  "coin_versions": {
+                    "id": "20000000-0000-4000-8000-000000000001",
+                    "version_number": 1,
+                    "model_path": "coins/gold/v1/model.usdz",
+                    "preview_path": "coins/gold/v1/preview.webp",
+                    "model_byte_size": 1024,
+                    "model_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "min_app_version": "1.0.0",
+                    "asset_schema_version": 1,
+                    "status": "published"
+                  }
+                }
+                """.utf8
+            )
+        )
+
+        let item = try row.catalogItem(supabaseBaseURL: URL(string: "https://project.supabase.co")!)
+
+        XCTAssertEqual(
+            item.version.modelURL.absoluteString,
+            "https://project.supabase.co/storage/v1/object/public/coin-models-free/coins/gold/v1/model.usdz"
+        )
+        XCTAssertEqual(
+            item.version.previewURL.absoluteString,
+            "https://project.supabase.co/storage/v1/object/public/coin-previews/coins/gold/v1/preview.webp"
+        )
+    }
+
+    func testAllowsHTTPSAndLocalLoopbackAssetURLsOnly() {
+        for value in [
+            "https://project.supabase.co/storage/v1/object/public/coin-models-free/model.usdz",
+            "http://127.0.0.1:54321/storage/v1/object/public/coin-models-free/model.usdz",
+            "http://localhost:54321/storage/v1/object/public/coin-models-free/model.usdz",
+            "http://[::1]:54321/storage/v1/object/public/coin-models-free/model.usdz"
+        ] {
+            XCTAssertTrue(CoinAssetURLSafety.isAllowed(URL(string: value)!))
+        }
+
+        for value in [
+            "http://example.invalid/model.usdz",
+            "file:///tmp/model.usdz"
+        ] {
+            XCTAssertFalse(CoinAssetURLSafety.isAllowed(URL(string: value)!))
+        }
+    }
+
     func testMapsOnlyActivePublishedVersionsAndSortsByOrderThenSlug() async throws {
         let firstID = UUID()
         let secondID = UUID()
@@ -15,7 +75,8 @@ final class CoinCatalogRepositoryTests: XCTestCase {
         ]
         let repository = SupabaseCoinCatalogRepository(
             fetchRows: { rows },
-            cache: CoinCatalogCache(directoryURL: temporaryDirectory())
+            cache: CoinCatalogCache(directoryURL: temporaryDirectory()),
+            supabaseBaseURL: catalogBaseURL
         )
 
         let catalog = try await repository.fetchPublishedCatalog()
@@ -25,9 +86,9 @@ final class CoinCatalogRepositoryTests: XCTestCase {
         XCTAssertEqual(catalog.last?.id, secondID)
     }
 
-    func testRejectsNonHTTPSModelOrPreviewURL() async {
-        await assertInvalid(row: makeRow(modelURL: "http://example.invalid/model.usdz"))
-        await assertInvalid(row: makeRow(previewURL: "http://example.invalid/preview.webp"))
+    func testRejectsRemoteHTTPAndFileSupabaseBases() async {
+        await assertInvalid(supabaseBaseURL: URL(string: "http://example.invalid")!)
+        await assertInvalid(supabaseBaseURL: URL(fileURLWithPath: "/tmp"))
     }
 
     func testRejectsMalformedSHA256() async {
@@ -43,11 +104,12 @@ final class CoinCatalogRepositoryTests: XCTestCase {
     func testRemoteFailureReturnsLastSuccessfulCache() async throws {
         let directory = temporaryDirectory()
         let cache = CoinCatalogCache(directoryURL: directory)
-        let cached = try makeRow(slug: "cached").catalogItem()
+        let cached = try makeRow(slug: "cached").catalogItem(supabaseBaseURL: catalogBaseURL)
         try cache.save([cached])
         let repository = SupabaseCoinCatalogRepository(
             fetchRows: { throw CatalogTestError.remoteFailure },
-            cache: cache
+            cache: cache,
+            supabaseBaseURL: catalogBaseURL
         )
 
         let catalog = try await repository.fetchPublishedCatalog()
@@ -55,10 +117,17 @@ final class CoinCatalogRepositoryTests: XCTestCase {
         XCTAssertEqual(catalog, [cached])
     }
 
-    private func assertInvalid(row: CoinCatalogRow) async {
+    private var catalogBaseURL: URL { URL(string: "https://example.invalid")! }
+
+    private func assertInvalid(
+        row: CoinCatalogRow? = nil,
+        supabaseBaseURL: URL? = nil
+    ) async {
+        let resolvedRow = row ?? makeRow()
         let repository = SupabaseCoinCatalogRepository(
-            fetchRows: { [row] },
-            cache: CoinCatalogCache(directoryURL: temporaryDirectory())
+            fetchRows: { [resolvedRow] },
+            cache: CoinCatalogCache(directoryURL: temporaryDirectory()),
+            supabaseBaseURL: supabaseBaseURL ?? catalogBaseURL
         )
 
         do {
@@ -76,8 +145,8 @@ final class CoinCatalogRepositoryTests: XCTestCase {
         coinStatus: String = "published",
         isActiveVersion: Bool = true,
         versionStatus: String = "published",
-        modelURL: String = "https://example.invalid/model.usdz",
-        previewURL: String = "https://example.invalid/preview.webp",
+        modelPath: String = "coins/classic/v1/model.usdz",
+        previewPath: String = "coins/classic/v1/preview.webp",
         modelByteSize: Int64 = 1024,
         modelSHA256: String = String(repeating: "a", count: 64)
     ) -> CoinCatalogRow {
@@ -94,8 +163,8 @@ final class CoinCatalogRepositoryTests: XCTestCase {
             version: .init(
                 id: versionID,
                 versionNumber: 1,
-                modelURL: modelURL,
-                previewURL: previewURL,
+                modelPath: modelPath,
+                previewPath: previewPath,
                 modelByteSize: modelByteSize,
                 modelSHA256: modelSHA256,
                 minAppVersion: "1.0.0",

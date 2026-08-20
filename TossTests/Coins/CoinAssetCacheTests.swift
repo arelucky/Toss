@@ -15,7 +15,19 @@ final class CoinAssetCacheTests: XCTestCase {
         XCTAssertEqual(fixture.downloads.count, 0)
     }
 
-    func testRejectsNonHTTPSURLs() async throws {
+    func testAllowsLocalLoopbackHTTPURL() async throws {
+        let fixture = try Fixture()
+        let item = fixture.item(
+            data: fixture.validUSDZ,
+            modelURL: URL(string: "http://127.0.0.1:54321/model.usdz")!
+        )
+
+        _ = try await fixture.cache.downloadAndValidate(item)
+
+        XCTAssertEqual(fixture.downloads.count, 1)
+    }
+
+    func testRejectsRemoteHTTPAndFileURLs() async throws {
         for scheme in ["http", "file"] {
             let fixture = try Fixture()
             let item = fixture.item(data: fixture.validUSDZ, modelURL: URL(string: "\(scheme)://example.invalid/model.usdz")!)

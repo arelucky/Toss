@@ -49,7 +49,7 @@ actor CoinAssetCache: CoinAssetCaching {
     }
 
     func downloadAndValidate(_ item: CoinCatalogItem) async throws -> URL {
-        guard item.version.modelURL.scheme?.lowercased() == "https" else {
+        guard CoinAssetURLSafety.isAllowed(item.version.modelURL) else {
             throw CoinAssetCacheError.insecureURL
         }
         if let cached = cachedModelURL(for: item) {
