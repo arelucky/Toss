@@ -36,6 +36,8 @@ type VersionRow = {
   published_at?: string | null;
 };
 
+export const ADMIN_MANAGEABLE_COIN_STATUSES = ["draft", "published"] as const;
+
 function requiredEnvironment(name: string) {
   const value = Deno.env.get(name)?.trim();
   if (!value) throw new Error(`Missing server configuration: ${name}`);
@@ -133,7 +135,7 @@ export function createLiveDependencies(): AdminCoinDependencies {
     },
     adminUserID: () => configuredAdminID,
     listDrafts: async () => {
-      const { data, error } = await serviceClient.from("coins").select("*,coin_versions!coin_versions_coin_id_fkey(*)").neq("status", "published").order("sort_order").order("slug");
+      const { data, error } = await serviceClient.from("coins").select("*,coin_versions!coin_versions_coin_id_fkey(*)").in("status", ADMIN_MANAGEABLE_COIN_STATUSES).order("sort_order").order("slug");
       if (error) throw new Error("admin dependency failed");
       return (data ?? []).map(mapCoin);
     },

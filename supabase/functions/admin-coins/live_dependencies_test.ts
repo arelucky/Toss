@@ -1,10 +1,22 @@
-import { mapCoin, replaceSignedUploadURLOrigin } from "./live_dependencies.ts";
+import {
+  ADMIN_MANAGEABLE_COIN_STATUSES,
+  mapCoin,
+  replaceSignedUploadURLOrigin,
+} from "./live_dependencies.ts";
 
 function assertEquals(actual: unknown, expected: unknown, message: string) {
   if (actual !== expected) {
     throw new Error(`${message}: ${String(actual)} !== ${String(expected)}`);
   }
 }
+
+Deno.test("lists only draft and published coins for administration", () => {
+  assertEquals(
+    ADMIN_MANAGEABLE_COIN_STATUSES.join(","),
+    "draft,published",
+    "manageable statuses",
+  );
+});
 
 Deno.test("replaces only the signed upload URL origin", () => {
   const signedURL = "http://kong:8000/storage/v1/object/upload/sign/coin-models-free/coins/example/v1/model.usdz?token=signed-token&mode=upload";
