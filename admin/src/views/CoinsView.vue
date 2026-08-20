@@ -54,8 +54,8 @@ onMounted(load);
     <section class="panel create-panel">
       <h2>Create coin</h2>
       <form @submit.prevent="createCoin">
-        <input v-model.trim="slug" placeholder="coin-slug" required />
-        <input v-model.trim="displayName" placeholder="Display name" required />
+        <input v-model.trim="slug" placeholder="coin-slug" aria-label="Coin slug" required />
+        <input v-model.trim="displayName" placeholder="Display name" aria-label="Display name" required />
         <button type="submit" :disabled="creating">{{ creating ? "Creating…" : "Create" }}</button>
       </form>
     </section>

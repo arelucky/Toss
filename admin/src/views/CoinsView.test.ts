@@ -18,4 +18,11 @@ describe("CoinsView", () => {
     await Promise.resolve();
     expect(wrapper.text()).not.toMatch(/price|premium|purchase|transaction|entitlement|users/i);
   });
+
+  it("labels the coin creation inputs for assistive technology", () => {
+    const wrapper = mount(CoinsView, { props: { loadCoins: vi.fn().mockResolvedValue([]) } });
+
+    expect(wrapper.find('input[aria-label="Coin slug"]').exists()).toBe(true);
+    expect(wrapper.find('input[aria-label="Display name"]').exists()).toBe(true);
+  });
 });
