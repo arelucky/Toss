@@ -36,6 +36,10 @@ final class TossTests: XCTestCase {
         XCTAssertEqual(material.roughness, 0.28, accuracy: 0.001)
     }
 
+    func testCoinDisplayLayerDefaultsToBundledClassicSource() throws {
+        XCTAssertEqual(CoinDisplayLayer().source, .bundledClassic)
+    }
+
     @MainActor
     func testCoinLoadStateNotifierSendsSuccessForCurrentSource() async {
         var receivedStates: [Bool] = []

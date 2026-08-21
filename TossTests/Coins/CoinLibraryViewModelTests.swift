@@ -103,6 +103,38 @@ final class CoinLibraryViewModelTests: XCTestCase {
         await subject.viewModel.refresh()
         XCTAssertEqual(subject.viewModel.items.first?.id, .classic)
     }
+
+    func testProductionDependenciesBuildLiveLibraryThatRefreshesInjectedCatalog() async {
+        let remote = makeItem(name: "Live")
+        let catalog = LibraryCatalogDouble(items: [remote])
+        let dependencies = makeDependencies(catalog: catalog)
+        let accountStore = AccountStore(authService: dependencies.authService)
+        let tossViewModel = CoinTossViewModel()
+
+        let viewModel = dependencies.makeCoinLibraryViewModel(
+            accountStore: accountStore,
+            tossViewModel: tossViewModel
+        )
+        await viewModel.refresh()
+
+        XCTAssertEqual(viewModel.items.map(\.id), [.classic, .coin(remote.id)])
+    }
+
+    func testContentViewUsesSelectedDownloadedModelSource() async {
+        let coin = makeItem()
+        let subject = Subject(cached: [coin])
+        await subject.viewModel.select(.coin(coin.id))
+
+        let contentView = ContentView(
+            viewModel: CoinTossViewModel(),
+            coinLibraryViewModel: subject.viewModel
+        )
+
+        XCTAssertEqual(
+            contentView.displayedCoinModelSource,
+            .downloaded(URL(fileURLWithPath: "/tmp/\(coin.id).usdz"))
+        )
+    }
 }
 
 @MainActor
@@ -133,5 +165,28 @@ private final class LibraryAssetDouble: CoinAssetCaching, @unchecked Sendable {
     func waitForDownload() async { await gate.waitUntilStarted() }; func completeDownload() { gate.complete() }
 }
 @MainActor private final class LibrarySelectionDouble: CoinSelecting { private(set) var selectedItems: [UUID] = []; func select(_ item: CoinCatalogItem, session: AccountSession, generationID: UUID) async { selectedItems.append(item.id) }; func selectClassic(session: AccountSession, generationID: UUID) async {} }
+private final class LibraryPreferenceDouble: SelectedCoinPreferenceServicing, @unchecked Sendable {
+    func fetchSelectedCoinID(for userID: UUID, generationID: UUID) async throws -> UUID? { nil }
+    func updateSelectedCoinID(_ coinID: UUID?, for userID: UUID, generationID: UUID) async throws {}
+}
 private final class LockedBox<Value>: @unchecked Sendable { private let lock = NSLock(); private var stored: Value; init(_ value: Value) { stored = value }; var value: Value { lock.withLock { stored } } }
 private enum TestError: Error { case expected }
+
+@MainActor
+private func makeDependencies(catalog: any CoinCatalogServicing) -> AppDependencies {
+    AppDependencies(
+        session: .guest,
+        environment: nil,
+        authService: AccountAuthServiceDouble(),
+        appleSignInService: AppleSignInServiceDouble(result: .failure(TestAccountError.expected)),
+        profileRepository: UserProfileRepositoryDouble(),
+        preferencesRepository: UserPreferencesRepositoryDouble(),
+        selectedCoinPreferenceRepository: LibraryPreferenceDouble(),
+        coinCatalogRepository: catalog,
+        coinCatalogCache: CoinCatalogCache(directoryURL: FileManager.default.temporaryDirectory),
+        deletionService: AccountDeletionServiceDouble(),
+        deletionRequestStore: AccountDeletionRequestStore(),
+        localPreferences: LocalPreferencesStore(),
+        feedbackPreferences: AppFeedbackPreferencesController()
+    )
+}

@@ -63,7 +63,7 @@ actor CoinAssetCache: CoinAssetCaching {
 
         let destination = modelURL(for: item)
         let partial = destination.deletingLastPathComponent()
-            .appendingPathComponent("\(UUID().uuidString).partial")
+            .appendingPathComponent("\(UUID().uuidString).partial.usdz")
         let fileManager = self.fileManager
         let downloader = self.downloader
         let preflight = self.preflight

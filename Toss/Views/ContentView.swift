@@ -29,17 +29,14 @@ struct ContentView: View {
         coinSide: CoinSide = .front,
         coinDisplayMode: CoinDisplayMode = .resolved(),
         viewModel: CoinTossViewModel = CoinTossViewModel(),
-        coinLibraryViewModel: CoinLibraryViewModel? = nil,
+        coinLibraryViewModel: CoinLibraryViewModel,
         onToss: @escaping (TossGestureEvent) -> Void = { _ in }
     ) {
         self.coinSide = coinSide
         self.coinDisplayMode = coinDisplayMode
         self.onToss = onToss
         _viewModel = StateObject(wrappedValue: viewModel)
-        _coinLibraryViewModel = StateObject(
-            wrappedValue: coinLibraryViewModel
-                ?? AppDependencies.makeOfflineCoinLibraryViewModel()
-        )
+        _coinLibraryViewModel = StateObject(wrappedValue: coinLibraryViewModel)
     }
 
     var body: some View {
@@ -98,7 +95,8 @@ struct ContentView: View {
                 tossMotionTrigger: tossMotionTrigger,
                 previewRotation: previewRotation,
                 previewInertia: previewInertia,
-                previewInertiaTrigger: previewInertiaTrigger
+                previewInertiaTrigger: previewInertiaTrigger,
+                source: displayedCoinModelSource
             )
                 .scaleEffect(coinScale)
         }
@@ -109,6 +107,10 @@ struct ContentView: View {
 
     private var coinVerticalOffset: CGFloat {
         tossOffset - 12
+    }
+
+    var displayedCoinModelSource: CoinModelSource {
+        coinLibraryViewModel.selectedModelSource
     }
 
     private var tossGesture: some Gesture {
@@ -261,8 +263,15 @@ struct ContentView: View {
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
-            ContentView(coinDisplayMode: .realityKit3D)
-            ContentView(coinSide: .back, coinDisplayMode: .swiftUI)
+            ContentView(
+                coinDisplayMode: .realityKit3D,
+                coinLibraryViewModel: AppDependencies.makeOfflineCoinLibraryViewModel()
+            )
+            ContentView(
+                coinSide: .back,
+                coinDisplayMode: .swiftUI,
+                coinLibraryViewModel: AppDependencies.makeOfflineCoinLibraryViewModel()
+            )
         }
     }
 }

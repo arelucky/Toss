@@ -75,6 +75,31 @@ struct AppDependencies {
 
 @MainActor
 extension AppDependencies {
+    func makeCoinLibraryViewModel(
+        accountStore: AccountStore,
+        tossViewModel: CoinTossViewModel
+    ) -> CoinLibraryViewModel {
+        let assets = CoinAssetCache()
+        let selectionGenerationID = UUID()
+        let selection = CoinSelectionStore(
+            catalog: coinCatalogRepository,
+            assets: assets,
+            preferences: selectedCoinPreferenceRepository,
+            isGenerationCurrent: { $0 == selectionGenerationID },
+            isCoinIdle: { tossViewModel.state == .idle }
+        )
+        return CoinLibraryViewModel(
+            cachedCatalog: coinCatalogCache.load,
+            catalog: coinCatalogRepository,
+            assets: assets,
+            selection: selection,
+            session: { accountStore.session },
+            generationID: { selectionGenerationID },
+            isOnline: { true },
+            tossState: { tossViewModel.state }
+        )
+    }
+
     static func makeOfflineCoinLibraryViewModel() -> CoinLibraryViewModel {
         let cache = CoinCatalogCache()
         let catalog = OfflineCoinCatalogService(cache: cache)

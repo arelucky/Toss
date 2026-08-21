@@ -30,6 +30,7 @@ struct CoinDisplayLayer: View {
     let previewRotation: CoinPreviewRotation
     let previewInertia: CoinPreviewInertia?
     let previewInertiaTrigger: Int
+    let source: CoinModelSource
 
     init(
         mode: CoinDisplayMode = .resolved(),
@@ -39,7 +40,8 @@ struct CoinDisplayLayer: View {
         tossMotionTrigger: Int = 0,
         previewRotation: CoinPreviewRotation = .zero,
         previewInertia: CoinPreviewInertia? = nil,
-        previewInertiaTrigger: Int = 0
+        previewInertiaTrigger: Int = 0,
+        source: CoinModelSource = .bundledClassic
     ) {
         self.mode = mode
         self.coinSide = coinSide
@@ -49,12 +51,14 @@ struct CoinDisplayLayer: View {
         self.previewRotation = previewRotation
         self.previewInertia = previewInertia
         self.previewInertiaTrigger = previewInertiaTrigger
+        self.source = source
     }
 
     var body: some View {
         switch mode {
         case .realityKit3D:
             Coin3DView(
+                source: source,
                 style: .home,
                 tossMotion: tossMotion,
                 tossMotionTrigger: tossMotionTrigger,

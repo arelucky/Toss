@@ -43,7 +43,25 @@ final class CoinAssetCacheTests: XCTestCase {
 
         _ = try await fixture.cache.downloadAndValidate(item)
 
-        XCTAssertEqual(fixture.downloads.destinations.map(\.pathExtension), ["partial"])
+        XCTAssertEqual(fixture.downloads.destinations.map(\.pathExtension), ["usdz"])
+        XCTAssertTrue(fixture.downloads.destinations.allSatisfy {
+            $0.lastPathComponent.hasSuffix(".partial.usdz")
+        })
+    }
+
+    func testDownloadAndPreflightUseTemporaryUSDZFile() async throws {
+        let fixture = try Fixture()
+        let item = fixture.item(data: fixture.validUSDZ)
+
+        let finalURL = try await fixture.cache.downloadAndValidate(item)
+        let temporaryURL = try XCTUnwrap(fixture.downloads.destinations.first)
+
+        XCTAssertEqual(temporaryURL.pathExtension, "usdz")
+        XCTAssertTrue(temporaryURL.lastPathComponent.hasSuffix(".partial.usdz"))
+        XCTAssertEqual(fixture.downloads.preflightDestinations, [temporaryURL])
+        XCTAssertEqual(fixture.downloads.preflightFileExistence, [true])
+        XCTAssertNotEqual(temporaryURL, finalURL)
+        XCTAssertEqual(finalURL, fixture.modelURL(for: item))
     }
 
     func testRejectsUnsuccessfulHTTPStatus() async throws {
@@ -140,7 +158,11 @@ private final class Fixture: @unchecked Sendable {
                 try payload.write(to: destination)
                 return statusCode
             },
-            preflight: { _ in
+            preflight: { url in
+                recorder.recordPreflight(
+                    url,
+                    fileExists: FileManager.default.fileExists(atPath: url.path)
+                )
                 if !preflightSucceeds { throw TestFailure.preflight }
             }
         )
@@ -194,6 +216,8 @@ private final class Fixture: @unchecked Sendable {
 private final class DownloadRecorder: @unchecked Sendable {
     private let lock = NSLock()
     private var storedDestinations: [URL] = []
+    private var storedPreflightDestinations: [URL] = []
+    private var storedPreflightFileExistence: [Bool] = []
 
     func record(_ destination: URL) {
         lock.lock()
@@ -205,6 +229,25 @@ private final class DownloadRecorder: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         return storedDestinations
+    }
+
+    func recordPreflight(_ destination: URL, fileExists: Bool) {
+        lock.lock()
+        storedPreflightDestinations.append(destination)
+        storedPreflightFileExistence.append(fileExists)
+        lock.unlock()
+    }
+
+    var preflightDestinations: [URL] {
+        lock.lock()
+        defer { lock.unlock() }
+        return storedPreflightDestinations
+    }
+
+    var preflightFileExistence: [Bool] {
+        lock.lock()
+        defer { lock.unlock() }
+        return storedPreflightFileExistence
     }
 
     var count: Int { destinations.count }

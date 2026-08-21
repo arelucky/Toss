@@ -9,12 +9,21 @@ private enum AppSheet: String, Identifiable {
 struct AppRootView: View {
     @StateObject private var accountStore: AccountStore
     @StateObject private var accountViewModel: AccountViewModel
+    @StateObject private var tossViewModel: CoinTossViewModel
+    @StateObject private var coinLibraryViewModel: CoinLibraryViewModel
     @State private var presentedSheet: AppSheet?
 
     init(dependencies: AppDependencies) {
         let store = AccountStore(authService: dependencies.authService, initialSession: dependencies.session)
         let sync = dependencies.makeAccountSyncCoordinator(accountStore: store)
+        let toss = CoinTossViewModel()
+        let coinLibrary = dependencies.makeCoinLibraryViewModel(
+            accountStore: store,
+            tossViewModel: toss
+        )
         _accountStore = StateObject(wrappedValue: store)
+        _tossViewModel = StateObject(wrappedValue: toss)
+        _coinLibraryViewModel = StateObject(wrappedValue: coinLibrary)
         _accountViewModel = StateObject(wrappedValue: AccountViewModel(
             accountStore: store,
             appleSignInService: dependencies.appleSignInService,
@@ -29,7 +38,10 @@ struct AppRootView: View {
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            ContentView()
+            ContentView(
+                viewModel: tossViewModel,
+                coinLibraryViewModel: coinLibraryViewModel
+            )
             accountButton
                 .padding(.top, 8)
                 .padding(.trailing, 16)
