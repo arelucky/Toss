@@ -26,6 +26,7 @@ export interface AdminCoin {
   description?: string;
   sortOrder: number;
   isFeatured: boolean;
+  activeVersionID?: string;
   status?: string;
   versions?: CoinVersion[];
   coin_versions?: Array<Record<string, unknown>>;

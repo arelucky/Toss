@@ -8,7 +8,7 @@ const props = withDefaults(defineProps<{
   coin?: AdminCoin;
   saveCoin?: (coin: AdminCoin) => Promise<void>;
   confirmAction?: (action: "publish" | "rollback") => Promise<boolean>;
-  performAction?: (action: "publish" | "rollback") => Promise<void>;
+  performAction?: (action: "publish" | "rollback", versionID: string) => Promise<void>;
 }>(), { coin: undefined, saveCoin: undefined, confirmAction: undefined, performAction: undefined });
 const route = useRoute();
 const router = useRouter();
@@ -57,16 +57,29 @@ async function save() {
   } finally { busy.value = false; }
 }
 
+function targetVersion(action: "publish" | "rollback", coin: AdminCoin) {
+  const candidates = (coin.versions ?? []).filter((version) => {
+    if (action === "publish") return version.status === "draft";
+    return version.status === "published" && version.id !== coin.activeVersionID;
+  });
+  return candidates.sort((left, right) => right.versionNumber - left.versionNumber)[0];
+}
+
 async function transition(action: "publish" | "rollback") {
   if (busy.value || !currentCoin.value) return;
-  const version = currentCoin.value.versions?.[0];
-  if (!version) { errorMessage.value = "Create a version first."; return; }
+  const version = targetVersion(action, currentCoin.value);
+  if (!version) {
+    errorMessage.value = action === "publish"
+      ? "Create a draft version before publishing."
+      : "No previous published version is available to roll back to.";
+    return;
+  }
   const confirmed = props.confirmAction ? await props.confirmAction(action) : window.confirm(`${action === "publish" ? "Publish" : "Roll back to"} this version?`);
   if (!confirmed) return;
   busy.value = true;
   errorMessage.value = "";
   try {
-    if (props.performAction) await props.performAction(action);
+    if (props.performAction) await props.performAction(action, version.id);
     else await adminCoins.action({ action: action === "publish" ? "publishVersion" : "rollbackVersion", coinID: currentCoin.value.id, versionID: version.id });
     await load();
   } catch (error) {
