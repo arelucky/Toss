@@ -77,11 +77,16 @@ const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{1,62}[a-z0-9])$/;
 const SHA256_PATTERN = /^[0-9a-f]{64}$/;
 const APP_VERSION_PATTERN = /^[0-9]+\.[0-9]+\.[0-9]+$/;
 const MAX_MODEL_BYTES = 52_428_800;
+const CORS_HEADERS = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "POST, OPTIONS",
+  "access-control-allow-headers": "authorization, apikey, content-type, x-client-info",
+};
 
 function json(status: number, payload: unknown) {
   return new Response(JSON.stringify(payload), {
     status,
-    headers: { "content-type": "application/json; charset=utf-8" },
+    headers: { ...CORS_HEADERS, "content-type": "application/json; charset=utf-8" },
   });
 }
 
@@ -237,6 +242,9 @@ export async function handleAdminCoinRequest(
   request: Request,
   dependencies: AdminCoinDependencies,
 ): Promise<Response> {
+  if (request.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: CORS_HEADERS });
+  }
   if (request.method !== "POST") return json(405, { error: "method_not_allowed" });
   const jwt = bearerToken(request);
   if (!jwt) return json(401, { error: "authentication_required" });

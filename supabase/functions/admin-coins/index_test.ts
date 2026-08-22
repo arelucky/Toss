@@ -275,3 +275,19 @@ Deno.test("responses never leak secrets, JWTs, admin UUIDs, paths, or internal e
     assert(!serialized.includes(forbidden), `response leaked ${forbidden}`);
   }
 });
+
+Deno.test("CORS preflight succeeds and error responses retain browser headers", async () => {
+  const test = subject();
+  const preflight = await test.handler(new Request("http://localhost/admin-coins", { method: "OPTIONS" }));
+
+  assertEquals(preflight.status, 204);
+  assert(preflight.headers.has("access-control-allow-origin"), "preflight must allow an origin");
+  assert((preflight.headers.get("access-control-allow-methods") ?? "").includes("POST"), "preflight must allow POST");
+  const allowedHeaders = (preflight.headers.get("access-control-allow-headers") ?? "").toLowerCase();
+  for (const header of ["authorization", "apikey", "content-type", "x-client-info"]) {
+    assert(allowedHeaders.includes(header), `preflight must allow ${header}`);
+  }
+
+  const unauthenticated = await test.handler(request({ action: "listDrafts" }, ""));
+  assert(unauthenticated.headers.has("access-control-allow-origin"), "error response must allow an origin");
+});
