@@ -9,6 +9,8 @@ import CoinsView from "./views/CoinsView.vue";
 import CoinEditorView from "./views/CoinEditorView.vue";
 
 type SessionReader = () => Promise<unknown | null>;
+type AuthStateListener = (event: string, session: unknown | null) => void;
+type AuthStateSubscriber = (listener: AuthStateListener) => unknown;
 
 export function authCallbackFragmentReplacement(
   location: Pick<Location, "pathname" | "search" | "hash">,
@@ -21,6 +23,21 @@ export function authCallbackFragmentReplacement(
   }
 
   return `${location.pathname}${location.search}`;
+}
+
+export function subscribeToAuthCallbackFragmentCleanup(
+  subscribe: AuthStateSubscriber,
+  location: Pick<Location, "pathname" | "search" | "hash"> = window.location,
+  history: Pick<History, "replaceState" | "state"> = window.history,
+) {
+  return subscribe((_event, session) => {
+    if (!session) return;
+
+    const replacement = authCallbackFragmentReplacement(location);
+    if (replacement) {
+      history.replaceState(history.state, "", replacement);
+    }
+  });
 }
 
 export function createAdminRouter(history: RouterHistory, getSession: SessionReader) {
