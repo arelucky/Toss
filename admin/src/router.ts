@@ -10,6 +10,19 @@ import CoinEditorView from "./views/CoinEditorView.vue";
 
 type SessionReader = () => Promise<unknown | null>;
 
+export function authCallbackFragmentReplacement(
+  location: Pick<Location, "pathname" | "search" | "hash">,
+): string | null {
+  const fragment = location.hash.startsWith("#") ? location.hash.slice(1) : location.hash;
+  const fragmentParameters = new URLSearchParams(fragment);
+
+  if (!fragmentParameters.has("access_token") && !fragmentParameters.has("refresh_token")) {
+    return null;
+  }
+
+  return `${location.pathname}${location.search}`;
+}
+
 export function createAdminRouter(history: RouterHistory, getSession: SessionReader) {
   const adminRouter = createRouter({
     history,
@@ -23,7 +36,15 @@ export function createAdminRouter(history: RouterHistory, getSession: SessionRea
 
   adminRouter.beforeEach(async (to) => {
     if (!to.meta.requiresAuth) return true;
-    return (await getSession()) ? true : "/login";
+    const session = await getSession();
+    if (!session) return "/login";
+
+    const replacement = authCallbackFragmentReplacement(window.location);
+    if (replacement) {
+      window.history.replaceState(window.history.state, "", replacement);
+    }
+
+    return true;
   });
   return adminRouter;
 }
