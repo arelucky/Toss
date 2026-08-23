@@ -2,6 +2,7 @@ import { getSupabaseClient } from "../lib/supabase";
 
 export const MAX_MODEL_BYTES = 52_428_800;
 export const MAX_PREVIEW_BYTES = 2_097_152;
+const coinSlugPattern = /^[a-z0-9](?:[a-z0-9-]{1,62}[a-z0-9])$/;
 
 export type AdminCoinRequest =
   | { action: "listDrafts" }
@@ -94,6 +95,10 @@ function validateFile(file: File, extension: string, maximum: number, typeLabel:
 
 export const validateModelFile = (file: File) => validateFile(file, ".usdz", MAX_MODEL_BYTES, "USDZ");
 export const validatePreviewFile = (file: File) => validateFile(file, ".webp", MAX_PREVIEW_BYTES, "WEBP");
+
+export function validateCoinSlug(slug: string): boolean {
+  return coinSlugPattern.test(slug);
+}
 
 function readBlobAsArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
   const nativeArrayBuffer = (blob as Blob & { arrayBuffer?: () => Promise<ArrayBuffer> }).arrayBuffer;

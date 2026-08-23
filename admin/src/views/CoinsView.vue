@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import { adminCoins, AdminCoinsError, type AdminCoin } from "../services/adminCoins";
+import { adminCoins, AdminCoinsError, type AdminCoin, validateCoinSlug } from "../services/adminCoins";
 
 const props = withDefaults(defineProps<{ loadCoins?: () => Promise<AdminCoin[]> }>(), { loadCoins: undefined });
 const router = useRouter();
@@ -24,6 +24,11 @@ async function load() {
 
 async function createCoin() {
   if (creating.value) return;
+  if (!validateCoinSlug(slug.value)) {
+    window.alert("Slug must use 3–64 lowercase letters, numbers, or hyphens.");
+    return;
+  }
+
   creating.value = true;
   errorMessage.value = "";
   try {

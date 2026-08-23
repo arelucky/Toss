@@ -1,6 +1,6 @@
 import { mount } from "@vue/test-utils";
 import CoinsView from "./CoinsView.vue";
-import { AdminCoinsError } from "../services/adminCoins";
+import { adminCoins, AdminCoinsError } from "../services/adminCoins";
 
 describe("CoinsView", () => {
   it("shows a safe access denied state for 403", async () => {
@@ -24,5 +24,20 @@ describe("CoinsView", () => {
 
     expect(wrapper.find('input[aria-label="Coin slug"]').exists()).toBe(true);
     expect(wrapper.find('input[aria-label="Display name"]').exists()).toBe(true);
+  });
+
+  it("alerts and skips createCoin for an uppercase slug", async () => {
+    const createCoin = vi.spyOn(adminCoins, "action");
+    const alert = vi.spyOn(window, "alert").mockImplementation(() => undefined);
+    const wrapper = mount(CoinsView, { props: { loadCoins: vi.fn().mockResolvedValue([]) } });
+
+    await wrapper.get('[aria-label="Coin slug"]').setValue("Hosted-Coin");
+    await wrapper.get('[aria-label="Display name"]').setValue("Hosted Coin");
+    await wrapper.get("form").trigger("submit");
+
+    expect(alert).toHaveBeenCalledWith("Slug must use 3–64 lowercase letters, numbers, or hyphens.");
+    expect(createCoin).not.toHaveBeenCalled();
+    createCoin.mockRestore();
+    alert.mockRestore();
   });
 });

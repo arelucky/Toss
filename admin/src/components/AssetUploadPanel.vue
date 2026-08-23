@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { uploadVersionAssets, adminCoins, putSignedFile } from "../services/adminCoins";
+import {
+  uploadVersionAssets,
+  adminCoins,
+  putSignedFile,
+  validateModelFile,
+  validatePreviewFile,
+} from "../services/adminCoins";
 
 interface UploadPayload { model: File; preview: File }
 const props = withDefaults(defineProps<{
@@ -23,7 +29,29 @@ function select(event: Event, target: "model" | "preview") {
 }
 
 async function submit() {
-  if (uploading.value || !model.value || !preview.value) return;
+  if (uploading.value) return;
+  if (!model.value) {
+    window.alert("USDZ file size is invalid");
+    return;
+  }
+
+  const modelValidation = validateModelFile(model.value);
+  if (!modelValidation.ok) {
+    window.alert(modelValidation.error);
+    return;
+  }
+
+  if (!preview.value) {
+    window.alert("WEBP file size is invalid");
+    return;
+  }
+
+  const previewValidation = validatePreviewFile(preview.value);
+  if (!previewValidation.ok) {
+    window.alert(previewValidation.error);
+    return;
+  }
+
   uploading.value = true;
   progress.value = 10;
   errorMessage.value = "";
@@ -53,7 +81,7 @@ async function submit() {
       <label>USDZ model<input data-test="model" type="file" accept=".usdz" :disabled="uploading" @change="select($event, 'model')" /></label>
       <label>WEBP preview<input data-test="preview" type="file" accept=".webp" :disabled="uploading" @change="select($event, 'preview')" /></label>
       <progress v-if="uploading || progress === 100" :value="progress" max="100" />
-      <button type="submit" :disabled="uploading || !model || !preview">{{ uploading ? "Uploading…" : "Create version and upload" }}</button>
+      <button type="submit" :disabled="uploading">{{ uploading ? "Uploading…" : "Create version and upload" }}</button>
     </form>
     <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
   </section>
