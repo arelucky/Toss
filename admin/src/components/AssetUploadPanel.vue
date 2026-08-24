@@ -31,7 +31,7 @@ function select(event: Event, target: "model" | "preview") {
 async function submit() {
   if (uploading.value) return;
   if (!model.value) {
-    window.alert("USDZ file size is invalid");
+    window.alert("USDZ 文件大小无效");
     return;
   }
 
@@ -42,7 +42,7 @@ async function submit() {
   }
 
   if (!preview.value) {
-    window.alert("WEBP file size is invalid");
+    window.alert("WEBP 文件大小无效");
     return;
   }
 
@@ -69,19 +69,19 @@ async function submit() {
     progress.value = 100;
     emit("completed");
   } catch {
-    errorMessage.value = "Could not upload these assets.";
+    errorMessage.value = "无法上传这些资源。";
   } finally { uploading.value = false; }
 }
 </script>
 
 <template>
   <section>
-    <h3>Version assets</h3>
+    <h3>版本资源</h3>
     <form @submit.prevent="submit">
-      <label>USDZ model<input data-test="model" type="file" accept=".usdz" :disabled="uploading" @change="select($event, 'model')" /></label>
-      <label>WEBP preview<input data-test="preview" type="file" accept=".webp" :disabled="uploading" @change="select($event, 'preview')" /></label>
+      <label>USDZ 模型<input data-test="model" type="file" accept=".usdz" :disabled="uploading" @change="select($event, 'model')" /></label>
+      <label>WEBP 预览图<input data-test="preview" type="file" accept=".webp" :disabled="uploading" @change="select($event, 'preview')" /></label>
       <progress v-if="uploading || progress === 100" :value="progress" max="100" />
-      <button type="submit" :disabled="uploading">{{ uploading ? "Uploading…" : "Create version and upload" }}</button>
+      <button type="submit" :disabled="uploading">{{ uploading ? "正在上传…" : "创建版本并上传" }}</button>
     </form>
     <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
   </section>

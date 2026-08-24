@@ -1,15 +1,16 @@
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
+import { nextTick } from "vue";
 import CoinsView from "./CoinsView.vue";
 import { adminCoins, AdminCoinsError } from "../services/adminCoins";
 
 describe("CoinsView", () => {
   it("shows a safe access denied state for 403", async () => {
     const wrapper = mount(CoinsView, {
-      props: { loadCoins: vi.fn().mockRejectedValue(new AdminCoinsError(403, "You do not have access to this console.")) },
+      props: { loadCoins: vi.fn().mockRejectedValue(new AdminCoinsError(403, "您无权访问此管理后台。")) },
     });
     await Promise.resolve();
     await Promise.resolve();
-    expect(wrapper.text()).toContain("You do not have access to this console.");
+    expect(wrapper.text()).toContain("您无权访问此管理后台。");
     expect(wrapper.text()).not.toMatch(/uuid|sql|service.role/i);
   });
 
@@ -19,11 +20,16 @@ describe("CoinsView", () => {
     expect(wrapper.text()).not.toMatch(/price|premium|purchase|transaction|entitlement|users/i);
   });
 
-  it("labels the coin creation inputs for assistive technology", () => {
+  it("renders Chinese creation controls, empty state, and accessible labels", async () => {
     const wrapper = mount(CoinsView, { props: { loadCoins: vi.fn().mockResolvedValue([]) } });
+    await nextTick();
+    await flushPromises();
+    await nextTick();
 
-    expect(wrapper.find('input[aria-label="Coin slug"]').exists()).toBe(true);
-    expect(wrapper.find('input[aria-label="Display name"]').exists()).toBe(true);
+    expect(wrapper.text()).toContain("创建硬币");
+    expect(wrapper.text()).toContain("尚无硬币。");
+    expect(wrapper.find('input[aria-label="硬币标识"]').exists()).toBe(true);
+    expect(wrapper.find('input[aria-label="硬币名称"]').exists()).toBe(true);
   });
 
   it("alerts and skips createCoin for an uppercase slug", async () => {
@@ -31,13 +37,35 @@ describe("CoinsView", () => {
     const alert = vi.spyOn(window, "alert").mockImplementation(() => undefined);
     const wrapper = mount(CoinsView, { props: { loadCoins: vi.fn().mockResolvedValue([]) } });
 
-    await wrapper.get('[aria-label="Coin slug"]').setValue("Hosted-Coin");
-    await wrapper.get('[aria-label="Display name"]').setValue("Hosted Coin");
+    await wrapper.get('[aria-label="硬币标识"]').setValue("Hosted-Coin");
+    await wrapper.get('[aria-label="硬币名称"]').setValue("Hosted Coin");
     await wrapper.get("form").trigger("submit");
 
-    expect(alert).toHaveBeenCalledWith("Slug must use 3–64 lowercase letters, numbers, or hyphens.");
+    expect(alert).toHaveBeenCalledWith("硬币标识只能使用 3–64 个小写字母、数字或连字符。");
     expect(createCoin).not.toHaveBeenCalled();
     createCoin.mockRestore();
     alert.mockRestore();
+  });
+
+  it("uses a Chinese confirmation before hiding a coin", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const wrapper = mount(CoinsView, {
+      props: {
+        loadCoins: vi.fn().mockResolvedValue([{
+          id: "coin-id",
+          displayName: "测试硬币",
+          sortOrder: 0,
+          isFeatured: false,
+          status: "draft",
+        }]),
+      },
+    });
+    await flushPromises();
+
+    const hideButton = wrapper.findAll("button").find((button) => button.text() === "隐藏");
+    await hideButton?.trigger("click");
+
+    expect(confirm).toHaveBeenCalledWith("确定要隐藏此硬币吗？现有资源将会保留。");
+    confirm.mockRestore();
   });
 });

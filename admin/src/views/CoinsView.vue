@@ -18,14 +18,14 @@ async function load() {
   try {
     coins.value = await (props.loadCoins ?? adminCoins.listDrafts)();
   } catch (error) {
-    errorMessage.value = error instanceof AdminCoinsError ? error.message : "Could not load coins.";
+    errorMessage.value = error instanceof AdminCoinsError ? error.message : "无法加载硬币。";
   } finally { loading.value = false; }
 }
 
 async function createCoin() {
   if (creating.value) return;
   if (!validateCoinSlug(slug.value)) {
-    window.alert("Slug must use 3–64 lowercase letters, numbers, or hyphens.");
+    window.alert("硬币标识只能使用 3–64 个小写字母、数字或连字符。");
     return;
   }
 
@@ -35,18 +35,25 @@ async function createCoin() {
     const coin = await adminCoins.action<AdminCoin>({ action: "createCoin", slug: slug.value, displayName: displayName.value });
     await router.push(`/coins/${coin.id}`);
   } catch (error) {
-    errorMessage.value = error instanceof AdminCoinsError ? error.message : "Could not create coin.";
+    errorMessage.value = error instanceof AdminCoinsError ? error.message : "无法创建硬币。";
   } finally { creating.value = false; }
 }
 
 async function hideCoin(coinID: string) {
-  if (!window.confirm("Hide this coin? Existing assets will be retained.")) return;
+  if (!window.confirm("确定要隐藏此硬币吗？现有资源将会保留。")) return;
   try {
     await adminCoins.action({ action: "hideCoin", coinID });
     await load();
   } catch (error) {
-    errorMessage.value = error instanceof AdminCoinsError ? error.message : "Could not hide coin.";
+    errorMessage.value = error instanceof AdminCoinsError ? error.message : "无法隐藏硬币。";
   }
+}
+
+function statusLabel(status?: string) {
+  if (status === "draft") return "草稿";
+  if (status === "published") return "已发布";
+  if (status === "hidden") return "已隐藏";
+  return "未知";
 }
 
 onMounted(load);
@@ -54,24 +61,24 @@ onMounted(load);
 
 <template>
   <main class="admin-shell">
-    <header><div><p class="muted">Toss administration</p><h1>Coins</h1></div></header>
+    <header><div><p class="muted">Toss 管理后台</p><h1>硬币</h1></div></header>
     <p v-if="errorMessage" class="panel error">{{ errorMessage }}</p>
     <section class="panel create-panel">
-      <h2>Create coin</h2>
+      <h2>创建硬币</h2>
       <form @submit.prevent="createCoin">
-        <input v-model.trim="slug" placeholder="coin-slug" aria-label="Coin slug" required />
-        <input v-model.trim="displayName" placeholder="Display name" aria-label="Display name" required />
-        <button type="submit" :disabled="creating">{{ creating ? "Creating…" : "Create" }}</button>
+        <input v-model.trim="slug" placeholder="例如：classic-coin" aria-label="硬币标识" required />
+        <input v-model.trim="displayName" placeholder="硬币名称" aria-label="硬币名称" required />
+        <button type="submit" :disabled="creating">{{ creating ? "正在创建…" : "创建" }}</button>
       </form>
     </section>
     <section class="panel list-panel">
-      <p v-if="loading" class="muted">Loading…</p>
-      <p v-else-if="coins.length === 0" class="muted">No coins yet.</p>
+      <p v-if="loading" class="muted">正在加载…</p>
+      <p v-else-if="coins.length === 0" class="muted">尚无硬币。</p>
       <table v-else>
-        <thead><tr><th>Name</th><th>Slug</th><th>Status</th><th></th></tr></thead>
+        <thead><tr><th>名称</th><th>标识</th><th>状态</th><th></th></tr></thead>
         <tbody><tr v-for="coin in coins" :key="coin.id">
-          <td>{{ coin.displayName }}</td><td>{{ coin.slug }}</td><td>{{ coin.status }}</td>
-          <td><button @click="router.push(`/coins/${coin.id}`)">Edit</button><button @click="hideCoin(coin.id)">Hide</button></td>
+          <td>{{ coin.displayName }}</td><td>{{ coin.slug }}</td><td>{{ statusLabel(coin.status) }}</td>
+          <td><button @click="router.push(`/coins/${coin.id}`)">编辑</button><button @click="hideCoin(coin.id)">隐藏</button></td>
         </tr></tbody>
       </table>
     </section>

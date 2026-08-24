@@ -28,7 +28,7 @@ async function submit() {
     sent.value = true;
     if (!props.sendOtp) await router.replace("/coins");
   } catch {
-    errorMessage.value = "Could not send the sign-in link.";
+    errorMessage.value = "无法发送登录链接。";
   } finally {
     submitting.value = false;
   }
@@ -39,14 +39,14 @@ async function submit() {
   <main class="login-page">
     <section class="panel login-panel">
       <p class="eyebrow">Toss</p>
-      <h1>Coin administration</h1>
-      <p class="muted">Enter the administrator email to receive a one-time sign-in link.</p>
+      <h1>硬币管理后台</h1>
+      <p class="muted">请输入管理员邮箱，我们会向您发送一次性登录链接。</p>
       <form @submit.prevent="submit">
-        <label for="email">Email</label>
+        <label for="email">邮箱</label>
         <input id="email" v-model.trim="email" type="email" autocomplete="email" required />
-        <button type="submit" :disabled="submitting">{{ submitting ? "Sending…" : "Send sign-in link" }}</button>
+        <button type="submit" :disabled="submitting">{{ submitting ? "正在发送…" : "发送登录链接" }}</button>
       </form>
-      <p v-if="sent" class="success">Check your inbox for the sign-in link.</p>
+      <p v-if="sent" class="success">请检查收件箱中的登录链接。</p>
       <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
     </section>
   </main>

@@ -15,6 +15,15 @@ const coin = {
 };
 
 describe("CoinEditorView", () => {
+  it("renders Chinese upload, publish, and rollback controls", () => {
+    const wrapper = mount(CoinEditorView, { props: { coin } });
+
+    expect(wrapper.text()).toContain("版本资源");
+    expect(wrapper.text()).toContain("最低应用版本");
+    expect(wrapper.get("[data-test='publish']").text()).toBe("发布");
+    expect(wrapper.get("[data-test='rollback']").text()).toBe("回滚");
+  });
+
   it("requires confirmation before publish and rollback", async () => {
     const confirmAction = vi.fn().mockResolvedValue(true);
     const performAction = vi.fn().mockResolvedValue(undefined);
@@ -81,14 +90,14 @@ describe("CoinEditorView", () => {
     await wrapper.get("[data-test='publish']").trigger("click");
     await flushPromises();
 
-    expect(wrapper.text()).toContain("Create a draft version before publishing.");
+    expect(wrapper.text()).toContain("请先创建草稿版本再发布。");
     expect(confirmAction).not.toHaveBeenCalled();
     expect(performAction).not.toHaveBeenCalled();
 
     await wrapper.get("[data-test='rollback']").trigger("click");
     await flushPromises();
 
-    expect(wrapper.text()).toContain("No previous published version is available to roll back to.");
+    expect(wrapper.text()).toContain("没有可回滚到的已发布旧版本。");
     expect(confirmAction).not.toHaveBeenCalled();
     expect(performAction).not.toHaveBeenCalled();
   });
@@ -101,7 +110,7 @@ describe("CoinEditorView", () => {
     await wrapper.get("form").trigger("submit");
     await Promise.resolve();
     expect((wrapper.get("[data-test='display-name']").element as HTMLInputElement).value).toBe("Edited Gold");
-    expect(wrapper.text()).toContain("Could not save changes.");
+    expect(wrapper.text()).toContain("无法保存更改。");
     expect(wrapper.text()).not.toContain("raw SQL secret");
   });
 });

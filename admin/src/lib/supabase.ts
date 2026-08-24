@@ -8,7 +8,7 @@ export function getSupabaseClient() {
   const supabaseURL = import.meta.env.VITE_SUPABASE_URL?.trim();
   const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
   if (!supabaseURL || !publishableKey) {
-    throw new Error("Missing Supabase admin console configuration.");
+    throw new Error("缺少 Supabase 管理后台配置。");
   }
 
   cachedClient = createClient(supabaseURL, publishableKey, {

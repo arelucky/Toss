@@ -10,10 +10,10 @@ import {
 describe("admin coin service", () => {
   it("validates USDZ and WEBP extension and fixed byte limits", () => {
     expect(validateModelFile(new File([new Uint8Array(10)], "coin.usdz"))).toEqual({ ok: true });
-    expect(validateModelFile(new File([new Uint8Array(10)], "coin.obj"))).toEqual({ ok: false, error: "USDZ file required" });
+    expect(validateModelFile(new File([new Uint8Array(10)], "coin.obj"))).toEqual({ ok: false, error: "需要 USDZ 文件" });
     expect(validateModelFile({ name: "coin.usdz", size: 52_428_801 } as File).ok).toBe(false);
     expect(validatePreviewFile(new File([new Uint8Array(10)], "preview.webp"))).toEqual({ ok: true });
-    expect(validatePreviewFile(new File([new Uint8Array(10)], "preview.png"))).toEqual({ ok: false, error: "WEBP file required" });
+    expect(validatePreviewFile(new File([new Uint8Array(10)], "preview.png"))).toEqual({ ok: false, error: "需要 WEBP 文件" });
     expect(validatePreviewFile({ name: "preview.webp", size: 2_097_153 } as File).ok).toBe(false);
   });
 
@@ -38,7 +38,7 @@ describe("admin coin service", () => {
       session: vi.fn().mockResolvedValue({ access_token: "token" }),
       invoke: vi.fn().mockResolvedValue({ data: null, error: { context: { status: 403 }, message: "admin uuid and SQL" } }),
     });
-    await expect(service.listDrafts()).rejects.toEqual(new AdminCoinsError(403, "You do not have access to this console."));
+    await expect(service.listDrafts()).rejects.toEqual(new AdminCoinsError(403, "您无权访问此管理后台。"));
   });
 
   it("uploads through createVersion, signed URLs, direct PUTs, then refreshes", async () => {

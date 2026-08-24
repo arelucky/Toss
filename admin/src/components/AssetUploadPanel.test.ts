@@ -40,7 +40,7 @@ describe("AssetUploadPanel", () => {
 
     await wrapper.get("form").trigger("submit");
 
-    expect(alert).toHaveBeenCalledWith("USDZ file required");
+    expect(alert).toHaveBeenCalledWith("需要 USDZ 文件");
     expect(upload).not.toHaveBeenCalled();
     alert.mockRestore();
   });
@@ -53,7 +53,7 @@ describe("AssetUploadPanel", () => {
 
     await wrapper.get("form").trigger("submit");
 
-    expect(alert).toHaveBeenCalledWith("USDZ file size is invalid");
+    expect(alert).toHaveBeenCalledWith("USDZ 文件大小无效");
     expect(upload).not.toHaveBeenCalled();
     alert.mockRestore();
   });
@@ -66,7 +66,7 @@ describe("AssetUploadPanel", () => {
 
     await wrapper.get("form").trigger("submit");
 
-    expect(alert).toHaveBeenCalledWith("WEBP file required");
+    expect(alert).toHaveBeenCalledWith("需要 WEBP 文件");
     expect(upload).not.toHaveBeenCalled();
     alert.mockRestore();
   });
@@ -79,7 +79,7 @@ describe("AssetUploadPanel", () => {
 
     await wrapper.get("form").trigger("submit");
 
-    expect(alert).toHaveBeenCalledWith("WEBP file size is invalid");
+    expect(alert).toHaveBeenCalledWith("WEBP 文件大小无效");
     expect(upload).not.toHaveBeenCalled();
     alert.mockRestore();
   });

@@ -38,9 +38,9 @@ async function load() {
   try {
     const coins = await adminCoins.listDrafts();
     loadedCoin.value = coins.find((coin) => coin.id === route.params.id);
-    if (!loadedCoin.value) errorMessage.value = "Coin could not be found.";
+    if (!loadedCoin.value) errorMessage.value = "未找到该硬币。";
   } catch (error) {
-    errorMessage.value = error instanceof AdminCoinsError ? error.message : "Could not load this coin.";
+    errorMessage.value = error instanceof AdminCoinsError ? error.message : "无法加载该硬币。";
   }
 }
 
@@ -53,7 +53,7 @@ async function save() {
     if (props.saveCoin) await props.saveCoin(edited);
     else await adminCoins.action({ action: "updateCoin", coinID: edited.id, displayName: edited.displayName, description: edited.description, sortOrder: edited.sortOrder, isFeatured: edited.isFeatured });
   } catch {
-    errorMessage.value = "Could not save changes.";
+    errorMessage.value = "无法保存更改。";
   } finally { busy.value = false; }
 }
 
@@ -70,11 +70,11 @@ async function transition(action: "publish" | "rollback") {
   const version = targetVersion(action, currentCoin.value);
   if (!version) {
     errorMessage.value = action === "publish"
-      ? "Create a draft version before publishing."
-      : "No previous published version is available to roll back to.";
+      ? "请先创建草稿版本再发布。"
+      : "没有可回滚到的已发布旧版本。";
     return;
   }
-  const confirmed = props.confirmAction ? await props.confirmAction(action) : window.confirm(`${action === "publish" ? "Publish" : "Roll back to"} this version?`);
+  const confirmed = props.confirmAction ? await props.confirmAction(action) : window.confirm(action === "publish" ? "确定要发布此版本吗？" : "确定要回滚到此版本吗？");
   if (!confirmed) return;
   busy.value = true;
   errorMessage.value = "";
@@ -83,7 +83,7 @@ async function transition(action: "publish" | "rollback") {
     else await adminCoins.action({ action: action === "publish" ? "publishVersion" : "rollbackVersion", coinID: currentCoin.value.id, versionID: version.id });
     await load();
   } catch (error) {
-    errorMessage.value = error instanceof AdminCoinsError ? error.message : "Could not update the version.";
+    errorMessage.value = error instanceof AdminCoinsError ? error.message : "无法更新版本。";
   } finally { busy.value = false; }
 }
 
@@ -92,30 +92,30 @@ void load();
 
 <template>
   <main class="admin-shell">
-    <button class="back" @click="router.push('/coins')">← Coins</button>
-    <h1>{{ currentCoin?.displayName || "Coin editor" }}</h1>
+    <button class="back" @click="router.push('/coins')">← 硬币</button>
+    <h1>{{ currentCoin?.displayName || "硬币编辑" }}</h1>
     <p v-if="errorMessage" class="panel error">{{ errorMessage }}</p>
     <template v-if="currentCoin">
       <section class="panel">
-        <h2>Details</h2>
+        <h2>详情</h2>
         <form @submit.prevent="save">
-          <label>Display name<input v-model="displayName" data-test="display-name" required /></label>
-          <label>Description<textarea v-model="description" rows="4" /></label>
-          <label>Sort order<input v-model.number="sortOrder" type="number" required /></label>
-          <label class="checkbox"><input v-model="isFeatured" type="checkbox" /> Featured</label>
-          <button type="submit" :disabled="busy">Save changes</button>
+          <label>显示名称<input v-model="displayName" data-test="display-name" required /></label>
+          <label>描述<textarea v-model="description" rows="4" /></label>
+          <label>排序<input v-model.number="sortOrder" type="number" required /></label>
+          <label class="checkbox"><input v-model="isFeatured" type="checkbox" /> 精选</label>
+          <button type="submit" :disabled="busy">保存更改</button>
         </form>
       </section>
       <section class="panel versions">
-        <h2>Versions</h2>
+        <h2>版本</h2>
         <div class="version-controls">
-          <label>Next version<input v-model.number="versionNumber" type="number" min="1" /></label>
-          <label>Minimum app version<input v-model="minAppVersion" /></label>
+          <label>下一个版本<input v-model.number="versionNumber" type="number" min="1" /></label>
+          <label>最低应用版本<input v-model="minAppVersion" /></label>
         </div>
         <AssetUploadPanel :coin-i-d="currentCoin.id" :version-number="versionNumber" :min-app-version="minAppVersion" @completed="load" />
         <div class="actions">
-          <button data-test="publish" :disabled="busy" @click="transition('publish')">Publish</button>
-          <button data-test="rollback" :disabled="busy" @click="transition('rollback')">Rollback</button>
+          <button data-test="publish" :disabled="busy" @click="transition('publish')">发布</button>
+          <button data-test="rollback" :disabled="busy" @click="transition('rollback')">回滚</button>
         </div>
       </section>
     </template>

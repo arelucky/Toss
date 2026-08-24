@@ -47,10 +47,10 @@ export class AdminCoinsError extends Error {
 }
 
 function safeMessage(status: number) {
-  if (status === 401) return "Your session has expired. Please sign in again.";
-  if (status === 403) return "You do not have access to this console.";
-  if (status === 409) return "This action conflicts with the current coin version.";
-  return "The admin service could not complete this action.";
+  if (status === 401) return "会话已过期，请重新登录。";
+  if (status === 403) return "您无权访问此管理后台。";
+  if (status === 409) return "此操作与当前硬币版本冲突。";
+  return "管理服务暂时无法完成此操作。";
 }
 
 export function createAdminCoinsService(dependencies: ServiceDependencies) {
@@ -88,8 +88,8 @@ export const adminCoins = createAdminCoinsService({
 type Validation = { ok: true } | { ok: false; error: string };
 
 function validateFile(file: File, extension: string, maximum: number, typeLabel: string): Validation {
-  if (!file.name.toLowerCase().endsWith(extension)) return { ok: false, error: `${typeLabel} file required` };
-  if (file.size <= 0 || file.size > maximum) return { ok: false, error: `${typeLabel} file size is invalid` };
+  if (!file.name.toLowerCase().endsWith(extension)) return { ok: false, error: `需要 ${typeLabel} 文件` };
+  if (file.size <= 0 || file.size > maximum) return { ok: false, error: `${typeLabel} 文件大小无效` };
   return { ok: true };
 }
 
@@ -108,10 +108,10 @@ function readBlobAsArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
     const reader = new FileReader();
     reader.onload = () => {
       if (reader.result instanceof ArrayBuffer) resolve(reader.result);
-      else reject(new Error("Could not read file data."));
+      else reject(new Error("无法读取文件数据。"));
     };
-    reader.onerror = () => reject(reader.error ?? new Error("Could not read file data."));
-    reader.onabort = () => reject(new Error("File reading was aborted."));
+    reader.onerror = () => reject(reader.error ?? new Error("无法读取文件数据。"));
+    reader.onabort = () => reject(new Error("文件读取已取消。"));
     reader.readAsArrayBuffer(blob);
   });
 }
