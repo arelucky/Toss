@@ -12,7 +12,8 @@ export type AdminCoinRequest =
   | { action: "createUploadURL"; versionID: string; asset: "model" | "preview" }
   | { action: "publishVersion"; coinID: string; versionID: string }
   | { action: "rollbackVersion"; coinID: string; versionID: string }
-  | { action: "hideCoin"; coinID: string };
+  | { action: "hideCoin"; coinID: string }
+  | { action: "restoreCoin"; coinID: string };
 
 export interface CoinVersion {
   id: string;

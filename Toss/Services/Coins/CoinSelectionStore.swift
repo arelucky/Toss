@@ -73,6 +73,26 @@ final class CoinSelectionStore: ObservableObject {
         await resolveAndPublish(item, generationID: session.isAuthenticated ? generationID : nil)
     }
 
+    func selectClassic(session: AccountSession, generationID: UUID) async {
+        switch session {
+        case .guest, .restoring:
+            localSelection.selectedCoinID = nil
+        case let .authenticated(userID):
+            guard isGenerationCurrent(generationID) else { return }
+            do {
+                try await preferences.updateSelectedCoinID(
+                    nil,
+                    for: userID,
+                    generationID: generationID
+                )
+            } catch {
+                // The current display still falls back safely to Classic.
+            }
+            guard isGenerationCurrent(generationID) else { return }
+        }
+        publish(.bundledClassic)
+    }
+
     func synchronize(session: AccountSession, generationID: UUID) async {
         do {
             let items = try await catalog.fetchPublishedCatalog()

@@ -10,10 +10,10 @@ function assertEquals(actual: unknown, expected: unknown, message: string) {
   }
 }
 
-Deno.test("lists only draft and published coins for administration", () => {
+Deno.test("lists draft, published, and hidden coins for administration", () => {
   assertEquals(
     ADMIN_MANAGEABLE_COIN_STATUSES.join(","),
-    "draft,published",
+    "draft,published,hidden",
     "manageable statuses",
   );
 });

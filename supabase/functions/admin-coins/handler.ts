@@ -6,7 +6,8 @@ export type AdminCoinRequest =
   | { action: "createUploadURL"; versionID: string; asset: "model" | "preview" }
   | { action: "publishVersion"; coinID: string; versionID: string }
   | { action: "rollbackVersion"; coinID: string; versionID: string }
-  | { action: "hideCoin"; coinID: string };
+  | { action: "hideCoin"; coinID: string }
+  | { action: "restoreCoin"; coinID: string };
 
 export interface CoinRecord {
   id: string;
@@ -63,6 +64,7 @@ export interface AdminCoinDependencies {
   publishVersion(coinID: string, versionID: string): Promise<unknown>;
   rollbackVersion(coinID: string, versionID: string): Promise<unknown>;
   hideCoin(coinID: string): Promise<unknown>;
+  restoreCoin(coinID: string): Promise<unknown>;
 }
 
 export class AdminCoinOperationError extends Error {
@@ -166,6 +168,7 @@ function parseRequest(value: unknown): AdminCoinRequest | null {
       if (!hasOnlyKeys(value, ["action", "coinID", "versionID"]) || !isUUID(value.coinID) || !isUUID(value.versionID)) return null;
       return { action: value.action, coinID: value.coinID, versionID: value.versionID };
     case "hideCoin":
+    case "restoreCoin":
       if (!hasOnlyKeys(value, ["action", "coinID"]) || !isUUID(value.coinID)) return null;
       return { action: value.action, coinID: value.coinID };
     default:
@@ -233,8 +236,22 @@ async function executeAction(action: AdminCoinRequest, dependencies: AdminCoinDe
       }
       return await dependencies.rollbackVersion(action.coinID, action.versionID);
     }
-    case "hideCoin":
+    case "hideCoin": {
+      const coin = await dependencies.getCoin(action.coinID);
+      if (!coin) throw new AdminCoinOperationError(404, "coin_not_found");
+      if (coin.status !== "published") {
+        throw new AdminCoinOperationError(409, "coin_not_hideable");
+      }
       return await dependencies.hideCoin(action.coinID);
+    }
+    case "restoreCoin": {
+      const coin = await dependencies.getCoin(action.coinID);
+      if (!coin) throw new AdminCoinOperationError(404, "coin_not_found");
+      if (coin.status !== "hidden") {
+        throw new AdminCoinOperationError(409, "coin_not_restorable");
+      }
+      return await dependencies.restoreCoin(action.coinID);
+    }
   }
 }
 

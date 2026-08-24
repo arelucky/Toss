@@ -43,6 +43,7 @@ function subject(overrides: Partial<AdminCoinDependencies> = {}) {
     storage: 0,
     publish: 0,
     rollback: 0,
+    restore: 0,
     deletes: 0,
     createdVersion: null as Record<string, unknown> | null,
   };
@@ -98,6 +99,10 @@ function subject(overrides: Partial<AdminCoinDependencies> = {}) {
       calls.database++;
       return { coinID, status: "hidden" };
     },
+    restoreCoin: async () => {
+      calls.restore++;
+      return { coinID, status: "published" };
+    },
     ...overrides,
   };
   return { handler: createAdminCoinsHandler(dependencies), calls };
@@ -139,6 +144,7 @@ Deno.test("validates UUIDs before database or storage access", async () => {
     { action: "publishVersion", coinID, versionID: "bad" },
     { action: "rollbackVersion", coinID: "bad", versionID },
     { action: "hideCoin", coinID: "bad" },
+    { action: "restoreCoin", coinID: "bad" },
   ]) {
     const test = subject();
     assertEquals((await test.handler(request(payload))).status, 400);
@@ -259,10 +265,23 @@ Deno.test("rollback delegates one atomic active-version transition", async () =>
   assertEquals(rollbackCalls, 1);
 });
 
-Deno.test("hide changes only coin state and never deletes storage", async () => {
-  const test = subject();
-  assertEquals((await test.handler(request({ action: "hideCoin", coinID }))).status, 200);
-  assertEquals(test.calls.deletes, 0);
+Deno.test("only published coins can be hidden and hiding never deletes storage", async () => {
+  for (const [status, expectedStatus] of [["published", 200], ["draft", 409], ["hidden", 409]] as const) {
+    const test = subject({ getCoin: async (id) => ({ id, slug: "classic-gold", status }) });
+    assertEquals((await test.handler(request({ action: "hideCoin", coinID }))).status, expectedStatus);
+    assertEquals(test.calls.deletes, 0);
+  }
+});
+
+Deno.test("only hidden coins can be restored", async () => {
+  const hidden = subject({ getCoin: async (id) => ({ id, slug: "classic-gold", status: "hidden" }) });
+  assertEquals((await hidden.handler(request({ action: "restoreCoin", coinID }))).status, 200);
+  assertEquals(hidden.calls.restore, 1);
+
+  for (const status of ["draft", "published"]) {
+    const test = subject({ getCoin: async (id) => ({ id, slug: "classic-gold", status }) });
+    assertEquals((await test.handler(request({ action: "restoreCoin", coinID }))).status, 409);
+  }
 });
 
 Deno.test("responses never leak secrets, JWTs, admin UUIDs, paths, or internal errors", async () => {

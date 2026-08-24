@@ -10,7 +10,7 @@ final class CoinLibraryViewModelTests: XCTestCase {
         XCTAssertEqual(subject.viewModel.selectedModelSource, .bundledClassic)
     }
 
-    func testShowsCachedCatalogBeforeMergingRemoteRefresh() async {
+    func testSuccessfulRefreshReplacesCachedDynamicCatalog() async {
         let cached = makeItem(name: "Cached", order: 2)
         let remote = makeItem(name: "Remote", order: 1)
         let subject = Subject(cached: [cached], remote: [remote])
@@ -18,7 +18,7 @@ final class CoinLibraryViewModelTests: XCTestCase {
 
         await subject.viewModel.refresh()
 
-        XCTAssertEqual(subject.viewModel.items.map(\.id), [.classic, .coin(remote.id), .coin(cached.id)])
+        XCTAssertEqual(subject.viewModel.items.map(\.id), [.classic, .coin(remote.id)])
     }
 
     func testOfflineUncachedCardIsDisabled() async {
@@ -104,6 +104,38 @@ final class CoinLibraryViewModelTests: XCTestCase {
         XCTAssertEqual(subject.viewModel.items.first?.id, .classic)
     }
 
+    func testSuccessfulRefreshRemovesHiddenSelectedCoinWithoutDeletingCachedAssets() async {
+        let hidden = makeItem(name: "Hidden")
+        let remote = makeItem(name: "Remote")
+        let subject = Subject(cached: [hidden], remote: [remote], cachedAssetIDs: [hidden.id])
+        await subject.viewModel.updateAvailability()
+        await subject.viewModel.select(.coin(hidden.id))
+
+        await subject.viewModel.refresh()
+
+        XCTAssertEqual(subject.viewModel.items.map(\.id), [.classic, .coin(remote.id)])
+        XCTAssertEqual(subject.viewModel.selectedID, .classic)
+        XCTAssertEqual(subject.viewModel.selectedModelSource, .bundledClassic)
+        XCTAssertEqual(subject.selection.classicSelections, 1)
+        XCTAssertEqual(subject.assets.removeUnreferencedAssetsCount, 0)
+    }
+
+    func testFailedRefreshKeepsCachedCatalogAndCurrentSelection() async {
+        let cached = makeItem(name: "Cached")
+        let subject = Subject(cached: [cached], cachedAssetIDs: [cached.id])
+        await subject.viewModel.updateAvailability()
+        await subject.viewModel.select(.coin(cached.id))
+        subject.catalog.error = TestError.expected
+
+        await subject.viewModel.refresh()
+
+        XCTAssertEqual(subject.viewModel.items.map(\.id), [.classic, .coin(cached.id)])
+        XCTAssertEqual(subject.viewModel.selectedID, .coin(cached.id))
+        XCTAssertEqual(subject.viewModel.selectedModelSource, .downloaded(subject.assets.localURL(for: cached)))
+        XCTAssertEqual(subject.selection.classicSelections, 0)
+        XCTAssertEqual(subject.assets.removeUnreferencedAssetsCount, 0)
+    }
+
     func testProductionDependenciesBuildLiveLibraryThatRefreshesInjectedCatalog() async {
         let remote = makeItem(name: "Live")
         let catalog = LibraryCatalogDouble(items: [remote])
@@ -155,16 +187,17 @@ private func makeItem(name: String = "Silver", order: Int = 0) -> CoinCatalogIte
     CoinCatalogItem(id: UUID(), slug: name.lowercased(), displayName: name, description: nil, sortOrder: order, isFeatured: false, version: .init(id: UUID(), versionNumber: 1, modelURL: URL(string: "https://example.invalid/model.usdz")!, previewURL: URL(string: "https://example.invalid/preview.webp")!, modelByteSize: 1, modelSHA256: String(repeating: "a", count: 64), minAppVersion: "1", assetSchemaVersion: 1))
 }
 
-private final class LibraryCatalogDouble: CoinCatalogServicing, @unchecked Sendable { var items: [CoinCatalogItem]; init(items: [CoinCatalogItem]) { self.items = items }; func fetchPublishedCatalog() async throws -> [CoinCatalogItem] { items } }
+private final class LibraryCatalogDouble: CoinCatalogServicing, @unchecked Sendable { var items: [CoinCatalogItem]; var error: Error?; init(items: [CoinCatalogItem]) { self.items = items }; func fetchPublishedCatalog() async throws -> [CoinCatalogItem] { if let error { throw error }; return items } }
 private final class LibraryAssetDouble: CoinAssetCaching, @unchecked Sendable {
-    var cachedIDs: Set<UUID>; let suspendDownload: Bool; let error: Error?; let gate = TestOperationGate(); private(set) var downloadCount = 0
+    var cachedIDs: Set<UUID>; let suspendDownload: Bool; let error: Error?; let gate = TestOperationGate(); private(set) var downloadCount = 0; private(set) var removeUnreferencedAssetsCount = 0
     init(cachedIDs: Set<UUID>, suspendDownload: Bool, error: Error?) { self.cachedIDs = cachedIDs; self.suspendDownload = suspendDownload; self.error = error }
-    func cachedModelURL(for item: CoinCatalogItem) async -> URL? { cachedIDs.contains(item.id) ? URL(fileURLWithPath: "/tmp/\(item.id).usdz") : nil }
+    func cachedModelURL(for item: CoinCatalogItem) async -> URL? { cachedIDs.contains(item.id) ? localURL(for: item) : nil }
     func downloadAndValidate(_ item: CoinCatalogItem) async throws -> URL { downloadCount += 1; if suspendDownload { await gate.suspend() }; if let error { throw error }; cachedIDs.insert(item.id); return URL(fileURLWithPath: "/tmp/\(item.id).usdz") }
-    func removeUnreferencedAssets(keeping items: [CoinCatalogItem]) async throws {}
+    func removeUnreferencedAssets(keeping items: [CoinCatalogItem]) async throws { removeUnreferencedAssetsCount += 1 }
+    func localURL(for item: CoinCatalogItem) -> URL { URL(fileURLWithPath: "/tmp/\(item.id).usdz") }
     func waitForDownload() async { await gate.waitUntilStarted() }; func completeDownload() { gate.complete() }
 }
-@MainActor private final class LibrarySelectionDouble: CoinSelecting { private(set) var selectedItems: [UUID] = []; func select(_ item: CoinCatalogItem, session: AccountSession, generationID: UUID) async { selectedItems.append(item.id) }; func selectClassic(session: AccountSession, generationID: UUID) async {} }
+@MainActor private final class LibrarySelectionDouble: CoinSelecting { private(set) var selectedItems: [UUID] = []; private(set) var classicSelections = 0; func select(_ item: CoinCatalogItem, session: AccountSession, generationID: UUID) async { selectedItems.append(item.id) }; func selectClassic(session: AccountSession, generationID: UUID) async { classicSelections += 1 } }
 private final class LibraryPreferenceDouble: SelectedCoinPreferenceServicing, @unchecked Sendable {
     func fetchSelectedCoinID(for userID: UUID, generationID: UUID) async throws -> UUID? { nil }
     func updateSelectedCoinID(_ coinID: UUID?, for userID: UUID, generationID: UUID) async throws {}

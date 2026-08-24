@@ -58,11 +58,15 @@ final class CoinLibraryViewModel: ObservableObject {
     func refresh() async {
         do {
             let remote = try await catalog.fetchPublishedCatalog()
-            var merged = Dictionary(uniqueKeysWithValues: catalogItems.map { ($0.id, $0) })
-            remote.forEach { merged[$0.id] = $0 }
-            catalogItems = Array(merged.values)
+            catalogItems = remote
             items = Self.libraryItems(from: catalogItems)
             await updateAvailability()
+            if case let .coin(selectedCoinID) = selectedID,
+               !remote.contains(where: { $0.id == selectedCoinID }) {
+                await selection.selectClassic(session: session(), generationID: generationID())
+                selectedID = .classic
+                selectedModelSource = .bundledClassic
+            }
         } catch {
             await updateAvailability()
         }

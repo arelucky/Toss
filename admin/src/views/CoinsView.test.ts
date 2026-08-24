@@ -47,7 +47,7 @@ describe("CoinsView", () => {
     alert.mockRestore();
   });
 
-  it("uses a Chinese confirmation before hiding a coin", async () => {
+  it("shows hide only for published coins and confirms in Chinese", async () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     const wrapper = mount(CoinsView, {
       props: {
@@ -56,7 +56,7 @@ describe("CoinsView", () => {
           displayName: "测试硬币",
           sortOrder: 0,
           isFeatured: false,
-          status: "draft",
+          status: "published",
         }]),
       },
     });
@@ -66,6 +66,35 @@ describe("CoinsView", () => {
     await hideButton?.trigger("click");
 
     expect(confirm).toHaveBeenCalledWith("确定要隐藏此硬币吗？现有资源将会保留。");
+    confirm.mockRestore();
+  });
+
+  it("shows restore for hidden coins and refreshes after confirmation", async () => {
+    const action = vi.spyOn(adminCoins, "action").mockResolvedValue({});
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const loadCoins = vi.fn().mockResolvedValue([{
+      id: "hidden-coin-id",
+      displayName: "测试硬币",
+      sortOrder: 0,
+      isFeatured: false,
+      status: "hidden",
+    }]);
+    const wrapper = mount(CoinsView, { props: { loadCoins } });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("已隐藏");
+    expect(wrapper.text()).toContain("恢复");
+    const actionButtons = wrapper.findAll("button");
+    expect(actionButtons.some((button) => button.text() === "隐藏")).toBe(false);
+    const restoreButton = actionButtons.find((button) => button.text() === "恢复");
+    expect(restoreButton).toBeDefined();
+    await restoreButton?.trigger("click");
+    await flushPromises();
+
+    expect(confirm).toHaveBeenCalledWith("确定要恢复此硬币吗？");
+    expect(action).toHaveBeenCalledWith({ action: "restoreCoin", coinID: "hidden-coin-id" });
+    expect(loadCoins).toHaveBeenCalledTimes(2);
+    action.mockRestore();
     confirm.mockRestore();
   });
 });

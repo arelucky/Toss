@@ -49,6 +49,16 @@ async function hideCoin(coinID: string) {
   }
 }
 
+async function restoreCoin(coinID: string) {
+  if (!window.confirm("确定要恢复此硬币吗？")) return;
+  try {
+    await adminCoins.action({ action: "restoreCoin", coinID });
+    await load();
+  } catch (error) {
+    errorMessage.value = error instanceof AdminCoinsError ? error.message : "无法恢复硬币。";
+  }
+}
+
 function statusLabel(status?: string) {
   if (status === "draft") return "草稿";
   if (status === "published") return "已发布";
@@ -78,7 +88,11 @@ onMounted(load);
         <thead><tr><th>名称</th><th>标识</th><th>状态</th><th></th></tr></thead>
         <tbody><tr v-for="coin in coins" :key="coin.id">
           <td>{{ coin.displayName }}</td><td>{{ coin.slug }}</td><td>{{ statusLabel(coin.status) }}</td>
-          <td><button @click="router.push(`/coins/${coin.id}`)">编辑</button><button @click="hideCoin(coin.id)">隐藏</button></td>
+          <td>
+            <button @click="router.push(`/coins/${coin.id}`)">编辑</button>
+            <button v-if="coin.status === 'published'" @click="hideCoin(coin.id)">隐藏</button>
+            <button v-else-if="coin.status === 'hidden'" @click="restoreCoin(coin.id)">恢复</button>
+          </td>
         </tr></tbody>
       </table>
     </section>

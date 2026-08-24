@@ -36,7 +36,7 @@ type VersionRow = {
   published_at?: string | null;
 };
 
-export const ADMIN_MANAGEABLE_COIN_STATUSES = ["draft", "published"] as const;
+export const ADMIN_MANAGEABLE_COIN_STATUSES = ["draft", "published", "hidden"] as const;
 
 function requiredEnvironment(name: string) {
   const value = Deno.env.get(name)?.trim();
@@ -210,6 +210,10 @@ export function createLiveDependencies(): AdminCoinDependencies {
     hideCoin: async (coinID) => await requireUpdatedCoin(serviceClient, {
       id: coinID,
       values: { status: "hidden" },
+    }),
+    restoreCoin: async (coinID) => await requireUpdatedCoin(serviceClient, {
+      id: coinID,
+      values: { status: "published" },
     }),
   };
 }

@@ -92,6 +92,27 @@ final class CoinSelectionStoreTests: XCTestCase {
 
         XCTAssertEqual(subject.preferences.updates, [.init(coinID: subject.coin.id, userID: subject.userID, generationID: subject.generationID)])
     }
+
+    func testSelectClassicClearsGuestPersistenceAndPublishesClassic() async {
+        let subject = Subject()
+        await subject.store.select(subject.coin, session: .guest, generationID: subject.generationID)
+
+        await subject.store.selectClassic(session: .guest, generationID: subject.generationID)
+
+        XCTAssertNil(subject.local.selectedCoinID)
+        XCTAssertEqual(subject.store.selectedCoin, .bundledClassic)
+    }
+
+    func testSelectClassicClearsAccountPreferenceEvenWhenPersistenceFails() async {
+        let subject = Subject()
+        await subject.store.select(subject.coin, session: .guest, generationID: subject.generationID)
+        subject.preferences.updateError = TestError.expected
+
+        await subject.store.selectClassic(session: .authenticated(userID: subject.userID), generationID: subject.generationID)
+
+        XCTAssertEqual(subject.preferences.updates.last, .init(coinID: nil, userID: subject.userID, generationID: subject.generationID))
+        XCTAssertEqual(subject.store.selectedCoin, .bundledClassic)
+    }
 }
 
 @MainActor
@@ -137,9 +158,10 @@ private final class LocalSelectionDouble: CoinLocalSelectionStoring, @unchecked 
 private final class SelectionPreferenceDouble: SelectedCoinPreferenceServicing, @unchecked Sendable {
     struct Update: Equatable { let coinID: UUID?; let userID: UUID; let generationID: UUID }
     var fetchResult: UUID?
+    var updateError: Error?
     private(set) var updates: [Update] = []
     func fetchSelectedCoinID(for userID: UUID, generationID: UUID) async throws -> UUID? { fetchResult }
-    func updateSelectedCoinID(_ coinID: UUID?, for userID: UUID, generationID: UUID) async throws { updates.append(.init(coinID: coinID, userID: userID, generationID: generationID)) }
+    func updateSelectedCoinID(_ coinID: UUID?, for userID: UUID, generationID: UUID) async throws { updates.append(.init(coinID: coinID, userID: userID, generationID: generationID)); if let updateError { throw updateError } }
 }
 
 private final class CatalogDouble: CoinCatalogServicing, @unchecked Sendable {
