@@ -37,6 +37,59 @@ describe("CoinEditorView", () => {
     expect(performAction.mock.calls.map(([action]) => action)).toEqual(["publish", "rollback"]);
   });
 
+  it("announces a successful publication after the version refreshes", async () => {
+    const wrapper = mount(CoinEditorView, {
+      props: {
+        coin,
+        confirmAction: vi.fn().mockResolvedValue(true),
+        performAction: vi.fn().mockResolvedValue(undefined),
+      },
+    });
+
+    await wrapper.get("[data-test='publish']").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.get('[role="status"]').text()).toBe("版本已发布。");
+  });
+
+  it("does not announce publication after a rollback", async () => {
+    const rollbackCoin = {
+      ...coin,
+      activeVersionID: "v2",
+      versions: [
+        { id: "v2", versionNumber: 2, status: "published" },
+        { id: "v1", versionNumber: 1, status: "published" },
+      ],
+    };
+    const wrapper = mount(CoinEditorView, {
+      props: {
+        coin: rollbackCoin,
+        confirmAction: vi.fn().mockResolvedValue(true),
+        performAction: vi.fn().mockResolvedValue(undefined),
+      },
+    });
+
+    await wrapper.get("[data-test='rollback']").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find('[role="status"]').exists()).toBe(false);
+  });
+
+  it("does not announce publication when publishing fails", async () => {
+    const wrapper = mount(CoinEditorView, {
+      props: {
+        coin,
+        confirmAction: vi.fn().mockResolvedValue(true),
+        performAction: vi.fn().mockRejectedValue(new Error("internal failure")),
+      },
+    });
+
+    await wrapper.get("[data-test='publish']").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find('[role="status"]').exists()).toBe(false);
+  });
+
   it("targets the highest eligible version for publish and rollback regardless of array order", async () => {
     const confirmAction = vi.fn().mockResolvedValue(true);
     const publishAction = vi.fn().mockResolvedValue(undefined);

@@ -22,6 +22,7 @@ const versionNumber = ref(1);
 const minAppVersion = ref("1.0.0");
 const busy = ref(false);
 const errorMessage = ref("");
+const successMessage = ref("");
 
 watch(currentCoin, (coin) => {
   if (!coin) return;
@@ -48,6 +49,7 @@ async function save() {
   if (busy.value || !currentCoin.value) return;
   busy.value = true;
   errorMessage.value = "";
+  successMessage.value = "";
   const edited = { ...currentCoin.value, displayName: displayName.value, description: description.value, sortOrder: sortOrder.value, isFeatured: isFeatured.value };
   try {
     if (props.saveCoin) await props.saveCoin(edited);
@@ -67,6 +69,7 @@ function targetVersion(action: "publish" | "rollback", coin: AdminCoin) {
 
 async function transition(action: "publish" | "rollback") {
   if (busy.value || !currentCoin.value) return;
+  successMessage.value = "";
   const version = targetVersion(action, currentCoin.value);
   if (!version) {
     errorMessage.value = action === "publish"
@@ -82,6 +85,7 @@ async function transition(action: "publish" | "rollback") {
     if (props.performAction) await props.performAction(action, version.id);
     else await adminCoins.action({ action: action === "publish" ? "publishVersion" : "rollbackVersion", coinID: currentCoin.value.id, versionID: version.id });
     await load();
+    if (action === "publish") successMessage.value = "版本已发布。";
   } catch (error) {
     errorMessage.value = error instanceof AdminCoinsError ? error.message : "无法更新版本。";
   } finally { busy.value = false; }
@@ -95,6 +99,7 @@ void load();
     <button class="back" @click="router.push('/coins')">← 硬币</button>
     <h1>{{ currentCoin?.displayName || "硬币编辑" }}</h1>
     <p v-if="errorMessage" class="panel error">{{ errorMessage }}</p>
+    <p v-if="successMessage" class="panel" role="status">{{ successMessage }}</p>
     <template v-if="currentCoin">
       <section class="panel">
         <h2>详情</h2>
