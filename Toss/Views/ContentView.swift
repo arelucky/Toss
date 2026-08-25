@@ -44,7 +44,9 @@ struct ContentView: View {
             TossBackground()
 
             coinInputLayer
-            .offset(y: coinVerticalOffset)
+                .offset(y: coinVerticalOffset)
+
+            idleTossAffordance
 
             VStack {
                 HStack {
@@ -54,7 +56,7 @@ struct ContentView: View {
                 Spacer()
             }
             .padding(.top, 8)
-            .padding(.leading, 16)
+            .padding(.leading, TossVisualStyle.pageHorizontalInset)
         }
         .onChange(of: viewModel.state) { _, state in
             debugLog("state changed: \(state)")
@@ -75,11 +77,18 @@ struct ContentView: View {
         Button { isCoinLibraryPresented = true } label: {
             Image(systemName: "circle.grid.2x2.fill")
                 .font(.system(size: 18, weight: .medium))
-                .frame(width: 44, height: 44)
-                .background(.ultraThinMaterial, in: Circle())
+                .frame(width: TossVisualStyle.controlSize, height: TossVisualStyle.controlSize)
+                .background(
+                    TossVisualStyle.primaryText.swiftUIColor.opacity(TossVisualStyle.surfaceOpacity),
+                    in: Circle()
+                )
+                .overlay {
+                    Circle()
+                        .stroke(TossVisualStyle.primaryText.swiftUIColor.opacity(0.18), lineWidth: 0.5)
+                }
         }
         .buttonStyle(.plain)
-        .foregroundStyle(.primary.opacity(0.82))
+        .foregroundStyle(TossVisualStyle.primaryText.swiftUIColor)
         .accessibilityLabel("Coins")
         .accessibilityHint("Opens the coin library")
     }
@@ -111,6 +120,24 @@ struct ContentView: View {
 
     var displayedCoinModelSource: CoinModelSource {
         coinLibraryViewModel.selectedModelSource
+    }
+
+    var idleTossAffordanceOpacity: Double {
+        viewModel.state == .idle && dragStartTime == nil ? 1 : 0
+    }
+
+    private var idleTossAffordance: some View {
+        VStack(spacing: 6) {
+            Image(systemName: "arrow.up")
+                .font(.system(size: 13, weight: .medium))
+            Text("Swipe up to toss")
+                .font(.system(size: 13, weight: .medium))
+        }
+        .foregroundStyle(TossVisualStyle.secondaryText.swiftUIColor)
+        .opacity(idleTossAffordanceOpacity)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+        .offset(y: 232)
     }
 
     private var tossGesture: some Gesture {

@@ -106,6 +106,23 @@ final class TossTests: XCTestCase {
         XCTAssertLessThan(style.floorShadowOpacity, 0.22)
     }
 
+    @MainActor
+    func testHomeIdleAffordanceIsVisibleOnlyWhileIdle() {
+        let idleView = ContentView(
+            viewModel: CoinTossViewModel(),
+            coinLibraryViewModel: AppDependencies.makeOfflineCoinLibraryViewModel()
+        )
+        let tossingViewModel = CoinTossViewModel()
+        tossingViewModel.endDrag(translation: CGSize(width: 0, height: -96), duration: 0.3)
+        let tossingView = ContentView(
+            viewModel: tossingViewModel,
+            coinLibraryViewModel: AppDependencies.makeOfflineCoinLibraryViewModel()
+        )
+
+        XCTAssertEqual(idleView.idleTossAffordanceOpacity, 1)
+        XCTAssertEqual(tossingView.idleTossAffordanceOpacity, 0)
+    }
+
     func testSoundEffectsExposeExpectedWavNames() throws {
         XCTAssertEqual(
             TossSoundEffect.allCases.map(\.fileName),

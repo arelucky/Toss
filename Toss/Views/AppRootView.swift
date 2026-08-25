@@ -44,7 +44,7 @@ struct AppRootView: View {
             )
             accountButton
                 .padding(.top, 8)
-                .padding(.trailing, 16)
+                .padding(.trailing, TossVisualStyle.pageHorizontalInset)
         }
         .sheet(item: $presentedSheet) { _ in
             AccountSheetView(viewModel: accountViewModel)
@@ -60,11 +60,18 @@ struct AppRootView: View {
         } label: {
             Image(systemName: accountIconName)
                 .font(.system(size: 18, weight: .medium))
-                .frame(width: 44, height: 44)
-                .background(.ultraThinMaterial, in: Circle())
+                .frame(width: TossVisualStyle.controlSize, height: TossVisualStyle.controlSize)
+                .background(
+                    TossVisualStyle.primaryText.swiftUIColor.opacity(TossVisualStyle.surfaceOpacity),
+                    in: Circle()
+                )
+                .overlay {
+                    Circle()
+                        .stroke(TossVisualStyle.primaryText.swiftUIColor.opacity(0.18), lineWidth: 0.5)
+                }
         }
         .buttonStyle(.plain)
-        .foregroundStyle(.primary.opacity(0.82))
+        .foregroundStyle(TossVisualStyle.primaryText.swiftUIColor)
         .accessibilityLabel("Account and settings")
         .accessibilityHint("Opens account settings")
     }

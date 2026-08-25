@@ -1,28 +1,18 @@
 import SwiftUI
 
-struct TossBackgroundColor: Equatable {
-    let red: Double
-    let green: Double
-    let blue: Double
-
-    var swiftUIColor: Color {
-        Color(red: red, green: green, blue: blue)
-    }
-}
-
 struct TossBackgroundStyle: Equatable {
-    let topColor: TossBackgroundColor
-    let bottomColor: TossBackgroundColor
-    let centerLightColor: TossBackgroundColor
+    let topColor: TossVisualColor
+    let bottomColor: TossVisualColor
+    let centerLightColor: TossVisualColor
     let centerLightOpacity: Double
     let floorShadowOpacity: Double
 
     static let defaultDisplay = TossBackgroundStyle(
-        topColor: TossBackgroundColor(red: 0.095, green: 0.098, blue: 0.108),
-        bottomColor: TossBackgroundColor(red: 0.018, green: 0.019, blue: 0.024),
-        centerLightColor: TossBackgroundColor(red: 0.74, green: 0.76, blue: 0.78),
-        centerLightOpacity: 0.24,
-        floorShadowOpacity: 0.14
+        topColor: TossVisualStyle.charcoalTop,
+        bottomColor: TossVisualStyle.charcoalBottom,
+        centerLightColor: TossVisualStyle.centerGlow,
+        centerLightOpacity: 0.20,
+        floorShadowOpacity: 0.12
     )
 }
 
