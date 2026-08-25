@@ -37,42 +37,26 @@ enum CoinLibraryHeroPresentationState: Equatable, Sendable {
 
 @MainActor
 final class CoinLibraryHeroLoadAttemptGate {
-    private var failedSource: CoinModelSource?
+    private var failedSources: [CoinModelSource] = []
 
     private(set) var presentationState: CoinLibraryHeroPresentationState = .loading
 
     func beginLoading(_ source: CoinModelSource) -> Bool {
-        guard failedSource != source else { return false }
+        guard !failedSources.contains(source) else { return false }
 
         presentationState = .loading
         return true
     }
 
-    func markDisplayed(for source: CoinModelSource) {
-        failedSource = nil
+    func markDisplayed() {
         presentationState = .displayed
     }
 
     func markUnavailable(for source: CoinModelSource) {
-        failedSource = source
-        presentationState = .unavailable
-    }
-
-    @discardableResult
-    func performLoad(
-        for source: CoinModelSource,
-        operation: () throws -> Void
-    ) -> Bool {
-        guard beginLoading(source) else { return false }
-
-        do {
-            try operation()
-            markDisplayed(for: source)
-            return true
-        } catch {
-            markUnavailable(for: source)
-            return false
+        if !failedSources.contains(source) {
+            failedSources.append(source)
         }
+        presentationState = .unavailable
     }
 }
 
@@ -234,7 +218,7 @@ private struct CoinRealityView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: ARView, context: Context) {
-        if context.coordinator.source != source {
+        if context.coordinator.requestedSource != source {
             loadCoin(source: source, into: context.coordinator.anchor, coordinator: context.coordinator)
         }
         context.coordinator.applyPreviewRotation(previewRotation)
@@ -258,7 +242,10 @@ private struct CoinRealityView: UIViewRepresentable {
     }
 
     private func loadCoin(source: CoinModelSource, into anchor: AnchorEntity?, coordinator: Coordinator) {
-        guard coordinator.beginLoading(source) else { return }
+        guard coordinator.beginLoading(source) else {
+            notifyPresentationState(.unavailable, source: source, coordinator: coordinator)
+            return
+        }
 
         notifyPresentationState(.loading, source: source, coordinator: coordinator)
         guard let anchor, let modelURL = modelURL(for: source) else {
@@ -280,7 +267,7 @@ private struct CoinRealityView: UIViewRepresentable {
             coordinator.prepareToReplaceCoin()
             anchor.addChild(coin)
             coordinator.setCoin(coin, source: source)
-            coordinator.markDisplayed(for: source)
+            coordinator.markDisplayed()
             CoinLoadStateNotifier(callback: onLoadStateChange).notifyLoaded(
                 source,
                 currentSource: { [weak coordinator] in
@@ -386,7 +373,7 @@ private struct CoinRealityView: UIViewRepresentable {
         init() {}
         private(set) weak var anchor: AnchorEntity?
         private(set) var source: CoinModelSource?
-        private var requestedSource: CoinModelSource?
+        private(set) var requestedSource: CoinModelSource?
         private let loadAttemptGate = CoinLibraryHeroLoadAttemptGate()
         private weak var coin: Entity?
         private var timer: Timer?
@@ -417,14 +404,12 @@ private struct CoinRealityView: UIViewRepresentable {
         }
 
         func beginLoading(_ source: CoinModelSource) -> Bool {
-            guard loadAttemptGate.beginLoading(source) else { return false }
-
             requestedSource = source
-            return true
+            return loadAttemptGate.beginLoading(source)
         }
 
-        func markDisplayed(for source: CoinModelSource) {
-            loadAttemptGate.markDisplayed(for: source)
+        func markDisplayed() {
+            loadAttemptGate.markDisplayed()
         }
 
         func markUnavailable(for source: CoinModelSource) {

@@ -25,11 +25,8 @@ final class TossTests: XCTestCase {
         let source = CoinModelSource.downloaded(URL(fileURLWithPath: "/tmp/unavailable.usdz"))
         let gate = CoinLibraryHeroLoadAttemptGate()
 
-        let loaded = gate.performLoad(for: source) {
-            throw CoinLibraryHeroLoadTestError.expected
-        }
-
-        XCTAssertFalse(loaded)
+        XCTAssertTrue(gate.beginLoading(source))
+        gate.markUnavailable(for: source)
         XCTAssertEqual(gate.presentationState, .unavailable)
     }
 
@@ -40,14 +37,36 @@ final class TossTests: XCTestCase {
         var attempts = 0
 
         for _ in 0..<2 {
-            _ = gate.performLoad(for: source) {
+            if gate.beginLoading(source) {
                 attempts += 1
-                throw CoinLibraryHeroLoadTestError.expected
+                gate.markUnavailable(for: source)
             }
         }
 
         XCTAssertEqual(attempts, 1)
         XCTAssertEqual(gate.presentationState, .unavailable)
+    }
+
+    @MainActor
+    func testCoinLibraryHeroCanRestorePreviouslyDisplayedSourceAfterDifferentSourceFails() {
+        let sourceA = CoinModelSource.downloaded(URL(fileURLWithPath: "/tmp/source-a.usdz"))
+        let sourceB = CoinModelSource.downloaded(URL(fileURLWithPath: "/tmp/source-b.usdz"))
+        let gate = CoinLibraryHeroLoadAttemptGate()
+
+        XCTAssertTrue(gate.beginLoading(sourceA))
+        gate.markDisplayed()
+        XCTAssertEqual(gate.presentationState, .displayed)
+
+        XCTAssertTrue(gate.beginLoading(sourceB))
+        gate.markUnavailable(for: sourceB)
+        XCTAssertEqual(gate.presentationState, .unavailable)
+
+        XCTAssertTrue(gate.beginLoading(sourceA))
+        gate.markDisplayed()
+        XCTAssertEqual(gate.presentationState, .displayed)
+
+        XCTAssertFalse(gate.beginLoading(sourceB))
+        XCTAssertEqual(gate.presentationState, .displayed)
     }
 
 
@@ -563,8 +582,4 @@ final class TossTests: XCTestCase {
         XCTAssertNil(viewModel.lastTossEvent)
         XCTAssertNil(viewModel.lastTossResult)
     }
-}
-
-private enum CoinLibraryHeroLoadTestError: Error {
-    case expected
 }
