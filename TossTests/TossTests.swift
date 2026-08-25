@@ -10,14 +10,44 @@ import CoreGraphics
 @testable import Toss
 
 final class TossTests: XCTestCase {
-    func testCoinLibraryHeroLoadingKeepsStaticPreviewVisible() {
-        XCTAssertTrue(CoinLibraryHeroPresentationState.loading.showsStaticPreview)
+    func testCoinLibraryHeroLoadingShowsIndicatorWithoutStaticPreview() {
+        XCTAssertTrue(CoinLibraryHeroPresentationState.loading.showsLoadingIndicator)
         XCTAssertFalse(CoinLibraryHeroPresentationState.loading.showsUnavailableStatus)
     }
 
-    func testCoinLibraryHeroUnavailableKeepsStaticPreviewVisible() {
-        XCTAssertTrue(CoinLibraryHeroPresentationState.unavailable.showsStaticPreview)
+    func testCoinLibraryHeroUnavailableShowsStatusWithoutStaticPreview() {
+        XCTAssertFalse(CoinLibraryHeroPresentationState.unavailable.showsLoadingIndicator)
         XCTAssertTrue(CoinLibraryHeroPresentationState.unavailable.showsUnavailableStatus)
+    }
+
+    @MainActor
+    func testCoinLibraryHeroLoadFailureEntersUnavailableState() {
+        let source = CoinModelSource.downloaded(URL(fileURLWithPath: "/tmp/unavailable.usdz"))
+        let gate = CoinLibraryHeroLoadAttemptGate()
+
+        let loaded = gate.performLoad(for: source) {
+            throw CoinLibraryHeroLoadTestError.expected
+        }
+
+        XCTAssertFalse(loaded)
+        XCTAssertEqual(gate.presentationState, .unavailable)
+    }
+
+    @MainActor
+    func testCoinLibraryHeroDoesNotRepeatSameFailedLoadDuringUpdates() {
+        let source = CoinModelSource.downloaded(URL(fileURLWithPath: "/tmp/retry-loop.usdz"))
+        let gate = CoinLibraryHeroLoadAttemptGate()
+        var attempts = 0
+
+        for _ in 0..<2 {
+            _ = gate.performLoad(for: source) {
+                attempts += 1
+                throw CoinLibraryHeroLoadTestError.expected
+            }
+        }
+
+        XCTAssertEqual(attempts, 1)
+        XCTAssertEqual(gate.presentationState, .unavailable)
     }
 
 
@@ -533,4 +563,8 @@ final class TossTests: XCTestCase {
         XCTAssertNil(viewModel.lastTossEvent)
         XCTAssertNil(viewModel.lastTossResult)
     }
+}
+
+private enum CoinLibraryHeroLoadTestError: Error {
+    case expected
 }

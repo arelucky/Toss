@@ -26,12 +26,53 @@ enum CoinLibraryHeroPresentationState: Equatable, Sendable {
     case displayed
     case unavailable
 
-    var showsStaticPreview: Bool {
-        self != .displayed
+    var showsLoadingIndicator: Bool {
+        self == .loading
     }
 
     var showsUnavailableStatus: Bool {
         self == .unavailable
+    }
+}
+
+@MainActor
+final class CoinLibraryHeroLoadAttemptGate {
+    private var failedSource: CoinModelSource?
+
+    private(set) var presentationState: CoinLibraryHeroPresentationState = .loading
+
+    func beginLoading(_ source: CoinModelSource) -> Bool {
+        guard failedSource != source else { return false }
+
+        presentationState = .loading
+        return true
+    }
+
+    func markDisplayed(for source: CoinModelSource) {
+        failedSource = nil
+        presentationState = .displayed
+    }
+
+    func markUnavailable(for source: CoinModelSource) {
+        failedSource = source
+        presentationState = .unavailable
+    }
+
+    @discardableResult
+    func performLoad(
+        for source: CoinModelSource,
+        operation: () throws -> Void
+    ) -> Bool {
+        guard beginLoading(source) else { return false }
+
+        do {
+            try operation()
+            markDisplayed(for: source)
+            return true
+        } catch {
+            markUnavailable(for: source)
+            return false
+        }
     }
 }
 
@@ -217,9 +258,11 @@ private struct CoinRealityView: UIViewRepresentable {
     }
 
     private func loadCoin(source: CoinModelSource, into anchor: AnchorEntity?, coordinator: Coordinator) {
-        coordinator.beginLoading(source)
+        guard coordinator.beginLoading(source) else { return }
+
         notifyPresentationState(.loading, source: source, coordinator: coordinator)
         guard let anchor, let modelURL = modelURL(for: source) else {
+            coordinator.markUnavailable(for: source)
             notifyPresentationState(.unavailable, source: source, coordinator: coordinator)
             return
         }
@@ -237,6 +280,7 @@ private struct CoinRealityView: UIViewRepresentable {
             coordinator.prepareToReplaceCoin()
             anchor.addChild(coin)
             coordinator.setCoin(coin, source: source)
+            coordinator.markDisplayed(for: source)
             CoinLoadStateNotifier(callback: onLoadStateChange).notifyLoaded(
                 source,
                 currentSource: { [weak coordinator] in
@@ -249,7 +293,8 @@ private struct CoinRealityView: UIViewRepresentable {
                 coordinator.startRotation(for: coin, step: style.rotationStep)
             }
         } catch {
-            assertionFailure("Failed to load TossCoin.usdz: \(error.localizedDescription)")
+            TossDebugLog.log("Coin3DView", "model load failed")
+            coordinator.markUnavailable(for: source)
             notifyPresentationState(.unavailable, source: source, coordinator: coordinator)
         }
     }
@@ -342,6 +387,7 @@ private struct CoinRealityView: UIViewRepresentable {
         private(set) weak var anchor: AnchorEntity?
         private(set) var source: CoinModelSource?
         private var requestedSource: CoinModelSource?
+        private let loadAttemptGate = CoinLibraryHeroLoadAttemptGate()
         private weak var coin: Entity?
         private var timer: Timer?
         private var rotationStep: Float = 0
@@ -370,8 +416,19 @@ private struct CoinRealityView: UIViewRepresentable {
             source = nil
         }
 
-        func beginLoading(_ source: CoinModelSource) {
+        func beginLoading(_ source: CoinModelSource) -> Bool {
+            guard loadAttemptGate.beginLoading(source) else { return false }
+
             requestedSource = source
+            return true
+        }
+
+        func markDisplayed(for source: CoinModelSource) {
+            loadAttemptGate.markDisplayed(for: source)
+        }
+
+        func markUnavailable(for source: CoinModelSource) {
+            loadAttemptGate.markUnavailable(for: source)
         }
 
         func setCoin(_ coin: Entity, source: CoinModelSource) {

@@ -107,11 +107,6 @@ struct CoinLibraryView: View {
     @ViewBuilder
     private func selectedCoinPreview(size: CGFloat) -> some View {
         ZStack {
-            heroStaticPreview
-                .frame(width: size, height: size)
-                .opacity(heroPresentationState == .displayed ? 0.16 : 1)
-                .animation(.easeOut(duration: 0.24), value: heroPresentationState)
-
             Circle()
                 .stroke(TossVisualStyle.selectionGold.swiftUIColor.opacity(0.88), lineWidth: 1.25)
                 .frame(width: size + 20, height: size + 20)
@@ -128,7 +123,7 @@ struct CoinLibraryView: View {
             .opacity(heroPresentationState == .displayed ? 1 : 0)
             .animation(.easeIn(duration: 0.2), value: heroPresentationState)
 
-            if heroPresentationState == .loading {
+            if heroPresentationState.showsLoadingIndicator {
                 ProgressView()
                     .controlSize(.regular)
                     .tint(TossVisualStyle.selectionGold.swiftUIColor)
@@ -141,24 +136,6 @@ struct CoinLibraryView: View {
                     .background(.black.opacity(0.54), in: Capsule())
             }
         }
-    }
-
-    @ViewBuilder
-    private var heroStaticPreview: some View {
-        switch CoinLibraryPreviewSource(item: selectedItem) {
-        case .bundledClassic:
-            Image("ClassicCoinPreview")
-                .resizable()
-                .scaledToFit()
-        case let .remote(previewURL):
-            CoinRemotePreviewImage(url: previewURL)
-                .scaledToFit()
-        }
-    }
-
-    private var selectedItem: CoinLibraryItem {
-        viewModel.items.first(where: { $0.id == viewModel.preselectedID })
-            ?? CoinLibraryItem(id: .classic, coin: nil)
     }
 
     private var previewGesture: some Gesture {
