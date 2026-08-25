@@ -201,7 +201,11 @@ private struct CoinRealityView: UIViewRepresentable {
         guard let anchor, let modelURL = modelURL(for: source) else { return }
 
         do {
-            let coin = try Entity.load(contentsOf: modelURL)
+            let coin = try CoinModelPrototypeCache.shared.clone(
+                for: modelURL,
+                isClassic: source == .bundledClassic,
+                load: { try Entity.load(contentsOf: modelURL) }
+            )
             prepareCoin(coin)
             if CoinMaterialStrategy.forSource(source) == .applyOverride {
                 applyMaterialOverride(to: coin)

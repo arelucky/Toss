@@ -84,6 +84,8 @@
 		F5FD000330A0000100000001 /* CoinAssetCaching.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FD000430A0000100000001 /* CoinAssetCaching.swift */; };
 		F5FD000530A0000100000001 /* CoinAssetCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FD000630A0000100000001 /* CoinAssetCache.swift */; };
 		F5FD000730A0000100000001 /* CoinFileDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FD000830A0000100000001 /* CoinFileDownloader.swift */; };
+		F601000130D0000100000001 /* CoinModelPrototypeCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F601000230D0000100000001 /* CoinModelPrototypeCacheTests.swift */; };
+		F601000330D0000100000001 /* CoinModelPrototypeCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F601000430D0000100000001 /* CoinModelPrototypeCache.swift */; };
 		F5FE000130B0000100000001 /* CoinSelectionStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FE000230B0000100000001 /* CoinSelectionStoreTests.swift */; };
 		F5FE000330B0000100000001 /* CoinSelectionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FE000430B0000100000001 /* CoinSelectionStore.swift */; };
 		F600000130C0000100000001 /* CoinLibraryViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F600000230C0000100000001 /* CoinLibraryViewModelTests.swift */; };
@@ -198,6 +200,8 @@
 		F5FD000430A0000100000001 /* CoinAssetCaching.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coins/CoinAssetCaching.swift; sourceTree = "<group>"; };
 		F5FD000630A0000100000001 /* CoinAssetCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coins/CoinAssetCache.swift; sourceTree = "<group>"; };
 		F5FD000830A0000100000001 /* CoinFileDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coins/CoinFileDownloader.swift; sourceTree = "<group>"; };
+		F601000230D0000100000001 /* CoinModelPrototypeCacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components/CoinModelPrototypeCacheTests.swift; sourceTree = "<group>"; };
+		F601000430D0000100000001 /* CoinModelPrototypeCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinModelPrototypeCache.swift; sourceTree = "<group>"; };
 		F5FE000230B0000100000001 /* CoinSelectionStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coins/CoinSelectionStoreTests.swift; sourceTree = "<group>"; };
 		F5FE000430B0000100000001 /* CoinSelectionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coins/CoinSelectionStore.swift; sourceTree = "<group>"; };
 		F600000230C0000100000001 /* CoinLibraryViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coins/CoinLibraryViewModelTests.swift; sourceTree = "<group>"; };
@@ -335,6 +339,7 @@
 				F5FD000230A0000100000001 /* CoinAssetCacheTests.swift */,
 				F600000230C0000100000001 /* CoinLibraryViewModelTests.swift */,
 				F5FE000230B0000100000001 /* CoinSelectionStoreTests.swift */,
+				F601000230D0000100000001 /* CoinModelPrototypeCacheTests.swift */,
 			);
 			path = TossTests;
 			sourceTree = "<group>";
@@ -378,6 +383,7 @@
 				F5A43AC22FFFEA0000F9D3AF /* CoinView.swift */,
 				F5C02A0930190851001D0A7E /* Coin3DView.swift */,
 				F5C02A0B30190851001D0A7E /* CoinDisplayLayer.swift */,
+				F601000430D0000100000001 /* CoinModelPrototypeCache.swift */,
 				F5B53001301C000100000001 /* TossBackground.swift */,
 				F5A43ABE2FFFEA0000F9D3AF /* CoinFront.swift */,
 				F5A43AC02FFFEA0000F9D3AF /* CoinBack.swift */,
@@ -656,6 +662,7 @@
 				F5FD000330A0000100000001 /* CoinAssetCaching.swift in Sources */,
 				F5FD000530A0000100000001 /* CoinAssetCache.swift in Sources */,
 				F5FD000730A0000100000001 /* CoinFileDownloader.swift in Sources */,
+				F601000330D0000100000001 /* CoinModelPrototypeCache.swift in Sources */,
 				F5FE000330B0000100000001 /* CoinSelectionStore.swift in Sources */,
 				F600000330C0000100000001 /* CoinLibraryViewModel.swift in Sources */,
 				F600000530C0000100000001 /* CoinLibraryView.swift in Sources */,
@@ -691,6 +698,7 @@
 				F5FD000130A0000100000001 /* CoinAssetCacheTests.swift in Sources */,
 				F600000130C0000100000001 /* CoinLibraryViewModelTests.swift in Sources */,
 				F5FE000130B0000100000001 /* CoinSelectionStoreTests.swift in Sources */,
+				F601000130D0000100000001 /* CoinModelPrototypeCacheTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
