@@ -7,9 +7,10 @@ struct CoinLibraryView: View {
     @State private var previewInertia: CoinPreviewInertia?
     @State private var previewInertiaTrigger = 0
     @State private var dragStartTime: Date?
-    @State private var isHeroLoaded = false
+    @State private var heroPresentationState: CoinLibraryHeroPresentationState = .loading
 
     private let applyButtonHeight: CGFloat = 52
+    private let bottomActionHeight: CGFloat = 84
 
     private let columns = [
         GridItem(.flexible(), spacing: 36),
@@ -23,26 +24,22 @@ struct CoinLibraryView: View {
             VStack(spacing: 0) {
                 navigationHeader
                 GeometryReader { proxy in
-                    let heroHeight = min(max(proxy.size.height * 0.48, 270), 360)
+                    let heroHeight = min(max(proxy.size.height * 0.43, 246), 310)
 
                     VStack(spacing: 0) {
                         selectedCoinStage(containerHeight: heroHeight)
                             .frame(height: heroHeight)
                         divider
                         libraryGrid
-                            .frame(maxHeight: .infinity)
                     }
                 }
+                bottomActionBar
             }
-        }
-        .ignoresSafeArea(edges: .bottom)
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            applyPreselectionButton
         }
         .preferredColorScheme(.dark)
         .task { await viewModel.refresh() }
         .onChange(of: viewModel.preselectedID) { _, _ in
-            isHeroLoaded = false
+            heroPresentationState = .loading
             resetPreview()
         }
         .onDisappear(perform: resetPreview)
@@ -74,31 +71,33 @@ struct CoinLibraryView: View {
     }
 
     private var navigationHeader: some View {
-        ZStack {
-            Text("Coin Library")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(.white)
-
-            HStack {
+        VStack(spacing: 5) {
+            ZStack {
                 Button(action: dismiss) {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 25, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .font(.system(size: 17, weight: .medium))
+                        .foregroundStyle(TossVisualStyle.primaryText.swiftUIColor)
                         .frame(width: 44, height: 44)
-                        .contentShape(Rectangle())
+                        .background(.white.opacity(0.055), in: Circle())
                 }
                 .accessibilityLabel("Back")
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                Spacer()
+                Text("Coin Library")
+                    .font(.system(size: 26, weight: .regular, design: .serif))
+                    .foregroundStyle(TossVisualStyle.primaryText.swiftUIColor)
             }
+            Text("Choose your coin.")
+                .font(.system(size: 14, weight: .regular))
+                .foregroundStyle(TossVisualStyle.secondaryText.swiftUIColor)
         }
-        .padding(.horizontal, 18)
-        .padding(.top, 6)
-        .frame(height: 58)
+        .padding(.horizontal, TossVisualStyle.pageHorizontalInset)
+        .padding(.top, 10)
+        .padding(.bottom, 12)
     }
 
     private func selectedCoinStage(containerHeight: CGFloat) -> some View {
-        selectedCoinPreview(size: min(292, max(250, containerHeight - 28)))
+        selectedCoinPreview(size: min(250, max(210, containerHeight - 36)))
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.bottom, 14)
             .contentShape(Rectangle())
@@ -108,22 +107,58 @@ struct CoinLibraryView: View {
     @ViewBuilder
     private func selectedCoinPreview(size: CGFloat) -> some View {
         ZStack {
+            heroStaticPreview
+                .frame(width: size, height: size)
+                .opacity(heroPresentationState == .displayed ? 0.16 : 1)
+                .animation(.easeOut(duration: 0.24), value: heroPresentationState)
+
+            Circle()
+                .stroke(TossVisualStyle.selectionGold.swiftUIColor.opacity(0.88), lineWidth: 1.25)
+                .frame(width: size + 20, height: size + 20)
+
             Coin3DView(
                 source: viewModel.preselectedModelSource,
                 style: .libraryHero,
                 previewRotation: previewRotation,
                 previewInertia: previewInertia,
                 previewInertiaTrigger: previewInertiaTrigger,
-                onLoadStateChange: { isHeroLoaded = $0 }
+                onPresentationStateChange: { heroPresentationState = $0 }
             )
             .frame(width: size, height: size)
+            .opacity(heroPresentationState == .displayed ? 1 : 0)
+            .animation(.easeIn(duration: 0.2), value: heroPresentationState)
 
-            if !isHeroLoaded {
+            if heroPresentationState == .loading {
                 ProgressView()
-                    .controlSize(.large)
-                    .tint(.white.opacity(0.78))
+                    .controlSize(.regular)
+                    .tint(TossVisualStyle.selectionGold.swiftUIColor)
+            } else if heroPresentationState.showsUnavailableStatus {
+                Text("Preview unavailable")
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(TossVisualStyle.secondaryText.swiftUIColor)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(.black.opacity(0.54), in: Capsule())
             }
         }
+    }
+
+    @ViewBuilder
+    private var heroStaticPreview: some View {
+        switch CoinLibraryPreviewSource(item: selectedItem) {
+        case .bundledClassic:
+            Image("ClassicCoinPreview")
+                .resizable()
+                .scaledToFit()
+        case let .remote(previewURL):
+            CoinRemotePreviewImage(url: previewURL)
+                .scaledToFit()
+        }
+    }
+
+    private var selectedItem: CoinLibraryItem {
+        viewModel.items.first(where: { $0.id == viewModel.preselectedID })
+            ?? CoinLibraryItem(id: .classic, coin: nil)
     }
 
     private var previewGesture: some Gesture {
@@ -184,10 +219,21 @@ struct CoinLibraryView: View {
                     )
                 }
             }
-            .padding(.horizontal, 38)
-            .padding(.top, 24)
-            .padding(.bottom, applyButtonHeight + 24)
+            .padding(.horizontal, 34)
+            .padding(.top, 20)
+            .padding(.bottom, 24)
         }
+    }
+
+    private var bottomActionBar: some View {
+        applyPreselectionButton
+            .frame(height: bottomActionHeight)
+            .background(TossVisualStyle.charcoalBottom.swiftUIColor.opacity(0.98))
+            .overlay(alignment: .top) {
+                Rectangle()
+                    .fill(.white.opacity(0.10))
+                    .frame(height: 1)
+            }
     }
 
     private var applyPreselectionButton: some View {
@@ -199,18 +245,19 @@ struct CoinLibraryView: View {
         } label: {
             Text("Use This Coin")
                 .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(TossVisualStyle.charcoalBottom.swiftUIColor)
+                .foregroundStyle(TossVisualStyle.selectionGold.swiftUIColor)
                 .frame(maxWidth: .infinity)
                 .frame(height: applyButtonHeight)
-                .background(TossVisualStyle.selectionGold.swiftUIColor, in: Capsule())
+                .background(.black.opacity(0.44), in: Capsule())
+                .overlay {
+                    Capsule()
+                        .stroke(TossVisualStyle.selectionGold.swiftUIColor.opacity(0.82), lineWidth: 1)
+                }
         }
         .buttonStyle(.plain)
         .disabled(!viewModel.canApplyPreselection)
-        .opacity(viewModel.canApplyPreselection ? 1 : 0.42)
+        .opacity(viewModel.canApplyPreselection ? 1 : 0.36)
         .padding(.horizontal, 24)
-        .padding(.top, 12)
-        .padding(.bottom, 8)
-        .background(.black.opacity(0.88))
         .accessibilityLabel("Use This Coin")
     }
 }

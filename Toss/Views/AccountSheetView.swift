@@ -77,3 +77,25 @@ struct AccountSettingsSection<Content: View>: View {
         }
     }
 }
+
+struct AccountPreferenceRow: View {
+    let title: String
+    let icon: String
+    @Binding var isOn: Bool
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 17, weight: .medium))
+                .foregroundStyle(TossVisualStyle.selectionGold.swiftUIColor)
+                .frame(width: 26, height: 26)
+                .background(.white.opacity(0.06), in: Circle())
+            Text(title)
+                .foregroundStyle(TossVisualStyle.primaryText.swiftUIColor)
+            Spacer()
+            Toggle(title, isOn: $isOn)
+                .labelsHidden()
+                .tint(TossVisualStyle.selectionGold.swiftUIColor)
+        }
+    }
+}

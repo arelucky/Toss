@@ -10,6 +10,16 @@ import CoreGraphics
 @testable import Toss
 
 final class TossTests: XCTestCase {
+    func testCoinLibraryHeroLoadingKeepsStaticPreviewVisible() {
+        XCTAssertTrue(CoinLibraryHeroPresentationState.loading.showsStaticPreview)
+        XCTAssertFalse(CoinLibraryHeroPresentationState.loading.showsUnavailableStatus)
+    }
+
+    func testCoinLibraryHeroUnavailableKeepsStaticPreviewVisible() {
+        XCTAssertTrue(CoinLibraryHeroPresentationState.unavailable.showsStaticPreview)
+        XCTAssertTrue(CoinLibraryHeroPresentationState.unavailable.showsUnavailableStatus)
+    }
+
 
     func testDefaultGoldThemeKeepsCoinStructureStable() throws {
         let theme = CoinTheme.defaultGold

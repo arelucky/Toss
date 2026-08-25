@@ -37,6 +37,7 @@ struct CoinLibraryCard: View {
 
                 coinPreview
                     .frame(width: previewSize, height: previewSize)
+                    .clipShape(Circle())
 
                 statusOverlay
             }
@@ -114,7 +115,7 @@ struct CoinLibraryCard: View {
 }
 
 @MainActor
-private struct CoinRemotePreviewImage: View {
+struct CoinRemotePreviewImage: View {
     let url: URL
 
     @State private var loadedImage: CGImage?
@@ -134,6 +135,5 @@ private struct CoinRemotePreviewImage: View {
                     }
             }
         }
-        .clipShape(Circle())
     }
 }

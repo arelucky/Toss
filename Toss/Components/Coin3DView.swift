@@ -21,6 +21,20 @@ enum CoinMaterialStrategy: Equatable, Sendable {
     }
 }
 
+enum CoinLibraryHeroPresentationState: Equatable, Sendable {
+    case loading
+    case displayed
+    case unavailable
+
+    var showsStaticPreview: Bool {
+        self != .displayed
+    }
+
+    var showsUnavailableStatus: Bool {
+        self == .unavailable
+    }
+}
+
 @MainActor
 struct CoinLoadStateNotifier {
     let callback: ((Bool) -> Void)?
@@ -46,6 +60,7 @@ struct Coin3DView: View {
     let previewInertia: CoinPreviewInertia?
     let previewInertiaTrigger: Int
     let onLoadStateChange: ((Bool) -> Void)?
+    let onPresentationStateChange: ((CoinLibraryHeroPresentationState) -> Void)?
 
     init(
         source: CoinModelSource = .bundledClassic,
@@ -55,7 +70,8 @@ struct Coin3DView: View {
         previewRotation: CoinPreviewRotation = .zero,
         previewInertia: CoinPreviewInertia? = nil,
         previewInertiaTrigger: Int = 0,
-        onLoadStateChange: ((Bool) -> Void)? = nil
+        onLoadStateChange: ((Bool) -> Void)? = nil,
+        onPresentationStateChange: ((CoinLibraryHeroPresentationState) -> Void)? = nil
     ) {
         self.source = source
         self.style = style
@@ -65,6 +81,7 @@ struct Coin3DView: View {
         self.previewInertia = previewInertia
         self.previewInertiaTrigger = previewInertiaTrigger
         self.onLoadStateChange = onLoadStateChange
+        self.onPresentationStateChange = onPresentationStateChange
     }
 
     var body: some View {
@@ -76,7 +93,8 @@ struct Coin3DView: View {
             previewRotation: previewRotation,
             previewInertia: previewInertia,
             previewInertiaTrigger: previewInertiaTrigger,
-            onLoadStateChange: onLoadStateChange
+            onLoadStateChange: onLoadStateChange,
+            onPresentationStateChange: onPresentationStateChange
         )
             .allowsHitTesting(false)
             .onAppear {
@@ -151,6 +169,7 @@ private struct CoinRealityView: UIViewRepresentable {
     let previewInertia: CoinPreviewInertia?
     let previewInertiaTrigger: Int
     let onLoadStateChange: ((Bool) -> Void)?
+    let onPresentationStateChange: ((CoinLibraryHeroPresentationState) -> Void)?
 
     func makeCoordinator() -> Coordinator {
         Coordinator()
@@ -198,7 +217,12 @@ private struct CoinRealityView: UIViewRepresentable {
     }
 
     private func loadCoin(source: CoinModelSource, into anchor: AnchorEntity?, coordinator: Coordinator) {
-        guard let anchor, let modelURL = modelURL(for: source) else { return }
+        coordinator.beginLoading(source)
+        notifyPresentationState(.loading, source: source, coordinator: coordinator)
+        guard let anchor, let modelURL = modelURL(for: source) else {
+            notifyPresentationState(.unavailable, source: source, coordinator: coordinator)
+            return
+        }
 
         do {
             let coin = try CoinModelPrototypeCache.shared.clone(
@@ -220,11 +244,25 @@ private struct CoinRealityView: UIViewRepresentable {
                     return source
                 }
             )
+            notifyPresentationState(.displayed, source: source, coordinator: coordinator)
             if style.autoRotates {
                 coordinator.startRotation(for: coin, step: style.rotationStep)
             }
         } catch {
             assertionFailure("Failed to load TossCoin.usdz: \(error.localizedDescription)")
+            notifyPresentationState(.unavailable, source: source, coordinator: coordinator)
+        }
+    }
+
+    private func notifyPresentationState(
+        _ state: CoinLibraryHeroPresentationState,
+        source: CoinModelSource,
+        coordinator: Coordinator
+    ) {
+        let callback = onPresentationStateChange
+        Task { @MainActor [weak coordinator] in
+            guard coordinator?.isRequesting(source) == true else { return }
+            callback?(state)
         }
     }
 
@@ -303,6 +341,7 @@ private struct CoinRealityView: UIViewRepresentable {
         init() {}
         private(set) weak var anchor: AnchorEntity?
         private(set) var source: CoinModelSource?
+        private var requestedSource: CoinModelSource?
         private weak var coin: Entity?
         private var timer: Timer?
         private var rotationStep: Float = 0
@@ -331,11 +370,19 @@ private struct CoinRealityView: UIViewRepresentable {
             source = nil
         }
 
+        func beginLoading(_ source: CoinModelSource) {
+            requestedSource = source
+        }
+
         func setCoin(_ coin: Entity, source: CoinModelSource) {
             self.coin = coin
             self.source = source
             baseTransform = coin.transform
             applyDisplayRotation()
+        }
+
+        func isRequesting(_ source: CoinModelSource) -> Bool {
+            requestedSource == source
         }
 
         func isDisplaying(_ source: CoinModelSource) -> Bool {
