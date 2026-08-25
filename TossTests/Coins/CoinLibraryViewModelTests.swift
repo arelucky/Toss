@@ -51,6 +51,75 @@ final class CoinLibraryViewModelTests: XCTestCase {
         )
     }
 
+    func testPreselectingDownloadedCoinDoesNotApplyIt() async {
+        let coin = makeItem()
+        let subject = Subject(cached: [coin])
+
+        await subject.viewModel.preselect(.coin(coin.id))
+
+        XCTAssertEqual(subject.selection.selectedItems, [])
+        XCTAssertEqual(subject.viewModel.selectedID, .classic)
+        XCTAssertEqual(subject.viewModel.selectedModelSource, .bundledClassic)
+        XCTAssertEqual(subject.viewModel.preselectedID, .coin(coin.id))
+        XCTAssertEqual(
+            subject.viewModel.preselectedModelSource,
+            .downloaded(URL(fileURLWithPath: "/tmp/\(coin.id).usdz"))
+        )
+        XCTAssertTrue(subject.viewModel.canApplyPreselection)
+    }
+
+    func testPreselectingCachedCoinDoesNotDownloadOrPersistSelection() async {
+        let coin = makeItem()
+        let subject = Subject(cached: [coin], cachedAssetIDs: [coin.id])
+        await subject.viewModel.updateAvailability()
+
+        await subject.viewModel.preselect(.coin(coin.id))
+
+        XCTAssertEqual(subject.assets.downloadCount, 0)
+        XCTAssertEqual(subject.selection.selectedItems, [])
+        XCTAssertEqual(subject.viewModel.preselectedID, .coin(coin.id))
+    }
+
+    func testPreselectionCannotBeAppliedAfterCachedModelIsRemoved() async {
+        let coin = makeItem()
+        let subject = Subject(cached: [coin], cachedAssetIDs: [coin.id])
+        await subject.viewModel.updateAvailability()
+        await subject.viewModel.preselect(.coin(coin.id))
+
+        subject.assets.cachedIDs.remove(coin.id)
+        await subject.viewModel.updateAvailability()
+
+        XCTAssertFalse(subject.viewModel.canApplyPreselection)
+    }
+
+    func testApplyPreselectionCommitsPreselectedCoin() async {
+        let coin = makeItem()
+        let subject = Subject(cached: [coin])
+        await subject.viewModel.preselect(.coin(coin.id))
+
+        await subject.viewModel.applyPreselection()
+
+        XCTAssertEqual(subject.selection.selectedItems, [coin.id])
+        XCTAssertEqual(subject.viewModel.selectedID, .coin(coin.id))
+        XCTAssertEqual(
+            subject.viewModel.selectedModelSource,
+            .downloaded(URL(fileURLWithPath: "/tmp/\(coin.id).usdz"))
+        )
+        XCTAssertFalse(subject.viewModel.canApplyPreselection)
+    }
+
+    func testFailedDownloadKeepsExistingPreselection() async {
+        let coin = makeItem()
+        let subject = Subject(cached: [coin], downloadError: TestError.expected)
+
+        await subject.viewModel.preselect(.coin(coin.id))
+
+        XCTAssertEqual(subject.viewModel.preselectedID, .classic)
+        XCTAssertEqual(subject.viewModel.preselectedModelSource, .bundledClassic)
+        XCTAssertEqual(subject.selection.selectedItems, [])
+        XCTAssertNotNil(subject.viewModel.notice)
+    }
+
     func testCachedRemoteSelectionUsesCachedLocalModelURL() async {
         let coin = makeItem()
         let subject = Subject(cached: [coin], cachedAssetIDs: [coin.id])
@@ -116,6 +185,8 @@ final class CoinLibraryViewModelTests: XCTestCase {
         XCTAssertEqual(subject.viewModel.items.map(\.id), [.classic, .coin(remote.id)])
         XCTAssertEqual(subject.viewModel.selectedID, .classic)
         XCTAssertEqual(subject.viewModel.selectedModelSource, .bundledClassic)
+        XCTAssertEqual(subject.viewModel.preselectedID, .classic)
+        XCTAssertEqual(subject.viewModel.preselectedModelSource, .bundledClassic)
         XCTAssertEqual(subject.selection.classicSelections, 1)
         XCTAssertEqual(subject.assets.removeUnreferencedAssetsCount, 0)
     }

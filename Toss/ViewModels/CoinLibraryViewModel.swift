@@ -28,10 +28,12 @@ extension CoinSelectionStore: CoinSelecting {}
 final class CoinLibraryViewModel: ObservableObject {
     @Published private(set) var items: [CoinLibraryItem]
     @Published private(set) var selectedID: CoinLibraryItemID = .classic
+    @Published private(set) var preselectedID: CoinLibraryItemID = .classic
     @Published private(set) var downloadingIDs: Set<CoinLibraryItemID> = []
     @Published private(set) var downloadProgress: [CoinLibraryItemID: CoinFileDownloadProgress] = [:]
     @Published private(set) var cachedIDs: Set<CoinLibraryItemID> = [.classic]
     @Published private(set) var selectedModelSource: CoinModelSource = .bundledClassic
+    @Published private(set) var preselectedModelSource: CoinModelSource = .bundledClassic
     @Published var notice: String?
 
     private let catalog: any CoinCatalogServicing
@@ -43,6 +45,11 @@ final class CoinLibraryViewModel: ObservableObject {
     private var catalogItems: [CoinCatalogItem]
     private var cachedModelURLs: [UUID: URL] = [:]
     private var downloadTokens: [CoinLibraryItemID: UUID] = [:]
+
+    var canApplyPreselection: Bool {
+        let isAvailable = preselectedID == .classic || cachedIDs.contains(preselectedID)
+        return isAvailable && !downloadingIDs.contains(preselectedID) && preselectedID != selectedID
+    }
 
     init(cachedCatalog: () -> [CoinCatalogItem], catalog: any CoinCatalogServicing, assets: any CoinAssetCaching, selection: any CoinSelecting, session: @escaping () -> AccountSession, generationID: @escaping () -> UUID, isOnline: @escaping () -> Bool, tossState: @escaping () -> CoinTossState) {
         let cached = cachedCatalog()
@@ -63,11 +70,18 @@ final class CoinLibraryViewModel: ObservableObject {
             catalogItems = remote
             items = Self.libraryItems(from: catalogItems)
             await updateAvailability()
+            if case let .coin(preselectedCoinID) = preselectedID,
+               !remote.contains(where: { $0.id == preselectedCoinID }) {
+                preselectedID = .classic
+                preselectedModelSource = .bundledClassic
+            }
             if case let .coin(selectedCoinID) = selectedID,
                !remote.contains(where: { $0.id == selectedCoinID }) {
                 await selection.selectClassic(session: session(), generationID: generationID())
                 selectedID = .classic
                 selectedModelSource = .bundledClassic
+                preselectedID = .classic
+                preselectedModelSource = .bundledClassic
             }
         } catch {
             await updateAvailability()
@@ -91,16 +105,16 @@ final class CoinLibraryViewModel: ObservableObject {
         id == .classic || cachedIDs.contains(id) || isOnline()
     }
 
-    func select(_ id: CoinLibraryItemID) async {
-        guard isEnabled(id), !downloadingIDs.contains(id) else { return }
+    @discardableResult
+    func preselect(_ id: CoinLibraryItemID) async -> Bool {
+        guard isEnabled(id), !downloadingIDs.contains(id) else { return false }
         if id == .classic {
-            await selection.selectClassic(session: session(), generationID: generationID())
-            selectedID = .classic
-            selectedModelSource = .bundledClassic
-            return
+            preselectedID = .classic
+            preselectedModelSource = .bundledClassic
+            return true
         }
         guard case let .coin(coinID) = id,
-              let item = catalogItems.first(where: { $0.id == coinID }) else { return }
+              let item = catalogItems.first(where: { $0.id == coinID }) else { return false }
         var localModelURL = cachedModelURLs[coinID]
         if localModelURL == nil {
             downloadingIDs.insert(id)
@@ -123,13 +137,34 @@ final class CoinLibraryViewModel: ObservableObject {
                 localModelURL = downloadedURL
             } catch {
                 notice = "The coin could not be downloaded. Please try again."
-                return
+                return false
             }
         }
-        guard let localModelURL else { return }
-        await selection.select(item, session: session(), generationID: generationID())
-        selectedID = id
-        selectedModelSource = .downloaded(localModelURL)
+        guard let localModelURL else { return false }
+        preselectedID = id
+        preselectedModelSource = .downloaded(localModelURL)
+        return true
+    }
+
+    func applyPreselection() async {
+        guard canApplyPreselection else { return }
+        switch preselectedID {
+        case .classic:
+            await selection.selectClassic(session: session(), generationID: generationID())
+            selectedID = .classic
+            selectedModelSource = .bundledClassic
+        case let .coin(coinID):
+            guard let item = catalogItems.first(where: { $0.id == coinID }),
+                  case let .downloaded(localModelURL) = preselectedModelSource else { return }
+            await selection.select(item, session: session(), generationID: generationID())
+            selectedID = .coin(coinID)
+            selectedModelSource = .downloaded(localModelURL)
+        }
+    }
+
+    func select(_ id: CoinLibraryItemID) async {
+        guard await preselect(id) else { return }
+        await applyPreselection()
     }
 
     private static func libraryItems(from catalog: [CoinCatalogItem]) -> [CoinLibraryItem] {
