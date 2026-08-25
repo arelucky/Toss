@@ -1,3 +1,4 @@
+import CoreGraphics
 import SwiftUI
 
 enum CoinLibraryPreviewSource: Equatable {
@@ -68,14 +69,7 @@ struct CoinLibraryCard: View {
                 .resizable()
                 .scaledToFit()
         case let .remote(previewURL):
-            AsyncImage(url: previewURL) { image in
-                image.resizable().scaledToFit()
-            } placeholder: {
-                Circle()
-                    .fill(.white.opacity(0.06))
-                    .overlay { ProgressView().tint(.white.opacity(0.8)) }
-            }
-            .clipShape(Circle())
+            CoinRemotePreviewImage(url: previewURL)
         }
     }
 
@@ -117,5 +111,30 @@ struct CoinLibraryCard: View {
         case .verifying:
             "正在验证模型…"
         }
+    }
+}
+
+@MainActor
+private struct CoinRemotePreviewImage: View {
+    let url: URL
+
+    @State private var loadedImage: CGImage?
+
+    var body: some View {
+        Group {
+            if let image = loadedImage ?? CoinPreviewImageCache.shared.image(for: url) {
+                Image(decorative: image, scale: 1)
+                    .resizable()
+                    .scaledToFit()
+            } else {
+                Circle()
+                    .fill(.white.opacity(0.06))
+                    .overlay { ProgressView().tint(.white.opacity(0.8)) }
+                    .task(id: url) {
+                        loadedImage = await CoinPreviewImageCache.shared.loadImage(for: url)
+                    }
+            }
+        }
+        .clipShape(Circle())
     }
 }
