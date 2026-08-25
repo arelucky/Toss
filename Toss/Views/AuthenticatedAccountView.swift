@@ -6,44 +6,19 @@ struct AuthenticatedAccountView: View {
     @State private var confirmsSignOut = false
 
     var body: some View {
-        Form {
-            Section("Signed in") {
+        ScrollView {
+            VStack(spacing: 22) {
+                AccountSettingsSection("Signed in") {
                 Label(displayName, systemImage: "person.crop.circle.fill")
-            }
-            Section("Feedback") {
-                Toggle("Sound", isOn: Binding(
-                    get: { viewModel.soundEnabled },
-                    set: { value in Task { await viewModel.setSoundEnabled(value) } }
-                ))
-                Toggle("Haptics", isOn: Binding(
-                    get: { viewModel.hapticEnabled },
-                    set: { value in Task { await viewModel.setHapticEnabled(value) } }
-                ))
-            }
-            if let notice = viewModel.notice {
-                Section {
-                    Text(notice.message)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(TossVisualStyle.primaryText.swiftUIColor)
                 }
+                feedbackSection
+                noticeSection
+                signOutSection
+                deletionSection
             }
-            Section {
-                Button("Sign Out", role: .destructive) { confirmsSignOut = true }
-                    .disabled(viewModel.isSigningOut)
-                if viewModel.isSigningOut {
-                    ProgressView("Signing out securely…")
-                }
-            }
-            Section {
-                Button("Delete Account", role: .destructive) { viewModel.requestAccountDeletion() }
-                    .disabled(viewModel.isDeleting || viewModel.isSigningOut)
-                    .accessibilityHint("Permanently deletes your Toss account after Apple reauthentication")
-                if viewModel.isDeleting {
-                    ProgressView("Deleting account securely…")
-                }
-            } footer: {
-                Text("This permanently deletes your Toss account and synced settings.")
-            }
+            .padding(.horizontal, TossVisualStyle.pageHorizontalInset)
+            .padding(.vertical, 24)
         }
         .confirmationDialog("Sign out of Toss?", isPresented: $confirmsSignOut) {
             Button("Sign Out", role: .destructive) {
@@ -60,6 +35,61 @@ struct AuthenticatedAccountView: View {
             Button("Cancel", role: .cancel) { viewModel.cancelAccountDeletion() }
         } message: {
             Text("You’ll be asked to reauthenticate with Apple. This action cannot be undone.")
+        }
+    }
+
+    private var feedbackSection: some View {
+        AccountSettingsSection("Feedback") {
+            Toggle("Sound", isOn: Binding(
+                get: { viewModel.soundEnabled },
+                set: { value in Task { await viewModel.setSoundEnabled(value) } }
+            ))
+            .tint(TossVisualStyle.selectionGold.swiftUIColor)
+
+            Divider().overlay(.white.opacity(0.12))
+
+            Toggle("Haptics", isOn: Binding(
+                get: { viewModel.hapticEnabled },
+                set: { value in Task { await viewModel.setHapticEnabled(value) } }
+            ))
+            .tint(TossVisualStyle.selectionGold.swiftUIColor)
+        }
+    }
+
+    @ViewBuilder
+    private var noticeSection: some View {
+        if let notice = viewModel.notice {
+            AccountSettingsSection {
+                Text(notice.message)
+                    .font(.footnote)
+                    .foregroundStyle(TossVisualStyle.secondaryText.swiftUIColor)
+            }
+        }
+    }
+
+    private var signOutSection: some View {
+        AccountSettingsSection {
+            Button("Sign Out", role: .destructive) { confirmsSignOut = true }
+                .disabled(viewModel.isSigningOut)
+            if viewModel.isSigningOut {
+                ProgressView("Signing out securely…")
+                    .tint(TossVisualStyle.selectionGold.swiftUIColor)
+            }
+        }
+    }
+
+    private var deletionSection: some View {
+        AccountSettingsSection {
+            Button("Delete Account", role: .destructive) { viewModel.requestAccountDeletion() }
+                .disabled(viewModel.isDeleting || viewModel.isSigningOut)
+                .accessibilityHint("Permanently deletes your Toss account after Apple reauthentication")
+            if viewModel.isDeleting {
+                ProgressView("Deleting account securely…")
+                    .tint(TossVisualStyle.selectionGold.swiftUIColor)
+            }
+            Text("This permanently deletes your Toss account and synced settings.")
+                .font(.footnote)
+                .foregroundStyle(TossVisualStyle.secondaryText.swiftUIColor)
         }
     }
 }
