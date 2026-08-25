@@ -29,6 +29,7 @@ final class CoinLibraryViewModel: ObservableObject {
     @Published private(set) var items: [CoinLibraryItem]
     @Published private(set) var selectedID: CoinLibraryItemID = .classic
     @Published private(set) var downloadingIDs: Set<CoinLibraryItemID> = []
+    @Published private(set) var downloadProgress: [CoinLibraryItemID: CoinFileDownloadProgress] = [:]
     @Published private(set) var cachedIDs: Set<CoinLibraryItemID> = [.classic]
     @Published private(set) var selectedModelSource: CoinModelSource = .bundledClassic
     @Published var notice: String?
@@ -41,6 +42,7 @@ final class CoinLibraryViewModel: ObservableObject {
     private let isOnline: () -> Bool
     private var catalogItems: [CoinCatalogItem]
     private var cachedModelURLs: [UUID: URL] = [:]
+    private var downloadTokens: [CoinLibraryItemID: UUID] = [:]
 
     init(cachedCatalog: () -> [CoinCatalogItem], catalog: any CoinCatalogServicing, assets: any CoinAssetCaching, selection: any CoinSelecting, session: @escaping () -> AccountSession, generationID: @escaping () -> UUID, isOnline: @escaping () -> Bool, tossState: @escaping () -> CoinTossState) {
         let cached = cachedCatalog()
@@ -102,9 +104,20 @@ final class CoinLibraryViewModel: ObservableObject {
         var localModelURL = cachedModelURLs[coinID]
         if localModelURL == nil {
             downloadingIDs.insert(id)
-            defer { downloadingIDs.remove(id) }
+            let downloadToken = UUID()
+            downloadTokens[id] = downloadToken
+            defer {
+                downloadingIDs.remove(id)
+                downloadProgress[id] = nil
+                downloadTokens[id] = nil
+            }
             do {
-                let downloadedURL = try await assets.downloadAndValidate(item)
+                let downloadedURL = try await assets.downloadAndValidate(item) { [weak self] progress in
+                    Task { @MainActor [weak self] in
+                        guard self?.downloadTokens[id] == downloadToken else { return }
+                        self?.downloadProgress[id] = progress
+                    }
+                }
                 cachedIDs.insert(id)
                 cachedModelURLs[coinID] = downloadedURL
                 localModelURL = downloadedURL

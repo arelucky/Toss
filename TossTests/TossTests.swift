@@ -36,6 +36,19 @@ final class TossTests: XCTestCase {
         XCTAssertEqual(material.roughness, 0.28, accuracy: 0.001)
     }
 
+    func testCoinModelSourceUsesTheCorrectMaterialStrategy() throws {
+        let downloadedURL = URL(fileURLWithPath: "/tmp/dynamic-coin.usdz")
+
+        XCTAssertEqual(
+            CoinMaterialStrategy.forSource(.bundledClassic),
+            .applyOverride
+        )
+        XCTAssertEqual(
+            CoinMaterialStrategy.forSource(.downloaded(downloadedURL)),
+            .preserveAssetMaterials
+        )
+    }
+
     func testCoinDisplayLayerDefaultsToBundledClassicSource() throws {
         XCTAssertEqual(CoinDisplayLayer().source, .bundledClassic)
     }

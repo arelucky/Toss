@@ -7,6 +7,20 @@ enum CoinModelSource: Equatable, Sendable {
     case downloaded(URL)
 }
 
+enum CoinMaterialStrategy: Equatable, Sendable {
+    case applyOverride
+    case preserveAssetMaterials
+
+    static func forSource(_ source: CoinModelSource) -> CoinMaterialStrategy {
+        switch source {
+        case .bundledClassic:
+            .applyOverride
+        case .downloaded:
+            .preserveAssetMaterials
+        }
+    }
+}
+
 @MainActor
 struct CoinLoadStateNotifier {
     let callback: ((Bool) -> Void)?
@@ -189,7 +203,9 @@ private struct CoinRealityView: UIViewRepresentable {
         do {
             let coin = try Entity.load(contentsOf: modelURL)
             prepareCoin(coin)
-            applyMaterialOverride(to: coin)
+            if CoinMaterialStrategy.forSource(source) == .applyOverride {
+                applyMaterialOverride(to: coin)
+            }
             coordinator.prepareToReplaceCoin()
             anchor.addChild(coin)
             coordinator.setCoin(coin, source: source)

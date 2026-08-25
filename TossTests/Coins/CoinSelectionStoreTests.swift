@@ -179,7 +179,7 @@ private final class AssetCacheDouble: CoinAssetCaching, @unchecked Sendable {
     private(set) var downloadCount = 0
     init(cachedURL: URL?, downloadedURL: URL, suspendDownload: Bool) { self.cachedURL = cachedURL; self.downloadedURL = downloadedURL; self.suspendDownload = suspendDownload }
     func cachedModelURL(for item: CoinCatalogItem) async -> URL? { cachedURL }
-    func downloadAndValidate(_ item: CoinCatalogItem) async throws -> URL { downloadCount += 1; if suspendDownload { await gate.suspend() }; if let downloadError { throw downloadError }; cachedURL = downloadedURL; return downloadedURL }
+    func downloadAndValidate(_ item: CoinCatalogItem, progress: @escaping @Sendable (CoinFileDownloadProgress) -> Void) async throws -> URL { downloadCount += 1; if suspendDownload { await gate.suspend() }; if let downloadError { throw downloadError }; cachedURL = downloadedURL; return downloadedURL }
     func removeUnreferencedAssets(keeping items: [CoinCatalogItem]) async throws {}
     func waitForDownload() async { await gate.waitUntilStarted() }
     func completeDownload() { gate.complete() }

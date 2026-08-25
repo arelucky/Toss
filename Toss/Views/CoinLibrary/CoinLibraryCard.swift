@@ -20,6 +20,7 @@ struct CoinLibraryCard: View {
     let isSelected: Bool
     let isCached: Bool
     let isDownloading: Bool
+    let downloadProgress: CoinFileDownloadProgress?
     let isEnabled: Bool
 
     private let previewSize: CGFloat = 126
@@ -82,9 +83,18 @@ struct CoinLibraryCard: View {
     private var statusOverlay: some View {
         if isDownloading {
             Circle()
-                .fill(.black.opacity(0.48))
-                .frame(width: 44, height: 44)
-                .overlay { ProgressView().tint(.white) }
+                .fill(.black.opacity(0.58))
+                .frame(width: 86, height: 86)
+                .overlay {
+                    VStack(spacing: 5) {
+                        ProgressView().tint(.white)
+                        Text(downloadProgressText)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.white)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(6)
+                }
         } else if !isCached {
             Circle()
                 .fill(.black.opacity(0.62))
@@ -95,6 +105,17 @@ struct CoinLibraryCard: View {
                         .foregroundStyle(.white.opacity(isEnabled ? 0.94 : 0.58))
                 }
                 .offset(x: 43, y: 43)
+        }
+    }
+
+    private var downloadProgressText: String {
+        switch downloadProgress {
+        case .connecting, nil:
+            "正在连接…"
+        case let .downloading(percent):
+            "正在下载 \(percent)%"
+        case .verifying:
+            "正在验证模型…"
         }
     }
 }

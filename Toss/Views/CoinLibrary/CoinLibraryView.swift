@@ -168,6 +168,7 @@ struct CoinLibraryView: View {
                             isSelected: viewModel.selectedID == item.id,
                             isCached: viewModel.cachedIDs.contains(item.id),
                             isDownloading: viewModel.downloadingIDs.contains(item.id),
+                            downloadProgress: viewModel.downloadProgress[item.id],
                             isEnabled: viewModel.isEnabled(item.id)
                         )
                     }

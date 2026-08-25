@@ -192,7 +192,7 @@ private final class LibraryAssetDouble: CoinAssetCaching, @unchecked Sendable {
     var cachedIDs: Set<UUID>; let suspendDownload: Bool; let error: Error?; let gate = TestOperationGate(); private(set) var downloadCount = 0; private(set) var removeUnreferencedAssetsCount = 0
     init(cachedIDs: Set<UUID>, suspendDownload: Bool, error: Error?) { self.cachedIDs = cachedIDs; self.suspendDownload = suspendDownload; self.error = error }
     func cachedModelURL(for item: CoinCatalogItem) async -> URL? { cachedIDs.contains(item.id) ? localURL(for: item) : nil }
-    func downloadAndValidate(_ item: CoinCatalogItem) async throws -> URL { downloadCount += 1; if suspendDownload { await gate.suspend() }; if let error { throw error }; cachedIDs.insert(item.id); return URL(fileURLWithPath: "/tmp/\(item.id).usdz") }
+    func downloadAndValidate(_ item: CoinCatalogItem, progress: @escaping @Sendable (CoinFileDownloadProgress) -> Void) async throws -> URL { downloadCount += 1; if suspendDownload { await gate.suspend() }; if let error { throw error }; cachedIDs.insert(item.id); return URL(fileURLWithPath: "/tmp/\(item.id).usdz") }
     func removeUnreferencedAssets(keeping items: [CoinCatalogItem]) async throws { removeUnreferencedAssetsCount += 1 }
     func localURL(for item: CoinCatalogItem) -> URL { URL(fileURLWithPath: "/tmp/\(item.id).usdz") }
     func waitForDownload() async { await gate.waitUntilStarted() }; func completeDownload() { gate.complete() }

@@ -15,7 +15,7 @@ enum CoinAssetCacheError: Error, Equatable {
 actor CoinAssetCache: CoinAssetCaching {
     private let fileManager: FileManager
     private let assetsDirectoryURL: URL
-    private let downloader: CoinAssetDownloader
+    private let downloader: any CoinFileDownloading
     private let preflight: CoinAssetPreflight
     private var downloadsInProgress: [AssetKey: Task<URL, Error>] = [:]
 
@@ -23,6 +23,8 @@ actor CoinAssetCache: CoinAssetCaching {
         directoryURL: URL? = nil,
         fileManager: FileManager = .default,
         downloader: CoinAssetDownloader? = nil,
+        fileDownloader: (any CoinFileDownloading)? = nil,
+        downloadPolicy: CoinFileDownloadPolicy = .live,
         preflight: CoinAssetPreflight? = nil
     ) {
         self.fileManager = fileManager
@@ -31,10 +33,18 @@ actor CoinAssetCache: CoinAssetCaching {
             in: .userDomainMask
         )[0]
         assetsDirectoryURL = applicationSupportURL.appendingPathComponent("CoinAssets", isDirectory: true)
-        self.downloader = downloader ?? { source, destination in
-            let (data, response) = try await URLSession.shared.data(from: source)
-            try data.write(to: destination)
-            return (response as? HTTPURLResponse)?.statusCode ?? 0
+        if let fileDownloader {
+            self.downloader = fileDownloader
+        } else if let downloader {
+            self.downloader = CoinFileDownloader(
+                attempt: ClosureCoinFileDownloadAttempt(downloader: downloader),
+                policy: downloadPolicy
+            )
+        } else {
+            self.downloader = CoinFileDownloader(
+                attempt: URLSessionCoinFileDownloadAttempt(),
+                policy: downloadPolicy
+            )
         }
         self.preflight = preflight ?? { modelURL in
             try await Task.detached(priority: .utility) {
@@ -48,7 +58,10 @@ actor CoinAssetCache: CoinAssetCaching {
         return fileManager.fileExists(atPath: url.path) ? url : nil
     }
 
-    func downloadAndValidate(_ item: CoinCatalogItem) async throws -> URL {
+    func downloadAndValidate(
+        _ item: CoinCatalogItem,
+        progress: @escaping @Sendable (CoinFileDownloadProgress) -> Void
+    ) async throws -> URL {
         guard CoinAssetURLSafety.isAllowed(item.version.modelURL) else {
             throw CoinAssetCacheError.insecureURL
         }
@@ -74,7 +87,8 @@ actor CoinAssetCache: CoinAssetCaching {
                 partial: partial,
                 fileManager: fileManager,
                 downloader: downloader,
-                preflight: preflight
+                preflight: preflight,
+                progress: progress
             )
         }
         downloadsInProgress[key] = task
@@ -123,16 +137,23 @@ actor CoinAssetCache: CoinAssetCaching {
         destination: URL,
         partial: URL,
         fileManager: FileManager,
-        downloader: CoinAssetDownloader,
-        preflight: CoinAssetPreflight
+        downloader: any CoinFileDownloading,
+        preflight: CoinAssetPreflight,
+        progress: @escaping @Sendable (CoinFileDownloadProgress) -> Void
     ) async throws -> URL {
         try fileManager.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
         defer { try? fileManager.removeItem(at: partial) }
 
-        let statusCode = try await downloader(item.version.modelURL, partial)
-        guard (200 ... 299).contains(statusCode) else {
-            throw CoinAssetCacheError.invalidHTTPStatus(statusCode)
+        let response = try await downloader.download(
+            from: item.version.modelURL,
+            to: partial,
+            expectedByteCount: item.version.modelByteSize,
+            progress: progress
+        )
+        guard (200 ... 299).contains(response.statusCode) else {
+            throw CoinAssetCacheError.invalidHTTPStatus(response.statusCode)
         }
+        progress(.verifying)
         let values = try partial.resourceValues(forKeys: [.fileSizeKey])
         guard Int64(values.fileSize ?? -1) == item.version.modelByteSize else {
             throw CoinAssetCacheError.invalidByteCount
@@ -148,6 +169,23 @@ actor CoinAssetCache: CoinAssetCaching {
         try await preflight(partial)
         try fileManager.moveItem(at: partial, to: destination)
         return destination
+    }
+
+}
+
+private struct ClosureCoinFileDownloadAttempt: CoinFileDownloadAttempting {
+    let downloader: CoinAssetDownloader
+
+    func download(
+        from source: URL,
+        to destination: URL,
+        resumeData: Data?,
+        expectedByteCount: Int64,
+        policy: CoinFileDownloadPolicy,
+        progress: @escaping @Sendable (CoinFileDownloadProgress) -> Void
+    ) async throws -> CoinFileDownloadResponse {
+        let statusCode = try await downloader(source, destination)
+        return .init(statusCode: statusCode)
     }
 }
 
