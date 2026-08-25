@@ -92,6 +92,46 @@ final class CoinLibraryViewModelTests: XCTestCase {
         XCTAssertFalse(subject.viewModel.canApplyPreselection)
     }
 
+    func testUncachedCoinCannotBeConfirmedWhileDownloading() async {
+        let applied = makeItem(name: "Applied")
+        let downloading = makeItem(name: "Downloading")
+        let subject = Subject(
+            cached: [applied, downloading],
+            cachedAssetIDs: [applied.id],
+            suspendDownload: true
+        )
+        await subject.viewModel.updateAvailability()
+        await subject.viewModel.select(.coin(applied.id))
+
+        let preselection = Task { await subject.viewModel.preselect(.coin(downloading.id)) }
+        await subject.assets.waitForDownload()
+
+        XCTAssertTrue(subject.viewModel.downloadingIDs.contains(.coin(downloading.id)))
+        XCTAssertFalse(subject.viewModel.canApplyPreselection)
+
+        subject.assets.completeDownload()
+        await preselection.value
+    }
+
+    func testPreselectionUsesDynamicHeroSourceWithoutChangingAppliedHomeSource() async {
+        let applied = makeItem(name: "Applied")
+        let preselected = makeItem(name: "Preselected")
+        let subject = Subject(cached: [applied, preselected], cachedAssetIDs: [applied.id, preselected.id])
+        await subject.viewModel.updateAvailability()
+        await subject.viewModel.select(.coin(applied.id))
+
+        await subject.viewModel.preselect(.coin(preselected.id))
+
+        XCTAssertEqual(
+            subject.viewModel.preselectedModelSource,
+            .downloaded(subject.assets.localURL(for: preselected))
+        )
+        XCTAssertEqual(
+            subject.viewModel.selectedModelSource,
+            .downloaded(subject.assets.localURL(for: applied))
+        )
+    }
+
     func testApplyPreselectionCommitsPreselectedCoin() async {
         let coin = makeItem()
         let subject = Subject(cached: [coin])

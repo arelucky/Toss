@@ -9,6 +9,8 @@ struct CoinLibraryView: View {
     @State private var dragStartTime: Date?
     @State private var isHeroLoaded = false
 
+    private let applyButtonHeight: CGFloat = 52
+
     private let columns = [
         GridItem(.flexible(), spacing: 36),
         GridItem(.flexible(), spacing: 36)
@@ -34,9 +36,12 @@ struct CoinLibraryView: View {
             }
         }
         .ignoresSafeArea(edges: .bottom)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            applyPreselectionButton
+        }
         .preferredColorScheme(.dark)
         .task { await viewModel.refresh() }
-        .onChange(of: viewModel.selectedID) { _, _ in
+        .onChange(of: viewModel.preselectedID) { _, _ in
             isHeroLoaded = false
             resetPreview()
         }
@@ -104,7 +109,7 @@ struct CoinLibraryView: View {
     private func selectedCoinPreview(size: CGFloat) -> some View {
         ZStack {
             Coin3DView(
-                source: viewModel.selectedModelSource,
+                source: viewModel.preselectedModelSource,
                 style: .libraryHero,
                 previewRotation: previewRotation,
                 previewInertia: previewInertia,
@@ -161,11 +166,11 @@ struct CoinLibraryView: View {
             LazyVGrid(columns: columns, spacing: 34) {
                 ForEach(viewModel.items) { item in
                     Button {
-                        Task { await viewModel.select(item.id) }
+                        Task { await viewModel.preselect(item.id) }
                     } label: {
                         CoinLibraryCard(
                             item: item,
-                            isSelected: viewModel.selectedID == item.id,
+                            isSelected: viewModel.preselectedID == item.id,
                             isCached: viewModel.cachedIDs.contains(item.id),
                             isDownloading: viewModel.downloadingIDs.contains(item.id),
                             downloadProgress: viewModel.downloadProgress[item.id],
@@ -181,7 +186,31 @@ struct CoinLibraryView: View {
             }
             .padding(.horizontal, 38)
             .padding(.top, 24)
-            .padding(.bottom, 40)
+            .padding(.bottom, applyButtonHeight + 24)
         }
+    }
+
+    private var applyPreselectionButton: some View {
+        Button {
+            Task {
+                await viewModel.applyPreselection()
+                dismiss()
+            }
+        } label: {
+            Text("Use This Coin")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(TossVisualStyle.charcoalBottom.swiftUIColor)
+                .frame(maxWidth: .infinity)
+                .frame(height: applyButtonHeight)
+                .background(TossVisualStyle.selectionGold.swiftUIColor, in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .disabled(!viewModel.canApplyPreselection)
+        .opacity(viewModel.canApplyPreselection ? 1 : 0.42)
+        .padding(.horizontal, 24)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
+        .background(.black.opacity(0.88))
+        .accessibilityLabel("Use This Coin")
     }
 }

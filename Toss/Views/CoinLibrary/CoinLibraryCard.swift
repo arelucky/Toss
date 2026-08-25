@@ -25,14 +25,13 @@ struct CoinLibraryCard: View {
     let isEnabled: Bool
 
     private let previewSize: CGFloat = 126
-    private let selectionGold = Color(red: 0.94, green: 0.70, blue: 0.35)
 
     var body: some View {
         VStack(spacing: 12) {
             ZStack {
                 if isSelected {
                     Circle()
-                        .stroke(selectionGold, lineWidth: 1.5)
+                        .stroke(TossVisualStyle.selectionGold.swiftUIColor, lineWidth: 1.5)
                         .frame(width: previewSize + 16, height: previewSize + 16)
                 }
 
@@ -51,7 +50,7 @@ struct CoinLibraryCard: View {
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(selectionGold)
+                        .foregroundStyle(TossVisualStyle.selectionGold.swiftUIColor)
                 }
             }
             .frame(maxWidth: .infinity)
