@@ -171,12 +171,12 @@ func testStillnessPaletteUsesWarmGoldOnlyAsAccent() {
 }
 ~~~
 
-在 `TossTests` 添加空闲提示测试，分别断言 idle 为 `1`、tossing 为 `0`；不得使用 `sleep`。
+在 `TossTests` 添加 `testHomeIdleAffordanceIsVisibleOnlyWhileIdle`，分别断言 idle 为 `1`、tossing 为 `0`；不得使用 `sleep`。
 
 - [ ] **Step 2：运行 RED 门禁**
 
 ~~~bash
-xcodebuild test -project Toss.xcodeproj -scheme Toss -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.5' -only-testing:TossTests/TossVisualStyleTests -only-testing:TossTests/TossTests
+xcodebuild test -project Toss.xcodeproj -scheme Toss -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.5' -only-testing:TossTests/TossVisualStyleTests -only-testing:TossTests/TossTests/testTossBackgroundUsesNeutralDisplayEnvironment -only-testing:TossTests/TossTests/testHomeIdleAffordanceIsVisibleOnlyWhileIdle
 ~~~
 
 预期：仅因 Token 或空闲提示 API 不存在而失败。
