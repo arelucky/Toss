@@ -123,7 +123,7 @@ onMounted(load);
         <p class="muted intro">管理发布状态、版本与展示顺序。</p>
       </div>
       <div class="header-actions">
-        <button class="secondary-button" data-test="reload-coins" :disabled="loading" @click="load({ preserveCatalog: coins.length > 0 })">
+        <button class="secondary-button" data-test="reload-coins" aria-label="重新加载硬币目录" :disabled="loading" @click="load({ preserveCatalog: coins.length > 0 })">
           {{ errorMessage ? "重试" : "刷新" }}
         </button>
         <button class="primary-button" data-test="create-toggle" :aria-expanded="createOpen" @click="createOpen = !createOpen">
@@ -134,7 +134,7 @@ onMounted(load);
 
     <section v-if="createOpen" class="panel create-panel" aria-labelledby="create-heading">
       <div><h2 id="create-heading">创建硬币</h2><p class="muted">创建后将在编辑页补充版本与资源。</p></div>
-      <form @submit.prevent="createCoin">
+      <form :aria-busy="creating" @submit.prevent="createCoin">
         <label>硬币标识<input v-model.trim="slug" placeholder="例如：classic-coin" aria-label="硬币标识" required /></label>
         <label>硬币名称<input v-model.trim="displayName" placeholder="硬币名称" aria-label="硬币名称" required /></label>
         <button class="primary-button" type="submit" :disabled="creating">{{ creating ? "正在创建…" : "创建硬币" }}</button>
@@ -158,7 +158,7 @@ onMounted(load);
 
     <p v-if="errorMessage" class="panel error" role="alert">{{ errorMessage }}</p>
 
-    <section class="panel catalog-panel" aria-live="polite">
+    <section class="panel catalog-panel" aria-live="polite" :aria-busy="loading">
       <div v-if="loading" class="catalog-skeleton" aria-label="正在加载硬币目录">
         <div v-for="index in 5" :key="index" class="skeleton-row"><span /><span /><span /><span /></div>
       </div>
@@ -178,8 +178,8 @@ onMounted(load);
                 <td>{{ coin.isFeatured ? "是" : "否" }}</td>
                 <td class="row-actions">
                   <button class="text-button" @click="router.push(`/coins/${coin.id}`)">编辑</button>
-                  <button v-if="coin.status === 'published'" class="text-button" :disabled="actionCoinID === coin.id" @click="hideCoin(coin.id)">{{ actionCoinID === coin.id ? "处理中…" : "隐藏" }}</button>
-                  <button v-else-if="coin.status === 'hidden'" class="text-button" :disabled="actionCoinID === coin.id" @click="restoreCoin(coin.id)">{{ actionCoinID === coin.id ? "处理中…" : "恢复" }}</button>
+                  <button v-if="coin.status === 'published'" class="text-button" :aria-busy="actionCoinID === coin.id" :disabled="actionCoinID === coin.id" @click="hideCoin(coin.id)">{{ actionCoinID === coin.id ? "处理中…" : "隐藏" }}</button>
+                  <button v-else-if="coin.status === 'hidden'" class="text-button" :aria-busy="actionCoinID === coin.id" :disabled="actionCoinID === coin.id" @click="restoreCoin(coin.id)">{{ actionCoinID === coin.id ? "处理中…" : "恢复" }}</button>
                 </td>
               </tr>
             </tbody>
@@ -193,8 +193,8 @@ onMounted(load);
             <div class="card-meta"><span>{{ activeVersion(coin) ? `当前 v${activeVersion(coin)?.versionNumber}` : "无当前版本" }}</span><span :class="assetState(coin)">{{ assetStateLabel(assetState(coin)) }}</span><span>排序 {{ coin.sortOrder }}</span><span>精选 {{ coin.isFeatured ? "是" : "否" }}</span></div>
             <div class="row-actions">
               <button class="text-button" @click="router.push(`/coins/${coin.id}`)">编辑</button>
-              <button v-if="coin.status === 'published'" class="text-button" :disabled="actionCoinID === coin.id" @click="hideCoin(coin.id)">{{ actionCoinID === coin.id ? "处理中…" : "隐藏" }}</button>
-              <button v-else-if="coin.status === 'hidden'" class="text-button" :disabled="actionCoinID === coin.id" @click="restoreCoin(coin.id)">{{ actionCoinID === coin.id ? "处理中…" : "恢复" }}</button>
+              <button v-if="coin.status === 'published'" class="text-button" :aria-busy="actionCoinID === coin.id" :disabled="actionCoinID === coin.id" @click="hideCoin(coin.id)">{{ actionCoinID === coin.id ? "处理中…" : "隐藏" }}</button>
+              <button v-else-if="coin.status === 'hidden'" class="text-button" :aria-busy="actionCoinID === coin.id" :disabled="actionCoinID === coin.id" @click="restoreCoin(coin.id)">{{ actionCoinID === coin.id ? "处理中…" : "恢复" }}</button>
             </div>
           </article>
         </div>

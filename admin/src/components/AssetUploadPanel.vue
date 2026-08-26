@@ -77,7 +77,7 @@ async function submit() {
 <template>
   <section class="upload-panel">
     <h3>版本资源</h3>
-    <form @submit.prevent="submit">
+    <form :aria-busy="uploading" @submit.prevent="submit">
       <label>USDZ 模型<input data-test="model" type="file" accept=".usdz" :disabled="uploading" @change="select($event, 'model')" /></label>
       <label>WEBP 预览图<input data-test="preview" type="file" accept=".webp" :disabled="uploading" @change="select($event, 'preview')" /></label>
       <div v-if="model || preview" class="selected-files" aria-live="polite">
@@ -85,9 +85,10 @@ async function submit() {
         <p v-if="preview">WEBP：{{ preview.name }}</p>
       </div>
       <progress v-if="uploading || progress === 100" :value="progress" max="100" />
+      <p v-if="uploading" class="upload-status" role="status">正在上传资源…</p>
       <button type="submit" :disabled="uploading">{{ uploading ? "正在上传…" : "创建版本并上传" }}</button>
     </form>
-    <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
+    <p v-if="errorMessage" class="error" role="alert">{{ errorMessage }}</p>
   </section>
 </template>
 
@@ -96,6 +97,7 @@ form { display: grid; gap: 12px; }
 label { display: grid; gap: 7px; color: var(--admin-muted); }
 .selected-files { display: grid; gap: 4px; padding: 10px 12px; border: 1px solid var(--admin-line); border-radius: 8px; color: var(--admin-muted); font-size: 13px; }
 .selected-files p { margin: 0; overflow-wrap: anywhere; }
+.upload-status { margin: 0; color: var(--admin-muted); font-size: 13px; }
 button { justify-self: start; border: 1px solid var(--admin-gold); border-radius: 8px; background: var(--admin-gold); color: #18140d; padding: 10px 14px; font-weight: 700; }
 button:disabled { opacity: .5; }
 </style>

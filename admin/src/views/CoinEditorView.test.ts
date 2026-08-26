@@ -61,6 +61,52 @@ const detailedCoin = {
 };
 
 describe("CoinEditorView", () => {
+  it("announces an in-progress save and disables version transitions while busy", async () => {
+    let finish!: () => void;
+    const wrapper = mount(CoinEditorView, {
+      props: {
+        coin,
+        saveCoin: () => new Promise<void>((resolve) => { finish = resolve; }),
+      },
+    });
+
+    await wrapper.get("form").trigger("submit");
+
+    expect(wrapper.get("[data-test='publish']").attributes("disabled")).toBeDefined();
+    expect(wrapper.get("[data-test='rollback']").attributes("disabled")).toBeDefined();
+    expect(wrapper.get('[role="status"]').text()).toContain("正在保存");
+
+    finish();
+    await flushPromises();
+  });
+
+  it("announces a successful save with a status role", async () => {
+    const wrapper = mount(CoinEditorView, {
+      props: { coin, saveCoin: vi.fn().mockResolvedValue(undefined) },
+    });
+
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+
+    expect(wrapper.get('[role="status"]').text()).toBe("已保存");
+  });
+
+  it("keeps publication success and safe errors in accessible regions", async () => {
+    const wrapper = mount(CoinEditorView, {
+      props: {
+        coin,
+        confirmAction: vi.fn().mockResolvedValue(true),
+        performAction: vi.fn().mockRejectedValue(new Error("raw internal failure")),
+      },
+    });
+
+    await wrapper.get("[data-test='publish']").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.get('[role="alert"]').text()).toBe("无法更新版本。");
+    expect(wrapper.text()).not.toContain("raw internal failure");
+  });
+
   it("renders only confirmed current-version and asset facts", () => {
     const wrapper = mount(CoinEditorView, {
       props: {

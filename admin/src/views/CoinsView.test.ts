@@ -46,6 +46,16 @@ async function finishInitialLoad() {
 }
 
 describe("CoinsView", () => {
+  it("exposes filter state and an accessible reload action", async () => {
+    const wrapper = mount(CoinsView, {
+      props: { loadCoins: vi.fn().mockRejectedValue(new Error("failed")) },
+    });
+    await finishInitialLoad();
+
+    expect(wrapper.get('[data-test="status-filter-all"]').attributes("aria-pressed")).toBe("true");
+    expect(wrapper.find('[aria-label="重新加载硬币目录"]').exists()).toBe(true);
+  });
+
   it("shows a safe access denied state for 403", async () => {
     const wrapper = mount(CoinsView, {
       props: { loadCoins: vi.fn().mockRejectedValue(new AdminCoinsError(403, "您无权访问此管理后台。")) },

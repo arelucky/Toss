@@ -36,6 +36,7 @@ const busy = ref(false);
 const errorMessage = ref("");
 const successMessage = ref("");
 const saveState = ref("");
+const saveStateIsLive = ref(false);
 const currentVersion = computed(() => currentCoin.value ? activeVersion(currentCoin.value) : undefined);
 const versionHistory = computed(() => currentCoin.value ? versionsDescending(currentCoin.value) : []);
 
@@ -66,6 +67,7 @@ async function save() {
   errorMessage.value = "";
   successMessage.value = "";
   saveState.value = "正在保存…";
+  saveStateIsLive.value = true;
   const edited = { ...currentCoin.value, displayName: displayName.value, description: description.value, sortOrder: sortOrder.value, isFeatured: isFeatured.value };
   try {
     if (props.saveCoin) await props.saveCoin(edited);
@@ -74,6 +76,7 @@ async function save() {
   } catch {
     errorMessage.value = "无法保存更改。";
     saveState.value = "保存未完成";
+    saveStateIsLive.value = false;
   } finally { busy.value = false; }
 }
 
@@ -89,6 +92,7 @@ async function transition(action: "publish" | "rollback") {
   if (busy.value || !currentCoin.value) return;
   successMessage.value = "";
   saveState.value = "";
+  saveStateIsLive.value = false;
   const version = targetVersion(action, currentCoin.value);
   if (!version) {
     errorMessage.value = action === "publish"
@@ -141,6 +145,7 @@ function publishedDate(value: string | null | undefined): string | undefined {
 function handleUploadCompleted() {
   successMessage.value = "";
   saveState.value = "资源已更新";
+  saveStateIsLive.value = false;
   void load();
 }
 
@@ -152,7 +157,7 @@ void load();
     <header class="editor-header">
       <button class="back" @click="router.push('/coins')">← 硬币</button>
       <div class="editor-heading"><p class="eyebrow">硬币编辑</p><h1>{{ currentCoin?.displayName || "硬币编辑" }}</h1><code>{{ currentCoin?.slug ?? "—" }}</code></div>
-      <div class="header-status"><span v-if="currentCoin" class="status-badge" :class="`status-${currentCoin.status ?? 'unknown'}`">{{ coinStatusLabel(currentCoin.status) }}</span><span v-if="saveState" class="save-state">{{ saveState }}</span></div>
+      <div class="header-status"><span v-if="currentCoin" class="status-badge" :class="`status-${currentCoin.status ?? 'unknown'}`">{{ coinStatusLabel(currentCoin.status) }}</span><span v-if="saveState" class="save-state" :role="saveStateIsLive ? 'status' : undefined">{{ saveState }}</span></div>
     </header>
     <p v-if="errorMessage" class="panel error" role="alert">{{ errorMessage }}</p>
     <p v-if="successMessage" class="panel success" role="status">{{ successMessage }}</p>
@@ -160,7 +165,7 @@ void load();
       <div class="editor-overview">
         <section class="panel basic-information">
           <div class="section-heading"><div><p class="eyebrow">基本信息</p><h2>展示与排序</h2></div><p class="muted">Slug 为固定标识，不能在此编辑。</p></div>
-        <form @submit.prevent="save">
+        <form :aria-busy="busy" @submit.prevent="save">
           <label>显示名称<input v-model="displayName" data-test="display-name" required /></label>
           <label>描述<textarea v-model="description" rows="4" /></label>
           <label>排序<input v-model.number="sortOrder" type="number" required /></label>
@@ -301,5 +306,11 @@ button:disabled { cursor: default; opacity: .52; }
   .upload-section { gap: 18px; }
   .fact-list, .asset-facts, form, .version-controls { grid-template-columns: 1fr; }
   form label:nth-child(2), .full-width { grid-column: auto; }
+}
+
+@media (max-width: 390px) {
+  .editor-header { gap: 10px; }
+  .back { padding-inline: 9px; }
+  .actions button { flex: 1; }
 }
 </style>

@@ -15,6 +15,20 @@ async function chooseFiles(wrapper: ReturnType<typeof mount>, model: File, previ
 }
 
 describe("AssetUploadPanel", () => {
+  it("exposes upload progress with an accessible status message", async () => {
+    let finish!: () => void;
+    const wrapper = mount(AssetUploadPanel, {
+      props: { upload: () => new Promise<void>((resolve) => { finish = resolve; }) },
+    });
+    await chooseFiles(wrapper, file("coin.usdz"), file("preview.webp"));
+
+    await wrapper.get("form").trigger("submit");
+
+    expect(wrapper.get('[role="status"]').text()).toContain("正在上传");
+
+    finish();
+  });
+
   it("keeps selected USDZ and WEBP file names visible while upload is pending", async () => {
     let finish!: () => void;
     const wrapper = mount(AssetUploadPanel, {
