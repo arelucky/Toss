@@ -19,6 +19,13 @@ export interface CoinVersion {
   id: string;
   versionNumber: number;
   status: string;
+  modelPath?: string;
+  previewPath?: string;
+  modelByteSize?: number;
+  modelSHA256?: string;
+  minAppVersion?: string;
+  assetSchemaVersion?: number;
+  publishedAt?: string | null;
 }
 
 export interface AdminCoin {
@@ -30,6 +37,7 @@ export interface AdminCoin {
   isFeatured: boolean;
   activeVersionID?: string;
   status?: string;
+  publishedAt?: string | null;
   versions?: CoinVersion[];
   coin_versions?: Array<Record<string, unknown>>;
 }
