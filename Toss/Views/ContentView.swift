@@ -43,10 +43,16 @@ struct ContentView: View {
         ZStack {
             TossBackground()
 
-            coinInputLayer
-                .offset(y: coinVerticalOffset)
+            GeometryReader { proxy in
+                ZStack {
+                    coinInputLayer
+                        .offset(y: tossOffset)
 
-            idleTossAffordance
+                    idleTossAffordance
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .offset(y: -proxy.size.height * 0.06)
+            }
 
             VStack {
                 HStack {
@@ -112,10 +118,6 @@ struct ContentView: View {
         .frame(width: 360, height: 430)
         .contentShape(Rectangle())
         .gesture(tossGesture)
-    }
-
-    private var coinVerticalOffset: CGFloat {
-        tossOffset - 12
     }
 
     var displayedCoinModelSource: CoinModelSource {

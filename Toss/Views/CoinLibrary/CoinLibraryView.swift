@@ -10,7 +10,7 @@ struct CoinLibraryView: View {
     @State private var heroPresentationState: CoinLibraryHeroPresentationState = .loading
 
     private let applyButtonHeight: CGFloat = 52
-    private let bottomActionHeight: CGFloat = 84
+    private let bottomActionHeight: CGFloat = 88
 
     private let columns = [
         GridItem(.flexible(), spacing: 36),
@@ -24,14 +24,16 @@ struct CoinLibraryView: View {
             VStack(spacing: 0) {
                 navigationHeader
                 GeometryReader { proxy in
-                    let heroHeight = min(max(proxy.size.height * 0.43, 246), 310)
+                    let heroHeight = min(max(proxy.size.height * 0.38, 220), 272)
 
                     VStack(spacing: 0) {
                         selectedCoinStage(containerHeight: heroHeight)
                             .frame(height: heroHeight)
                         divider
                         libraryGrid
+                            .frame(maxHeight: .infinity)
                     }
+                    .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
                 }
                 bottomActionBar
             }
@@ -97,7 +99,7 @@ struct CoinLibraryView: View {
     }
 
     private func selectedCoinStage(containerHeight: CGFloat) -> some View {
-        selectedCoinPreview(size: min(250, max(210, containerHeight - 36)))
+        selectedCoinPreview(size: min(226, max(190, containerHeight - 32)))
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.bottom, 14)
             .contentShape(Rectangle())
@@ -175,7 +177,7 @@ struct CoinLibraryView: View {
 
     private var libraryGrid: some View {
         ScrollView {
-            LazyVGrid(columns: columns, spacing: 34) {
+            LazyVGrid(columns: columns, spacing: 28) {
                 ForEach(viewModel.items) { item in
                     Button {
                         Task { await viewModel.preselect(item.id) }
@@ -197,7 +199,7 @@ struct CoinLibraryView: View {
                 }
             }
             .padding(.horizontal, 34)
-            .padding(.top, 20)
+            .padding(.top, 18)
             .padding(.bottom, 24)
         }
     }
@@ -214,7 +216,9 @@ struct CoinLibraryView: View {
     }
 
     private var applyPreselectionButton: some View {
-        Button {
+        let isEnabled = viewModel.canApplyPreselection
+
+        return Button {
             Task {
                 await viewModel.applyPreselection()
                 dismiss()
@@ -222,18 +226,22 @@ struct CoinLibraryView: View {
         } label: {
             Text("Use This Coin")
                 .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(TossVisualStyle.selectionGold.swiftUIColor)
+                .foregroundStyle(
+                    TossVisualStyle.selectionGold.swiftUIColor.opacity(isEnabled ? 1 : 0.58)
+                )
                 .frame(maxWidth: .infinity)
                 .frame(height: applyButtonHeight)
-                .background(.black.opacity(0.44), in: Capsule())
+                .background(.black.opacity(isEnabled ? 0.44 : 0.30), in: Capsule())
                 .overlay {
                     Capsule()
-                        .stroke(TossVisualStyle.selectionGold.swiftUIColor.opacity(0.82), lineWidth: 1)
+                        .stroke(
+                            TossVisualStyle.selectionGold.swiftUIColor.opacity(isEnabled ? 0.82 : 0.42),
+                            lineWidth: 1
+                        )
                 }
         }
         .buttonStyle(.plain)
-        .disabled(!viewModel.canApplyPreselection)
-        .opacity(viewModel.canApplyPreselection ? 1 : 0.36)
+        .disabled(!isEnabled)
         .padding(.horizontal, 24)
         .accessibilityLabel("Use This Coin")
     }

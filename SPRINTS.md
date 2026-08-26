@@ -475,3 +475,23 @@ feat: add RealityKit 3D coin preview
 * Storage 正式资源系统
 * Vue 管理后台
 * 生产项目与 App 发布
+
+---
+
+# Stillness App 端视觉阶段
+
+## 状态
+
+✅ 真机验收通过
+
+完成内容：
+
+* Task 5 自动门禁实际执行 242 项 XCTest，全部成功
+* Task 5B 完成 Stillness 真机视觉布局修正
+* 首页 3D Coin 与 Toss affordance 布局完成真机验收
+* Coin Library Hero 比例完成调整
+* Coin Library ScrollView 与 BottomActionBar 布局边界完成修复
+* 网格末项不再被底栏遮挡
+* `Use This Coin` disabled 状态完成视觉修正
+* Account 已完成登录态真机验收
+* Stillness 当前 App 端 UI 阶段真机验收通过
