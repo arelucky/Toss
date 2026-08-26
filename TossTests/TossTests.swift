@@ -100,7 +100,7 @@ final class TossTests: XCTestCase {
 
         XCTAssertEqual(
             CoinMaterialStrategy.forSource(.bundledClassic),
-            .applyOverride
+            .preserveAssetMaterials
         )
         XCTAssertEqual(
             CoinMaterialStrategy.forSource(.downloaded(downloadedURL)),

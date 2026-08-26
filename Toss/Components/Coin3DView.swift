@@ -14,7 +14,7 @@ enum CoinMaterialStrategy: Equatable, Sendable {
     static func forSource(_ source: CoinModelSource) -> CoinMaterialStrategy {
         switch source {
         case .bundledClassic:
-            .applyOverride
+            .preserveAssetMaterials
         case .downloaded:
             .preserveAssetMaterials
         }
