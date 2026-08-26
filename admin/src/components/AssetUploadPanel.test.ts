@@ -15,6 +15,20 @@ async function chooseFiles(wrapper: ReturnType<typeof mount>, model: File, previ
 }
 
 describe("AssetUploadPanel", () => {
+  it("keeps selected USDZ and WEBP file names visible while upload is pending", async () => {
+    let finish!: () => void;
+    const wrapper = mount(AssetUploadPanel, {
+      props: { upload: () => new Promise<void>((resolve) => { finish = resolve; }) },
+    });
+    await chooseFiles(wrapper, file("coin.usdz"), file("preview.webp"));
+
+    await wrapper.get("form").trigger("submit");
+
+    expect(wrapper.text()).toContain("coin.usdz");
+    expect(wrapper.text()).toContain("preview.webp");
+    finish();
+  });
+
   it("disables duplicate submission while uploading", async () => {
     let finish!: () => void;
     const upload = vi.fn(() => new Promise<void>((resolve) => { finish = resolve; }));

@@ -14,7 +14,83 @@ const coin = {
   ],
 };
 
+const detailedCoin = {
+  id: "detailed-coin-id",
+  displayName: "美丽梦境",
+  slug: "dream-coin",
+  description: "有完整版本字段的硬币。",
+  sortOrder: 10,
+  isFeatured: true,
+  status: "published",
+  activeVersionID: "v2",
+  versions: [
+    {
+      id: "v1",
+      versionNumber: 1,
+      status: "published",
+      modelPath: "coins/dream-coin/v1/model.usdz",
+      previewPath: "coins/dream-coin/v1/preview.webp",
+      modelByteSize: 1_572_864,
+      modelSHA256: "a".repeat(64),
+      minAppVersion: "1.0.0",
+      assetSchemaVersion: 1,
+    },
+    {
+      id: "v3",
+      versionNumber: 3,
+      status: "draft",
+      modelPath: "coins/dream-coin/v3/model.usdz",
+      previewPath: "coins/dream-coin/v3/preview.webp",
+      modelByteSize: 2_097_152,
+      minAppVersion: "1.0.0",
+      assetSchemaVersion: 1,
+    },
+    {
+      id: "v2",
+      versionNumber: 2,
+      status: "published",
+      modelPath: "coins/dream-coin/v2/model.usdz",
+      previewPath: "coins/dream-coin/v2/preview.webp",
+      modelByteSize: 1_572_864,
+      modelSHA256: "b".repeat(64),
+      minAppVersion: "1.0.0",
+      assetSchemaVersion: 1,
+      publishedAt: "2026-08-26T00:00:00Z",
+    },
+  ],
+};
+
 describe("CoinEditorView", () => {
+  it("renders only confirmed current-version and asset facts", () => {
+    const wrapper = mount(CoinEditorView, {
+      props: {
+        coin: detailedCoin,
+        makePublicPreviewURL: (path: string) => `https://example.test/${path}`,
+      },
+    });
+
+    expect(wrapper.text()).toContain("当前版本");
+    expect(wrapper.text()).toContain("v2");
+    expect(wrapper.text()).toContain("已就绪");
+    expect(wrapper.text()).toContain("model.usdz");
+    expect(wrapper.text()).toContain("preview.webp");
+    expect(wrapper.text()).toContain("1.5 MB");
+    expect(wrapper.html()).not.toMatch(/signed|token/i);
+  });
+
+  it("lists version history in descending order without changing transition targets", () => {
+    const wrapper = mount(CoinEditorView, {
+      props: {
+        coin: detailedCoin,
+        makePublicPreviewURL: (path: string) => `https://preview.example/${path}`,
+      },
+    });
+
+    expect(wrapper.findAll('[data-test="version-history-row"]')
+      .map((row) => row.attributes("data-version")))
+      .toEqual(["3", "2", "1"]);
+  });
+
   it("renders Chinese upload, publish, and rollback controls", () => {
     const wrapper = mount(CoinEditorView, { props: { coin } });
 

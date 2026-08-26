@@ -6,6 +6,10 @@ export function activeVersion(coin: AdminCoin): CoinVersion | undefined {
   return coin.versions?.find((version) => version.id === coin.activeVersionID);
 }
 
+export function versionsDescending(coin: AdminCoin): CoinVersion[] {
+  return [...(coin.versions ?? [])].sort((left, right) => right.versionNumber - left.versionNumber);
+}
+
 export function coinStatusLabel(status: string | undefined): string {
   if (status === "draft") return "草稿";
   if (status === "published") return "已发布";

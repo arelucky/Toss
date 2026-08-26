@@ -75,11 +75,15 @@ async function submit() {
 </script>
 
 <template>
-  <section>
+  <section class="upload-panel">
     <h3>版本资源</h3>
     <form @submit.prevent="submit">
       <label>USDZ 模型<input data-test="model" type="file" accept=".usdz" :disabled="uploading" @change="select($event, 'model')" /></label>
       <label>WEBP 预览图<input data-test="preview" type="file" accept=".webp" :disabled="uploading" @change="select($event, 'preview')" /></label>
+      <div v-if="model || preview" class="selected-files" aria-live="polite">
+        <p v-if="model">USDZ：{{ model.name }}</p>
+        <p v-if="preview">WEBP：{{ preview.name }}</p>
+      </div>
       <progress v-if="uploading || progress === 100" :value="progress" max="100" />
       <button type="submit" :disabled="uploading">{{ uploading ? "正在上传…" : "创建版本并上传" }}</button>
     </form>
@@ -89,7 +93,9 @@ async function submit() {
 
 <style scoped>
 form { display: grid; gap: 12px; }
-label { display: grid; gap: 7px; color: #525964; }
-button { justify-self: start; border: 0; border-radius: 7px; background: #25282d; color: white; padding: 10px 14px; }
+label { display: grid; gap: 7px; color: var(--admin-muted); }
+.selected-files { display: grid; gap: 4px; padding: 10px 12px; border: 1px solid var(--admin-line); border-radius: 8px; color: var(--admin-muted); font-size: 13px; }
+.selected-files p { margin: 0; overflow-wrap: anywhere; }
+button { justify-self: start; border: 1px solid var(--admin-gold); border-radius: 8px; background: var(--admin-gold); color: #18140d; padding: 10px 14px; font-weight: 700; }
 button:disabled { opacity: .5; }
 </style>
