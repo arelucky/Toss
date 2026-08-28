@@ -10,6 +10,9 @@ xcuserdata/
 DerivedData/
 .build/
 
+# Local git worktrees
+.worktrees/
+
 # Local secrets
 .env
 .env.local
