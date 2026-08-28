@@ -102,13 +102,13 @@ final class SupabaseConfigurationTests: XCTestCase {
         let infoURL = repositoryRoot.appendingPathComponent("Toss/Info.plist")
         let data = try Data(contentsOf: infoURL)
         let info = try XCTUnwrap(
-            PropertyListSerialization.propertyList(from: data, format: nil) as? [String: String]
+            PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any]
         )
         let source = try String(contentsOf: infoURL, encoding: .utf8)
 
-        XCTAssertEqual(info["TossSupabaseURL"], "$(SUPABASE_URL)")
+        XCTAssertEqual(info["TossSupabaseURL"] as? String, "$(SUPABASE_URL)")
         XCTAssertEqual(
-            info["TossSupabasePublishableKey"],
+            info["TossSupabasePublishableKey"] as? String,
             "$(SUPABASE_PUBLISHABLE_KEY)"
         )
         XCTAssertFalse(source.contains(".supabase.co"))
