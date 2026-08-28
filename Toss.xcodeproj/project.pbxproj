@@ -14,6 +14,7 @@
 		F5A43A7C2FFFE85000F9D3AF /* TossApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43A7B2FFFE85000F9D3AF /* TossApp.swift */; };
 		F5A43A7E2FFFE85000F9D3AF /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43A7D2FFFE85000F9D3AF /* ContentView.swift */; };
 		F5A43A802FFFE85100F9D3AF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F5A43A7F2FFFE85100F9D3AF /* Assets.xcassets */; };
+		F604000130F1000100000001 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F604000230F1000100000001 /* LaunchScreen.storyboard */; };
 		F5A43A832FFFE85100F9D3AF /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F5A43A822FFFE85100F9D3AF /* Preview Assets.xcassets */; };
 		F5A43A8D2FFFE85100F9D3AF /* TossTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43A8C2FFFE85100F9D3AF /* TossTests.swift */; };
 		F5A43A972FFFE85100F9D3AF /* TossUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A43A962FFFE85100F9D3AF /* TossUITests.swift */; };
@@ -129,6 +130,7 @@
 		F5A43A7B2FFFE85000F9D3AF /* TossApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TossApp.swift; sourceTree = "<group>"; };
 		F5A43A7D2FFFE85000F9D3AF /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		F5A43A7F2FFFE85100F9D3AF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		F604000230F1000100000001 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		F5A43A822FFFE85100F9D3AF /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		F5A43A882FFFE85100F9D3AF /* TossTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TossTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5A43A8C2FFFE85100F9D3AF /* TossTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TossTests.swift; sourceTree = "<group>"; };
@@ -282,6 +284,7 @@
 		F5A43A7A2FFFE85000F9D3AF /* Toss */ = {
 			isa = PBXGroup;
 			children = (
+				F604000230F1000100000001 /* LaunchScreen.storyboard */,
 				F5F100083025000100000001 /* Configuration */,
 				F5795CD93017BBA40011040E /* Resources */,
 				F5A43AB02FFFE90000F9D3AF /* App */,
@@ -593,6 +596,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F604000130F1000100000001 /* LaunchScreen.storyboard in Resources */,
 				F5795CDE3018BA2B0011040E /* Models in Resources */,
 				F5E41003301B100100000001 /* Sounds in Resources */,
 				F5A43A832FFFE85100F9D3AF /* Preview Assets.xcassets in Resources */,
