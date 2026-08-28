@@ -534,3 +534,23 @@ feat: add RealityKit 3D coin preview
 
 * 聚焦材质策略测试 1/1 通过
 * iPhone15pm Debug 构建、安装启动与真机视觉/交互验收通过
+
+---
+
+# Toss Ritual 公开支持页面阶段
+
+## 状态
+
+✅ 已完成，待发布至 GitHub Pages
+
+完成内容：
+
+* 新增公开支持页与隐私政策页
+* 使用公开支持邮箱 `tossritual.support@proton.me`
+* 隐私政策如实说明可选 Apple 登录、偏好同步与 Supabase 基础设施处理
+* 不公开内部设计或实施文档
+
+验证结果：
+
+* 公开内容检查通过
+* 桌面与手机宽度页面检查通过
