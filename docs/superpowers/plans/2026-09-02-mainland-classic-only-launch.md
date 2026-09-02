@@ -4,7 +4,7 @@
 
 **Goal:** Make the single Toss binary select an offline, Classic-only experience for China mainland storefronts while preserving the existing online experience everywhere else.
 
-**Architecture:** A testable launch-profile resolver reads a persisted choice first, then reads `Storefront.current?.countryCode`. `CHN` selects `mainlandClassicOnly`; other known storefronts select `globalOnline`; an unavailable storefront asks once for a manual choice. The mainland root never creates `AppDependencies`, a Supabase client, account services, catalog caches, asset caches, or a coin-library view model.
+**Architecture:** A testable asynchronous launch-profile resolver reads a persisted choice first, then awaits `Storefront.current?.countryCode`. `CHN` selects `mainlandClassicOnly`; other known storefronts select `globalOnline`; an unavailable storefront asks once for a manual choice. The mainland root never creates `AppDependencies`, a Supabase client, account services, catalog caches, asset caches, or a coin-library view model.
 
 **Tech Stack:** Swift 5, SwiftUI, StoreKit `Storefront`, XCTest, UserDefaults-backed local preferences, iOS 17 minimum.
 
@@ -55,28 +55,28 @@
 - `enum DistributionProfile: String, Equatable, Sendable { case globalOnline; case mainlandClassicOnly }`
 - `DistributionProfile.capabilities -> DistributionProfileCapabilities(showsCoinLibrary:showsAccount:usesOnlineServices:)`
 - `enum DistributionProfileResolution: Equatable { case resolved(DistributionProfile); case requiresManualChoice }`
-- `protocol StorefrontCountryCodeProviding { func currentCountryCode() -> String? }`
+- `protocol StorefrontCountryCodeProviding { func currentCountryCode() async -> String? }`
 - `DistributionProfileStore.storedProfile`, `save(_:)`
-- `DistributionProfileResolver.resolve()`, `chooseManually(_:)`
+- `DistributionProfileResolver.resolve() async`, `chooseManually(_:)`
 
 - [ ] **Step 1: Write failing resolver tests**
 
 ~~~swift
-func testCHNStorefrontResolvesAndPersistsClassicOnly() {
+func testCHNStorefrontResolvesAndPersistsClassicOnly() async {
     let store = DistributionProfileStore(store: ProfileKeyValueStore())
     let resolver = DistributionProfileResolver(
         store: store,
         storefront: StorefrontCountryCodeDouble(countryCode: "CHN")
     )
 
-    XCTAssertEqual(resolver.resolve(), .resolved(.mainlandClassicOnly))
+    XCTAssertEqual(await resolver.resolve(), .resolved(.mainlandClassicOnly))
     XCTAssertEqual(store.storedProfile, .mainlandClassicOnly)
     XCTAssertFalse(DistributionProfile.mainlandClassicOnly.capabilities.showsCoinLibrary)
     XCTAssertFalse(DistributionProfile.mainlandClassicOnly.capabilities.showsAccount)
     XCTAssertFalse(DistributionProfile.mainlandClassicOnly.capabilities.usesOnlineServices)
 }
 
-func testStoredProfileWinsOverChangedStorefront() {
+func testStoredProfileWinsOverChangedStorefront() async {
     let store = DistributionProfileStore(store: ProfileKeyValueStore())
     store.save(.globalOnline)
     let resolver = DistributionProfileResolver(
@@ -84,17 +84,17 @@ func testStoredProfileWinsOverChangedStorefront() {
         storefront: StorefrontCountryCodeDouble(countryCode: "CHN")
     )
 
-    XCTAssertEqual(resolver.resolve(), .resolved(.globalOnline))
+    XCTAssertEqual(await resolver.resolve(), .resolved(.globalOnline))
 }
 
-func testUnknownStorefrontRequiresManualChoiceAndPersistsIt() {
+func testUnknownStorefrontRequiresManualChoiceAndPersistsIt() async {
     let store = DistributionProfileStore(store: ProfileKeyValueStore())
     let resolver = DistributionProfileResolver(
         store: store,
         storefront: StorefrontCountryCodeDouble(countryCode: nil)
     )
 
-    XCTAssertEqual(resolver.resolve(), .requiresManualChoice)
+    XCTAssertEqual(await resolver.resolve(), .requiresManualChoice)
     XCTAssertEqual(resolver.chooseManually(.mainlandClassicOnly), .mainlandClassicOnly)
     XCTAssertEqual(store.storedProfile, .mainlandClassicOnly)
 }
@@ -117,9 +117,9 @@ Expected: compilation fails because the profile resolver types do not exist.
 Use the existing `PreferencesKeyValueStoring` protocol, with a distinct `distribution.profile` key. The StoreKit provider returns `Storefront.current?.countryCode`.
 
 ~~~swift
-func resolve() -> DistributionProfileResolution {
+func resolve() async -> DistributionProfileResolution {
     if let storedProfile = store.storedProfile { return .resolved(storedProfile) }
-    guard let countryCode = storefront.currentCountryCode() else { return .requiresManualChoice }
+    guard let countryCode = await storefront.currentCountryCode() else { return .requiresManualChoice }
     let profile: DistributionProfile = countryCode.uppercased() == "CHN"
         ? .mainlandClassicOnly
         : .globalOnline
@@ -196,7 +196,7 @@ Expected: compilation fails because bootstrap presentation and factory types do 
 
 - [ ] **Step 3: Implement bootstrap**
 
-`TossApp` must render `AppBootstrapView()`, not `AppRootView(dependencies: .live())`.
+`TossApp` must render `AppBootstrapView()`, not `AppRootView(dependencies: .live())`. `AppBootstrapView` invokes `await resolver.resolve()` from its `.task`, and it must show only a neutral launch progress state while this short StoreKit read is unfinished.
 
 ~~~swift
 switch presentation.destination {
