@@ -37,6 +37,10 @@
 		F5D33A02301A000100000001 /* TossResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5D33A01301A000100000001 /* TossResult.swift */; };
 		F5F100023025000100000001 /* SupabaseConfigurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F100013025000100000001 /* SupabaseConfigurationTests.swift */; };
 		F5F100043025000100000001 /* SupabaseConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F100033025000100000001 /* SupabaseConfiguration.swift */; };
+		F605000130F2000100000001 /* DistributionProfileResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F605000230F2000100000001 /* DistributionProfileResolverTests.swift */; };
+		F605000330F2000100000001 /* DistributionProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = F605000430F2000100000001 /* DistributionProfile.swift */; };
+		F605000530F2000100000001 /* DistributionProfileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F605000630F2000100000001 /* DistributionProfileStore.swift */; };
+		F605000730F2000100000001 /* DistributionProfileResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = F605000830F2000100000001 /* DistributionProfileResolver.swift */; };
 		F5F400013028000100000001 /* AccountStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F400023028000100000001 /* AccountStoreTests.swift */; };
 		F5F400033028000100000001 /* AccountTestDoubles.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F400043028000100000001 /* AccountTestDoubles.swift */; };
 		F5F401013028000100000001 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F401023028000100000001 /* AppEnvironment.swift */; };
@@ -155,6 +159,10 @@
 		F5D33A01301A000100000001 /* TossResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TossResult.swift; sourceTree = "<group>"; };
 		F5F100013025000100000001 /* SupabaseConfigurationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Configuration/SupabaseConfigurationTests.swift; sourceTree = "<group>"; };
 		F5F100033025000100000001 /* SupabaseConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseConfiguration.swift; sourceTree = "<group>"; };
+		F605000230F2000100000001 /* DistributionProfileResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Configuration/DistributionProfileResolverTests.swift; sourceTree = "<group>"; };
+		F605000430F2000100000001 /* DistributionProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistributionProfile.swift; sourceTree = "<group>"; };
+		F605000630F2000100000001 /* DistributionProfileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistributionProfileStore.swift; sourceTree = "<group>"; };
+		F605000830F2000100000001 /* DistributionProfileResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistributionProfileResolver.swift; sourceTree = "<group>"; };
 		F5F100053025000100000001 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		F5F100063025000100000001 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 		F5F100073025000100000001 /* LocalSecrets.xcconfig.example */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = LocalSecrets.xcconfig.example; sourceTree = "<group>"; };
@@ -314,6 +322,9 @@
 			isa = PBXGroup;
 			children = (
 				F5F100033025000100000001 /* SupabaseConfiguration.swift */,
+				F605000430F2000100000001 /* DistributionProfile.swift */,
+				F605000630F2000100000001 /* DistributionProfileStore.swift */,
+				F605000830F2000100000001 /* DistributionProfileResolver.swift */,
 			);
 			path = Configuration;
 			sourceTree = "<group>";
@@ -333,6 +344,7 @@
 			children = (
 				F5A43A8C2FFFE85100F9D3AF /* TossTests.swift */,
 				F5F100013025000100000001 /* SupabaseConfigurationTests.swift */,
+				F605000230F2000100000001 /* DistributionProfileResolverTests.swift */,
 				F5F400023028000100000001 /* AccountStoreTests.swift */,
 				F5F400043028000100000001 /* AccountTestDoubles.swift */,
 				F5F500023035000100000001 /* NonceGeneratorTests.swift */,
@@ -626,6 +638,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				F5F100043025000100000001 /* SupabaseConfiguration.swift in Sources */,
+				F605000330F2000100000001 /* DistributionProfile.swift in Sources */,
+				F605000530F2000100000001 /* DistributionProfileStore.swift in Sources */,
+				F605000730F2000100000001 /* DistributionProfileResolver.swift in Sources */,
 				F5A43AC12FFFEA0000F9D3AF /* CoinBack.swift in Sources */,
 				F5A43AB92FFFEA0000F9D3AF /* CoinTheme.swift in Sources */,
 				F5A43ABF2FFFEA0000F9D3AF /* CoinFront.swift in Sources */,
@@ -699,6 +714,7 @@
 			files = (
 				F5A43A8D2FFFE85100F9D3AF /* TossTests.swift in Sources */,
 				F5F100023025000100000001 /* SupabaseConfigurationTests.swift in Sources */,
+				F605000130F2000100000001 /* DistributionProfileResolverTests.swift in Sources */,
 				F5F400013028000100000001 /* AccountStoreTests.swift in Sources */,
 				F5F400033028000100000001 /* AccountTestDoubles.swift in Sources */,
 				F5F500013035000100000001 /* NonceGeneratorTests.swift in Sources */,
