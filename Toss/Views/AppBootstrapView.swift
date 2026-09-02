@@ -11,6 +11,75 @@ enum LaunchProfileDestination: Equatable {
     case requiresManualChoice
 }
 
+struct LaunchProfileLoadingPresentation {
+    static let backgroundColor = TossVisualStyle.charcoalTop
+    static let title = "命运的一掷"
+    static let subtitle = "A toss of fate"
+}
+
+private struct LaunchProfileLoadingView: View {
+    var body: some View {
+        ZStack {
+            LaunchProfileLoadingPresentation.backgroundColor.swiftUIColor
+                .ignoresSafeArea()
+
+            VStack(spacing: 10) {
+                Text(LaunchProfileLoadingPresentation.title)
+                    .font(.system(size: 30, weight: .semibold))
+                    .foregroundStyle(TossVisualStyle.primaryText.swiftUIColor)
+
+                Text(LaunchProfileLoadingPresentation.subtitle)
+                    .font(.system(size: 17))
+                    .foregroundStyle(TossVisualStyle.secondaryText.swiftUIColor)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Preparing Toss")
+    }
+}
+
+@MainActor
+final class AppLaunchCoordinator: ObservableObject {
+    enum State: Equatable {
+        case resolving
+        case resolved(DistributionProfile)
+        case requiresManualChoice
+    }
+
+    @Published private(set) var state: State
+
+    private let resolver: DistributionProfileResolver
+
+    init(resolver: DistributionProfileResolver = DistributionProfileResolver()) {
+        self.resolver = resolver
+
+        if let storedProfile = resolver.storedProfile {
+            state = .resolved(storedProfile)
+        } else {
+            state = .resolving
+            Task { [weak self] in
+                await self?.resolveProfile()
+            }
+        }
+    }
+
+    @discardableResult
+    func chooseManually(_ profile: DistributionProfile) -> DistributionProfile {
+        let selectedProfile = resolver.chooseManually(profile)
+        state = .resolved(selectedProfile)
+        return selectedProfile
+    }
+
+    private func resolveProfile() async {
+        switch await resolver.resolve() {
+        case let .resolved(profile):
+            state = .resolved(profile)
+        case .requiresManualChoice:
+            state = .requiresManualChoice
+        }
+    }
+}
+
 @MainActor
 final class LaunchProfilePresentation: ObservableObject {
     @Published private(set) var destination: LaunchProfileDestination
@@ -61,42 +130,44 @@ final class LaunchProfilePresentation: ObservableObject {
 
 @MainActor
 struct AppBootstrapView: View {
-    private let resolver: DistributionProfileResolver
+    @ObservedObject private var coordinator: AppLaunchCoordinator
     @StateObject private var presentation: LaunchProfilePresentation
-    @State private var resolutionStarted = false
-    @State private var resolutionFinished = false
 
     init(
-        resolver: DistributionProfileResolver,
+        coordinator: AppLaunchCoordinator,
         onlineFactory: any OnlineRootBuilding
     ) {
-        self.resolver = resolver
+        _coordinator = ObservedObject(wrappedValue: coordinator)
         _presentation = StateObject(wrappedValue: LaunchProfilePresentation(
-            profile: nil,
+            profile: coordinator.resolvedProfile,
             onlineFactory: onlineFactory,
-            manualProfileChooser: { resolver.chooseManually($0) }
+            manualProfileChooser: { coordinator.chooseManually($0) }
         ))
     }
 
     @MainActor
-    init() {
+    init(coordinator: AppLaunchCoordinator) {
         self.init(
-            resolver: DistributionProfileResolver(),
+            coordinator: coordinator,
             onlineFactory: LiveOnlineRootBuilder()
         )
     }
 
     var body: some View {
         Group {
-            if resolutionFinished {
+            switch coordinator.state {
+            case .resolving:
+                LaunchProfileLoadingView()
+            case .resolved:
                 destinationView
-            } else {
-                ProgressView()
-                    .accessibilityLabel("Preparing Toss")
+            case .requiresManualChoice:
+                DistributionProfileChoiceView(onChoose: presentation.chooseManually)
             }
         }
-        .task {
-            await resolveProfileOnce()
+        .onChange(of: coordinator.state) { _, state in
+            if case let .resolved(profile) = state {
+                presentation.present(profile)
+            }
         }
     }
 
@@ -108,21 +179,14 @@ struct AppBootstrapView: View {
         case .globalOnline:
             AppRootView(dependencies: presentation.onlineDependencies)
         case .requiresManualChoice:
-            DistributionProfileChoiceView(onChoose: presentation.chooseManually)
+            EmptyView()
         }
     }
+}
 
-    private func resolveProfileOnce() async {
-        guard !resolutionStarted else { return }
-        resolutionStarted = true
-
-        switch await resolver.resolve() {
-        case let .resolved(profile):
-            presentation.present(profile)
-        case .requiresManualChoice:
-            break
-        }
-
-        resolutionFinished = true
+private extension AppLaunchCoordinator {
+    var resolvedProfile: DistributionProfile? {
+        guard case let .resolved(profile) = state else { return nil }
+        return profile
     }
 }

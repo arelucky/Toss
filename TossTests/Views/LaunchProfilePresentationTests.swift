@@ -39,6 +39,12 @@ final class LaunchProfilePresentationTests: XCTestCase {
         XCTAssertFalse(view.showsCoinLibraryControl)
         XCTAssertEqual(view.displayedCoinModelSource, .bundledClassic)
     }
+
+    func testProfileResolutionLoadingMatchesStaticLaunchScreen() {
+        XCTAssertEqual(LaunchProfileLoadingPresentation.backgroundColor, TossVisualStyle.charcoalTop)
+        XCTAssertEqual(LaunchProfileLoadingPresentation.title, "命运的一掷")
+        XCTAssertEqual(LaunchProfileLoadingPresentation.subtitle, "A toss of fate")
+    }
 }
 
 @MainActor

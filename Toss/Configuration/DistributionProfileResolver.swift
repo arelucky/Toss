@@ -27,6 +27,10 @@ final class DistributionProfileResolver {
         self.storefront = storefront
     }
 
+    var storedProfile: DistributionProfile? {
+        store.storedProfile
+    }
+
     func resolve() async -> DistributionProfileResolution {
         if let storedProfile = store.storedProfile {
             return .resolved(storedProfile)

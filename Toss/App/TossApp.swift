@@ -8,10 +8,14 @@
 import SwiftUI
 
 @main
+@MainActor
 struct TossApp: App {
+    @StateObject private var launchCoordinator = AppLaunchCoordinator()
+
     var body: some Scene {
         WindowGroup {
-            AppBootstrapView()
+            AppBootstrapView(coordinator: launchCoordinator)
+                .preferredColorScheme(.dark)
         }
     }
 }

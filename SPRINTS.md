@@ -601,3 +601,22 @@ feat: add RealityKit 3D coin preview
 51c0d8d feat: add mainland offline app root
 abd19a7 feat: limit mainland app to Classic
 ```
+
+---
+
+# 启动档案静态过渡页
+
+## 状态
+
+✅ iPhone15pm 真机首次启动验收通过
+
+## 完成内容
+
+* 启动时由 App 级协调器优先读取已保存的发行档案，避免不必要的异步等待。
+* 首次启动解析 Storefront 期间，继续显示与系统启动页一致的深色双语静态页面。
+* 档案解析完成后才切换至大陆 Classic-only 或全球在线根视图，全程不显示白屏。
+
+## 验证结果
+
+* 启动档案与静态过渡页聚焦测试通过。
+* iPhone15pm Debug 构建、重新安装与首次启动视觉验收通过；未见白屏。

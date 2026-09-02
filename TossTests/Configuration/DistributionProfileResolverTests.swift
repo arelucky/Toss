@@ -59,6 +59,22 @@ final class DistributionProfileResolverTests: XCTestCase {
         XCTAssertEqual(resolver.chooseManually(.mainlandClassicOnly), .mainlandClassicOnly)
         XCTAssertEqual(store.storedProfile, .mainlandClassicOnly)
     }
+
+    @MainActor
+    func testSavedProfileIsReadyBeforeStorefrontResolutionStarts() {
+        let store = DistributionProfileStore(store: ProfileKeyValueStore())
+        store.save(.mainlandClassicOnly)
+        let storefront = StorefrontCountryCodeDouble(countryCode: "USA")
+        let coordinator = AppLaunchCoordinator(
+            resolver: DistributionProfileResolver(
+                store: store,
+                storefront: storefront
+            )
+        )
+
+        XCTAssertEqual(coordinator.state, .resolved(.mainlandClassicOnly))
+        XCTAssertEqual(storefront.callCount, 0)
+    }
 }
 
 private final class ProfileKeyValueStore: PreferencesKeyValueStoring {
