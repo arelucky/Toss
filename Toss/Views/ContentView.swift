@@ -10,6 +10,8 @@ import SwiftUI
 struct ContentView: View {
     let coinSide: CoinSide
     let coinDisplayMode: CoinDisplayMode
+    let coinModelSource: CoinModelSource
+    let onOpenCoinLibrary: (() -> Void)?
     let onToss: (TossGestureEvent) -> Void
     @State private var rotationDegrees = 0.0
     @State private var tossOffset: CGFloat = 0
@@ -21,22 +23,22 @@ struct ContentView: View {
     @State private var previewInertiaTrigger = 0
     @State private var dragStartTime: Date?
     @StateObject private var viewModel: CoinTossViewModel
-    @StateObject private var coinLibraryViewModel: CoinLibraryViewModel
-    @State private var isCoinLibraryPresented = false
 
     @MainActor
     init(
         coinSide: CoinSide = .front,
         coinDisplayMode: CoinDisplayMode = .resolved(),
         viewModel: CoinTossViewModel = CoinTossViewModel(),
-        coinLibraryViewModel: CoinLibraryViewModel,
+        coinModelSource: CoinModelSource = .bundledClassic,
+        onOpenCoinLibrary: (() -> Void)? = nil,
         onToss: @escaping (TossGestureEvent) -> Void = { _ in }
     ) {
         self.coinSide = coinSide
         self.coinDisplayMode = coinDisplayMode
+        self.coinModelSource = coinModelSource
+        self.onOpenCoinLibrary = onOpenCoinLibrary
         self.onToss = onToss
         _viewModel = StateObject(wrappedValue: viewModel)
-        _coinLibraryViewModel = StateObject(wrappedValue: coinLibraryViewModel)
     }
 
     var body: some View {
@@ -56,7 +58,9 @@ struct ContentView: View {
 
             VStack {
                 HStack {
-                    coinLibraryButton
+                    if let onOpenCoinLibrary {
+                        coinLibraryButton(action: onOpenCoinLibrary)
+                    }
                     Spacer()
                 }
                 Spacer()
@@ -74,13 +78,10 @@ struct ContentView: View {
             SoundManager.shared.prepare()
             HapticManager.shared.prepare()
         }
-        .fullScreenCover(isPresented: $isCoinLibraryPresented) {
-            CoinLibraryView(viewModel: coinLibraryViewModel) { isCoinLibraryPresented = false }
-        }
     }
 
-    private var coinLibraryButton: some View {
-        Button { isCoinLibraryPresented = true } label: {
+    private func coinLibraryButton(action: @escaping () -> Void) -> some View {
+        Button(action: action) {
             Image(systemName: "circle.grid.2x2.fill")
                 .font(.system(size: 18, weight: .medium))
                 .frame(width: TossVisualStyle.controlSize, height: TossVisualStyle.controlSize)
@@ -121,7 +122,11 @@ struct ContentView: View {
     }
 
     var displayedCoinModelSource: CoinModelSource {
-        coinLibraryViewModel.selectedModelSource
+        coinModelSource
+    }
+
+    var showsCoinLibraryControl: Bool {
+        onOpenCoinLibrary != nil
     }
 
     var idleTossAffordanceOpacity: Double {
@@ -293,13 +298,11 @@ struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
             ContentView(
-                coinDisplayMode: .realityKit3D,
-                coinLibraryViewModel: AppDependencies.makeOfflineCoinLibraryViewModel()
+                coinDisplayMode: .realityKit3D
             )
             ContentView(
                 coinSide: .back,
-                coinDisplayMode: .swiftUI,
-                coinLibraryViewModel: AppDependencies.makeOfflineCoinLibraryViewModel()
+                coinDisplayMode: .swiftUI
             )
         }
     }

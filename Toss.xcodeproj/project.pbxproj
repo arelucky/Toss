@@ -41,6 +41,10 @@
 		F605000330F2000100000001 /* DistributionProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = F605000430F2000100000001 /* DistributionProfile.swift */; };
 		F605000530F2000100000001 /* DistributionProfileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F605000630F2000100000001 /* DistributionProfileStore.swift */; };
 		F605000730F2000100000001 /* DistributionProfileResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = F605000830F2000100000001 /* DistributionProfileResolver.swift */; };
+		F606000130F2100100000001 /* LaunchProfilePresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F606000230F2100100000001 /* LaunchProfilePresentationTests.swift */; };
+		F606000330F2100100000001 /* AppBootstrapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F606000430F2100100000001 /* AppBootstrapView.swift */; };
+		F606000530F2100100000001 /* DistributionProfileChoiceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F606000630F2100100000001 /* DistributionProfileChoiceView.swift */; };
+		F606000730F2100100000001 /* MainlandClassicRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F606000830F2100100000001 /* MainlandClassicRootView.swift */; };
 		F5F400013028000100000001 /* AccountStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F400023028000100000001 /* AccountStoreTests.swift */; };
 		F5F400033028000100000001 /* AccountTestDoubles.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F400043028000100000001 /* AccountTestDoubles.swift */; };
 		F5F401013028000100000001 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F401023028000100000001 /* AppEnvironment.swift */; };
@@ -163,6 +167,10 @@
 		F605000430F2000100000001 /* DistributionProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistributionProfile.swift; sourceTree = "<group>"; };
 		F605000630F2000100000001 /* DistributionProfileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistributionProfileStore.swift; sourceTree = "<group>"; };
 		F605000830F2000100000001 /* DistributionProfileResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistributionProfileResolver.swift; sourceTree = "<group>"; };
+		F606000230F2100100000001 /* LaunchProfilePresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/LaunchProfilePresentationTests.swift; sourceTree = "<group>"; };
+		F606000430F2100100000001 /* AppBootstrapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBootstrapView.swift; sourceTree = "<group>"; };
+		F606000630F2100100000001 /* DistributionProfileChoiceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistributionProfileChoiceView.swift; sourceTree = "<group>"; };
+		F606000830F2100100000001 /* MainlandClassicRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainlandClassicRootView.swift; sourceTree = "<group>"; };
 		F5F100053025000100000001 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		F5F100063025000100000001 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 		F5F100073025000100000001 /* LocalSecrets.xcconfig.example */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = LocalSecrets.xcconfig.example; sourceTree = "<group>"; };
@@ -345,6 +353,7 @@
 				F5A43A8C2FFFE85100F9D3AF /* TossTests.swift */,
 				F5F100013025000100000001 /* SupabaseConfigurationTests.swift */,
 				F605000230F2000100000001 /* DistributionProfileResolverTests.swift */,
+				F606000230F2100100000001 /* LaunchProfilePresentationTests.swift */,
 				F5F400023028000100000001 /* AccountStoreTests.swift */,
 				F5F400043028000100000001 /* AccountTestDoubles.swift */,
 				F5F500023035000100000001 /* NonceGeneratorTests.swift */,
@@ -393,6 +402,9 @@
 			children = (
 				F5A43A7D2FFFE85000F9D3AF /* ContentView.swift */,
 				F5F911023060000100000001 /* AppRootView.swift */,
+				F606000430F2100100000001 /* AppBootstrapView.swift */,
+				F606000630F2100100000001 /* DistributionProfileChoiceView.swift */,
+				F606000830F2100100000001 /* MainlandClassicRootView.swift */,
 				F5F912023060000100000001 /* AccountSheetView.swift */,
 				F5F913023060000100000001 /* GuestAccountView.swift */,
 				F5F914023060000100000001 /* AuthenticatedAccountView.swift */,
@@ -638,6 +650,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				F5F100043025000100000001 /* SupabaseConfiguration.swift in Sources */,
+				F606000330F2100100000001 /* AppBootstrapView.swift in Sources */,
+				F606000530F2100100000001 /* DistributionProfileChoiceView.swift in Sources */,
+				F606000730F2100100000001 /* MainlandClassicRootView.swift in Sources */,
 				F605000330F2000100000001 /* DistributionProfile.swift in Sources */,
 				F605000530F2000100000001 /* DistributionProfileStore.swift in Sources */,
 				F605000730F2000100000001 /* DistributionProfileResolver.swift in Sources */,
@@ -715,6 +730,7 @@
 				F5A43A8D2FFFE85100F9D3AF /* TossTests.swift in Sources */,
 				F5F100023025000100000001 /* SupabaseConfigurationTests.swift in Sources */,
 				F605000130F2000100000001 /* DistributionProfileResolverTests.swift in Sources */,
+				F606000130F2100100000001 /* LaunchProfilePresentationTests.swift in Sources */,
 				F5F400013028000100000001 /* AccountStoreTests.swift in Sources */,
 				F5F400033028000100000001 /* AccountTestDoubles.swift in Sources */,
 				F5F500013035000100000001 /* NonceGeneratorTests.swift in Sources */,

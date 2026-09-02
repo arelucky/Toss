@@ -1,5 +1,12 @@
 import SwiftUI
 
+@MainActor
+struct LiveOnlineRootBuilder: OnlineRootBuilding {
+    func makeOnlineDependencies() -> AppDependencies {
+        .live()
+    }
+}
+
 private enum AppSheet: String, Identifiable {
     case account
     var id: String { rawValue }
@@ -12,6 +19,7 @@ struct AppRootView: View {
     @StateObject private var tossViewModel: CoinTossViewModel
     @StateObject private var coinLibraryViewModel: CoinLibraryViewModel
     @State private var presentedSheet: AppSheet?
+    @State private var isCoinLibraryPresented = false
 
     init(dependencies: AppDependencies) {
         let store = AccountStore(authService: dependencies.authService, initialSession: dependencies.session)
@@ -40,7 +48,8 @@ struct AppRootView: View {
         ZStack(alignment: .topTrailing) {
             ContentView(
                 viewModel: tossViewModel,
-                coinLibraryViewModel: coinLibraryViewModel
+                coinModelSource: coinLibraryViewModel.selectedModelSource,
+                onOpenCoinLibrary: { isCoinLibraryPresented = true }
             )
             accountButton
                 .padding(.top, 8)
@@ -48,6 +57,11 @@ struct AppRootView: View {
         }
         .sheet(item: $presentedSheet) { _ in
             AccountSheetView(viewModel: accountViewModel)
+        }
+        .fullScreenCover(isPresented: $isCoinLibraryPresented) {
+            CoinLibraryView(viewModel: coinLibraryViewModel) {
+                isCoinLibraryPresented = false
+            }
         }
         .task {
             await accountViewModel.start()

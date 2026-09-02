@@ -169,13 +169,13 @@ final class TossTests: XCTestCase {
     func testHomeIdleAffordanceIsVisibleOnlyWhileIdle() {
         let idleView = ContentView(
             viewModel: CoinTossViewModel(),
-            coinLibraryViewModel: AppDependencies.makeOfflineCoinLibraryViewModel()
+            coinModelSource: .bundledClassic
         )
         let tossingViewModel = CoinTossViewModel()
         tossingViewModel.endDrag(translation: CGSize(width: 0, height: -96), duration: 0.3)
         let tossingView = ContentView(
             viewModel: tossingViewModel,
-            coinLibraryViewModel: AppDependencies.makeOfflineCoinLibraryViewModel()
+            coinModelSource: .bundledClassic
         )
 
         XCTAssertEqual(idleView.idleTossAffordanceOpacity, 1)

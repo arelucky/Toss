@@ -270,7 +270,7 @@ final class CoinLibraryViewModelTests: XCTestCase {
 
         let contentView = ContentView(
             viewModel: CoinTossViewModel(),
-            coinLibraryViewModel: subject.viewModel
+            coinModelSource: subject.viewModel.selectedModelSource
         )
 
         XCTAssertEqual(
