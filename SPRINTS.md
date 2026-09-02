@@ -571,3 +571,33 @@ feat: add RealityKit 3D coin preview
 
 * 启动页配置聚焦检查通过
 * Debug 模拟器构建、安装与冷启动录制通过
+
+---
+
+# 中国大陆 Classic-only 首发档案
+
+## 状态
+
+✅ 真机双档案验收通过
+
+## 完成内容
+
+* 首次启动按 App Store Storefront 解析并持久化大陆/全球档案；已保存的选择优先。
+* 大陆档案仅提供内置 Classic、掷硬币、声音与触觉设置，不初始化账户、硬币库或在线服务。
+* 全球档案保留账户入口、硬币库和动态硬币能力。
+* 旧的国内云服务部署计划已标记为失效；本首发不采购、不部署国内云资源。
+* 真机验收时使用的 Debug 档案选择器已完整移除，不会进入 TestFlight 或正式版本。
+
+## 验证结果
+
+* Storefront 解析、离线根视图和本地设置的聚焦测试通过。
+* 完整 TossTests 与 Debug 模拟器构建通过。
+* iPhone15pm 真机验收：大陆档案离线可用且不显示账户/硬币库；全球档案仍显示账户与硬币库入口。
+
+## Git Commits
+
+```text
+6a37bac feat: resolve mainland launch profile
+51c0d8d feat: add mainland offline app root
+abd19a7 feat: limit mainland app to Classic
+```

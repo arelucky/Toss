@@ -1,5 +1,7 @@
 # Toss Mainland China Release Implementation Plan
 
+> **Superseded on 2026-09-02.** This domestic-cloud deployment plan is no longer active. Mainland launch now uses the offline Classic-only scope documented in `2026-09-02-mainland-classic-only-launch.md`; do not provision or deploy the services described below unless a later approved plan replaces that scope.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
 **Goal:** Release Toss in China mainland with isolated domestic accounts, APIs, assets, and administration while keeping the existing overseas service unchanged.
