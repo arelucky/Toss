@@ -150,13 +150,16 @@ git commit -m 'feat: resolve mainland launch profile'
 - Create: `Toss/Views/MainlandClassicRootView.swift`
 - Modify: `Toss/App/TossApp.swift`
 - Modify: `Toss/Views/AppRootView.swift`
+- Modify: `Toss/Views/ContentView.swift`
 - Create: `TossTests/Views/LaunchProfilePresentationTests.swift`
+- Modify: `TossTests/TossTests.swift`
 - Modify: `Toss.xcodeproj/project.pbxproj`
 
 **Interfaces:**
 - `protocol OnlineRootBuilding { @MainActor func makeOnlineDependencies() -> AppDependencies }`
 - `LaunchProfilePresentation(profile:onlineFactory:)` caches global dependencies once and exposes `.mainlandClassicOnly`, `.globalOnline`, or `.requiresManualChoice` destination.
 - `AppBootstrapView` resolves before creating either root.
+- `ContentView` accepts `coinModelSource: CoinModelSource` and `onOpenCoinLibrary: (() -> Void)?`; it renders the library control only when the callback is non-nil.
 
 - [ ] **Step 1: Write failing route tests**
 
@@ -182,84 +185,6 @@ func testGlobalRouteBuildsOnlineDependenciesOnce() {
     _ = presentation.onlineDependencies
     XCTAssertEqual(factory.makeCallCount, 1)
 }
-~~~
-
-- [ ] **Step 2: Verify RED**
-
-~~~bash
-xcodebuild test -project Toss.xcodeproj -scheme Toss \
-  -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.5' \
-  -only-testing:TossTests/LaunchProfilePresentationTests
-~~~
-
-Expected: compilation fails because bootstrap presentation and factory types do not exist.
-
-- [ ] **Step 3: Implement bootstrap**
-
-`TossApp` must render `AppBootstrapView()`, not `AppRootView(dependencies: .live())`. `AppBootstrapView` invokes `await resolver.resolve()` from its `.task`, and it must show only a neutral launch progress state while this short StoreKit read is unfinished.
-
-~~~swift
-switch presentation.destination {
-case .mainlandClassicOnly:
-    MainlandClassicRootView()
-case .globalOnline:
-    AppRootView(dependencies: presentation.onlineDependencies)
-case .requiresManualChoice:
-    DistributionProfileChoiceView(onChoose: presentation.chooseManually)
-}
-~~~
-
-Keep the current `AppRootView(dependencies:)` as the global-only root. Its account restoration task stays inside this branch. `MainlandClassicRootView` must not import or reference `AppDependencies`, `AccountStore`, `AccountViewModel`, `CoinLibraryViewModel`, `CoinCatalogCache`, `CoinAssetCache`, `SupabaseConfiguration`, or `AppDependencies.live()`.
-
-- [ ] **Step 4: Verify GREEN**
-
-Re-run Step 2. Inspect the mainland constructor: it accepts no online service dependency.
-
-- [ ] **Step 5: Commit**
-
-~~~bash
-git add Toss/Views/AppBootstrapView.swift Toss/Views/DistributionProfileChoiceView.swift Toss/Views/MainlandClassicRootView.swift Toss/App/TossApp.swift Toss/Views/AppRootView.swift TossTests/Views/LaunchProfilePresentationTests.swift Toss.xcodeproj/project.pbxproj
-git diff --cached --check
-git commit -m 'feat: add mainland offline app root'
-~~~
-
-### Task 3: Hide online controls and retain local sound and haptic settings
-
-**Files:**
-- Create: `Toss/ViewModels/ClassicSettingsViewModel.swift`
-- Create: `Toss/Views/ClassicSettingsSheetView.swift`
-- Modify: `Toss/Views/MainlandClassicRootView.swift`
-- Modify: `Toss/Views/ContentView.swift`
-- Modify: `Toss/Views/AppRootView.swift`
-- Modify: `TossTests/TossTests.swift`
-- Create: `TossTests/Views/ClassicSettingsViewModelTests.swift`
-- Modify: `Toss.xcodeproj/project.pbxproj`
-
-**Interfaces:**
-- `ClassicSettingsViewModel` publishes `soundEnabled` and `hapticEnabled`, and implements `setSoundEnabled(_:)` / `setHapticEnabled(_:)`.
-- `ContentView` accepts `coinModelSource: CoinModelSource` and `onOpenCoinLibrary: (() -> Void)?`.
-- `ContentView.showsCoinLibraryControl` returns whether that callback exists.
-- Mainland always uses `.bundledClassic` and `nil`; the global root supplies the selected source and its existing library action.
-
-- [ ] **Step 1: Write failing local-settings and control tests**
-
-~~~swift
-@MainActor
-func testClassicSettingsPersistAndApplyFeedbackLocally() {
-    let storage = SettingsKeyValueStore()
-    let feedback = FeedbackDouble()
-    let model = ClassicSettingsViewModel(
-        localPreferences: LocalPreferencesStore(store: storage),
-        feedbackPreferences: feedback
-    )
-
-    model.setSoundEnabled(false)
-    model.setHapticEnabled(false)
-
-    XCTAssertFalse(model.soundEnabled)
-    XCTAssertFalse(model.hapticEnabled)
-    XCTAssertEqual(feedback.applied, .init(soundEnabled: false, hapticEnabled: false))
-}
 
 @MainActor
 func testClassicContentHasNoCoinLibraryAction() {
@@ -279,35 +204,50 @@ func testClassicContentHasNoCoinLibraryAction() {
 ~~~bash
 xcodebuild test -project Toss.xcodeproj -scheme Toss \
   -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.5' \
-  -only-testing:TossTests/ClassicSettingsViewModelTests \
-  -only-testing:TossTests/TossTests/testClassicContentHasNoCoinLibraryAction
+  -only-testing:TossTests/LaunchProfilePresentationTests
 ~~~
 
-Expected: compilation fails because the revised ContentView and settings view model do not exist.
+Expected: compilation fails because bootstrap presentation and factory types do not exist.
 
-- [ ] **Step 3: Implement the local-only settings and ownership split**
+- [ ] **Step 3: Implement bootstrap**
 
-`ClassicSettingsViewModel` reads `LocalPreferencesStore.guestPreferences`, saves only `saveGuest`, then calls `AppFeedbackPreferencesController.apply`. It must not accept or reference an account service, repository, sync coordinator, or Supabase type.
+`TossApp` must render `AppBootstrapView()`, not `AppRootView(dependencies: .live())`. `AppBootstrapView` invokes `await resolver.resolve()` from its `.task`, and it must show only a neutral launch progress state while this short StoreKit read is unfinished.
 
-Move the online full-screen `CoinLibraryView` presentation from `ContentView` into `AppRootView`. `ContentView` shows its grid button only if the action exists:
+Do not construct the MainActor-isolated live factory in a default argument. Provide an explicit injected initializer and a MainActor convenience initializer instead:
 
 ~~~swift
-var showsCoinLibraryControl: Bool { onOpenCoinLibrary != nil }
+init(resolver: DistributionProfileResolver, onlineFactory: any OnlineRootBuilding) {
+    self.resolver = resolver
+    _presentation = StateObject(wrappedValue: LaunchProfilePresentation(
+        profile: nil,
+        onlineFactory: onlineFactory,
+        manualProfileChooser: { resolver.chooseManually($0) }
+    ))
+}
 
-if let onOpenCoinLibrary {
-    Button(action: onOpenCoinLibrary) {
-        Image(systemName: "circle.grid.2x2.fill")
-            .font(.system(size: 18, weight: .medium))
-            .frame(width: TossVisualStyle.controlSize, height: TossVisualStyle.controlSize)
-    }
+init(resolver: DistributionProfileResolver = DistributionProfileResolver()) {
+    self.init(resolver: resolver, onlineFactory: LiveOnlineRootBuilder())
 }
 ~~~
 
-`MainlandClassicRootView` supplies `.bundledClassic`, no library action, and a sliders button opening `ClassicSettingsSheetView`. Reuse `AccountPreferenceRow` for only Sound and Haptics. It must not present `AccountSheetView`.
+~~~swift
+switch presentation.destination {
+case .mainlandClassicOnly:
+    MainlandClassicRootView()
+case .globalOnline:
+    AppRootView(dependencies: presentation.onlineDependencies)
+case .requiresManualChoice:
+    DistributionProfileChoiceView(onChoose: presentation.chooseManually)
+}
+~~~
+
+Keep the current `AppRootView(dependencies:)` as the global-only root. Its account restoration task stays inside this branch. `MainlandClassicRootView` must not import or reference `AppDependencies`, `AccountStore`, `AccountViewModel`, `CoinLibraryViewModel`, `CoinCatalogCache`, `CoinAssetCache`, `SupabaseConfiguration`, or `AppDependencies.live()`.
+
+Move the full-screen `CoinLibraryView` presentation from `ContentView` into `AppRootView`. `ContentView` retains all toss gesture, animation, sound, haptic, and RealityKit behavior, but receives its source and optional leading control action from its root. The global root supplies its selected dynamic source and action; the mainland root supplies `.bundledClassic` and `nil`. This ensures the mainland root offers the complete toss ritual without constructing a library view model.
 
 - [ ] **Step 4: Verify GREEN**
 
-Run Step 2, then:
+Re-run Step 2, then verify the ownership split keeps the global selected model behavior:
 
 ~~~bash
 xcodebuild test -project Toss.xcodeproj -scheme Toss \
@@ -316,12 +256,74 @@ xcodebuild test -project Toss.xcodeproj -scheme Toss \
   -only-testing:TossTests/TossTests/testHomeIdleAffordanceIsVisibleOnlyWhileIdle
 ~~~
 
-Expected: all focused tests pass, including the unchanged global dynamic-selection behavior.
+Expected: all focused tests pass. Inspect the mainland constructor: it accepts no online service dependency.
 
 - [ ] **Step 5: Commit**
 
 ~~~bash
-git add Toss/ViewModels/ClassicSettingsViewModel.swift Toss/Views/ClassicSettingsSheetView.swift Toss/Views/MainlandClassicRootView.swift Toss/Views/ContentView.swift Toss/Views/AppRootView.swift TossTests/TossTests.swift TossTests/Views/ClassicSettingsViewModelTests.swift Toss.xcodeproj/project.pbxproj
+git add Toss/Views/AppBootstrapView.swift Toss/Views/DistributionProfileChoiceView.swift Toss/Views/MainlandClassicRootView.swift Toss/App/TossApp.swift Toss/Views/AppRootView.swift Toss/Views/ContentView.swift TossTests/Views/LaunchProfilePresentationTests.swift TossTests/TossTests.swift Toss.xcodeproj/project.pbxproj
+git diff --cached --check
+git commit -m 'feat: add mainland offline app root'
+~~~
+
+### Task 3: Retain local sound and haptic settings in the Mainland root
+
+**Files:**
+- Create: `Toss/ViewModels/ClassicSettingsViewModel.swift`
+- Create: `Toss/Views/ClassicSettingsSheetView.swift`
+- Modify: `Toss/Views/MainlandClassicRootView.swift`
+- Create: `TossTests/Views/ClassicSettingsViewModelTests.swift`
+- Modify: `Toss.xcodeproj/project.pbxproj`
+
+**Interfaces:**
+- `ClassicSettingsViewModel` publishes `soundEnabled` and `hapticEnabled`, and implements `setSoundEnabled(_:)` / `setHapticEnabled(_:)`.
+
+- [ ] **Step 1: Write the failing local-settings test**
+
+~~~swift
+@MainActor
+func testClassicSettingsPersistAndApplyFeedbackLocally() {
+    let storage = SettingsKeyValueStore()
+    let feedback = FeedbackDouble()
+    let model = ClassicSettingsViewModel(
+        localPreferences: LocalPreferencesStore(store: storage),
+        feedbackPreferences: feedback
+    )
+
+    model.setSoundEnabled(false)
+    model.setHapticEnabled(false)
+
+    XCTAssertFalse(model.soundEnabled)
+    XCTAssertFalse(model.hapticEnabled)
+    XCTAssertEqual(feedback.applied, .init(soundEnabled: false, hapticEnabled: false))
+}
+
+~~~
+
+- [ ] **Step 2: Verify RED**
+
+~~~bash
+xcodebuild test -project Toss.xcodeproj -scheme Toss \
+  -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.5' \
+  -only-testing:TossTests/ClassicSettingsViewModelTests
+~~~
+
+Expected: compilation fails because the mainland settings view model does not exist.
+
+- [ ] **Step 3: Implement the local-only settings sheet**
+
+`ClassicSettingsViewModel` reads `LocalPreferencesStore.guestPreferences`, saves only `saveGuest`, then calls `AppFeedbackPreferencesController.apply`. It must not accept or reference an account service, repository, sync coordinator, or Supabase type.
+
+`MainlandClassicRootView` supplies `.bundledClassic`, no library action, and a sliders button opening `ClassicSettingsSheetView`. Reuse `AccountPreferenceRow` for only Sound and Haptics. It must not present `AccountSheetView`.
+
+- [ ] **Step 4: Verify GREEN**
+
+Run Step 2 again. Expected: the local settings tests pass.
+
+- [ ] **Step 5: Commit**
+
+~~~bash
+git add Toss/ViewModels/ClassicSettingsViewModel.swift Toss/Views/ClassicSettingsSheetView.swift Toss/Views/MainlandClassicRootView.swift TossTests/Views/ClassicSettingsViewModelTests.swift Toss.xcodeproj/project.pbxproj
 git diff --cached --check
 git commit -m 'feat: limit mainland app to Classic'
 ~~~
