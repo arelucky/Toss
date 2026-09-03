@@ -620,3 +620,16 @@ abd19a7 feat: limit mainland app to Classic
 
 * 启动档案与静态过渡页聚焦测试通过。
 * iPhone15pm Debug 构建、重新安装与首次启动视觉验收通过；未见白屏。
+
+---
+
+# 大陆首发版本准备
+
+## 状态
+
+✅ 本地 Release 构建验证通过
+
+## 完成内容
+
+* 发布版本调整为 1.0.1（4），用于包含大陆 Classic-only 档案的首次更新。
+* 保持同一 Bundle ID，后续由 App Store Connect 的中国大陆销售范围决定可下载地区。
