@@ -24,7 +24,10 @@ struct MainlandClassicRootView: View {
                 .padding(.trailing, TossVisualStyle.pageHorizontalInset)
         }
         .sheet(isPresented: $isSettingsPresented) {
-            ClassicSettingsSheetView(viewModel: settingsViewModel)
+            ClassicSettingsSheetView(
+                viewModel: settingsViewModel,
+                filingDisclosure: .current
+            )
         }
     }
 
@@ -52,4 +55,14 @@ struct MainlandClassicRootView: View {
         .accessibilityLabel("Settings")
         .accessibilityHint("Opens sound and haptic settings")
     }
+}
+
+struct MainlandAppFilingDisclosure: Equatable {
+    let number: String
+    let verificationURL: URL
+
+    static let current = MainlandAppFilingDisclosure(
+        number: "苏ICP备2026011580号-2A",
+        verificationURL: URL(string: "https://beian.miit.gov.cn/")!
+    )
 }
