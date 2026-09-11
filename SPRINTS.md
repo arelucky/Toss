@@ -631,7 +631,7 @@ abd19a7 feat: limit mainland app to Classic
 
 ## 完成内容
 
-* 发布版本调整为 1.0.1（4），用于包含大陆 Classic-only 档案的首次更新。
+* 发布版本调整为 1.0.2（1），用于包含大陆 Classic-only 档案与备案号展示的首次更新。
 * 保持同一 Bundle ID，后续由 App Store Connect 的中国大陆销售范围决定可下载地区。
 
 ---
