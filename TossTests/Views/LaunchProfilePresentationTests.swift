@@ -45,6 +45,17 @@ final class LaunchProfilePresentationTests: XCTestCase {
         XCTAssertEqual(LaunchProfileLoadingPresentation.title, "命运的一掷")
         XCTAssertEqual(LaunchProfileLoadingPresentation.subtitle, "A toss of fate")
     }
+
+    func testMainlandFilingDisclosureUsesIssuedNumberAndMIITLookup() {
+        XCTAssertEqual(
+            MainlandAppFilingDisclosure.current.number,
+            "苏ICP备2026011580号-2A"
+        )
+        XCTAssertEqual(
+            MainlandAppFilingDisclosure.current.verificationURL,
+            URL(string: "https://beian.miit.gov.cn/")
+        )
+    }
 }
 
 @MainActor
