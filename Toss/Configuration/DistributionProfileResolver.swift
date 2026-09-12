@@ -28,12 +28,18 @@ final class DistributionProfileResolver {
     }
 
     var storedProfile: DistributionProfile? {
-        store.storedProfile
+        guard store.hasCurrentResolutionVersion else { return nil }
+        return store.storedProfile
     }
 
     func resolve() async -> DistributionProfileResolution {
-        if let storedProfile = store.storedProfile {
+        if let storedProfile {
             return .resolved(storedProfile)
+        }
+
+        if store.storedProfile == .mainlandClassicOnly {
+            store.save(.mainlandClassicOnly)
+            return .resolved(.mainlandClassicOnly)
         }
 
         guard let countryCode = await storefront.currentCountryCode() else {

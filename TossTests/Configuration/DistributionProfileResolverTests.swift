@@ -46,6 +46,76 @@ final class DistributionProfileResolverTests: XCTestCase {
         XCTAssertEqual(storefront.callCount, 0)
     }
 
+    func testLegacyGlobalProfileRechecksCHNStorefrontAndMigratesToClassicOnly() async {
+        let storage = ProfileKeyValueStore()
+        storage.set(DistributionProfile.globalOnline.rawValue, forKey: "distribution.profile")
+        let store = DistributionProfileStore(store: storage)
+        let storefront = StorefrontCountryCodeDouble(countryCode: "CHN")
+        let resolver = DistributionProfileResolver(
+            store: store,
+            storefront: storefront
+        )
+
+        let resolution = await resolver.resolve()
+
+        XCTAssertEqual(resolution, .resolved(.mainlandClassicOnly))
+        XCTAssertEqual(store.storedProfile, .mainlandClassicOnly)
+        XCTAssertEqual(storefront.callCount, 1)
+    }
+
+    func testLegacyGlobalProfileRechecksNonCHNStorefrontAndMigratesOnce() async {
+        let storage = ProfileKeyValueStore()
+        storage.set(DistributionProfile.globalOnline.rawValue, forKey: "distribution.profile")
+        let store = DistributionProfileStore(store: storage)
+        let storefront = StorefrontCountryCodeDouble(countryCode: "USA")
+        let resolver = DistributionProfileResolver(store: store, storefront: storefront)
+
+        let firstResolution = await resolver.resolve()
+
+        XCTAssertEqual(firstResolution, .resolved(.globalOnline))
+        XCTAssertEqual(storefront.callCount, 1)
+
+        let changedStorefront = StorefrontCountryCodeDouble(countryCode: "CHN")
+        let relaunchedResolver = DistributionProfileResolver(
+            store: store,
+            storefront: changedStorefront
+        )
+
+        let relaunchedResolution = await relaunchedResolver.resolve()
+
+        XCTAssertEqual(relaunchedResolution, .resolved(.globalOnline))
+        XCTAssertEqual(changedStorefront.callCount, 0)
+    }
+
+    func testLegacyGlobalProfileWithoutStorefrontRequiresManualChoice() async {
+        let storage = ProfileKeyValueStore()
+        storage.set(DistributionProfile.globalOnline.rawValue, forKey: "distribution.profile")
+        let storefront = StorefrontCountryCodeDouble(countryCode: nil)
+        let resolver = DistributionProfileResolver(
+            store: DistributionProfileStore(store: storage),
+            storefront: storefront
+        )
+
+        let resolution = await resolver.resolve()
+
+        XCTAssertEqual(resolution, .requiresManualChoice)
+        XCTAssertEqual(storefront.callCount, 1)
+    }
+
+    @MainActor
+    func testLegacyGlobalProfileIsNotReadyBeforeMigration() {
+        let storage = ProfileKeyValueStore()
+        storage.set(DistributionProfile.globalOnline.rawValue, forKey: "distribution.profile")
+        let coordinator = AppLaunchCoordinator(
+            resolver: DistributionProfileResolver(
+                store: DistributionProfileStore(store: storage),
+                storefront: StorefrontCountryCodeDouble(countryCode: "CHN")
+            )
+        )
+
+        XCTAssertEqual(coordinator.state, .resolving)
+    }
+
     func testUnknownStorefrontRequiresManualChoiceAndPersistsIt() async {
         let store = DistributionProfileStore(store: ProfileKeyValueStore())
         let resolver = DistributionProfileResolver(
