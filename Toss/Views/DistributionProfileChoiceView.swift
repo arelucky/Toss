@@ -9,9 +9,9 @@ struct DistributionProfileChoiceView: View {
 
             VStack(spacing: 24) {
                 VStack(spacing: 8) {
-                    Text("Choose your region")
+                    Text("Test a Toss profile")
                         .font(.title2.weight(.semibold))
-                    Text("This one-time choice determines which Toss experience is available.")
+                    Text("TestFlight only. Choose the experience to verify for this launch.")
                         .font(.subheadline)
                         .foregroundStyle(TossVisualStyle.secondaryText.swiftUIColor)
                         .multilineTextAlignment(.center)

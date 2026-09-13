@@ -53,13 +53,9 @@ final class AppLaunchCoordinator: ObservableObject {
     init(resolver: DistributionProfileResolver = DistributionProfileResolver()) {
         self.resolver = resolver
 
-        if let storedProfile = resolver.storedProfile {
-            state = .resolved(storedProfile)
-        } else {
-            state = .resolving
-            Task { [weak self] in
-                await self?.resolveProfile()
-            }
+        state = .resolving
+        Task { [weak self] in
+            await self?.resolveProfile()
         }
     }
 

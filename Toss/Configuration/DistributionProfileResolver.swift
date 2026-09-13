@@ -1,3 +1,4 @@
+import Foundation
 import StoreKit
 
 enum DistributionProfileResolution: Equatable {
@@ -15,47 +16,47 @@ struct StoreKitStorefrontCountryCodeProvider: StorefrontCountryCodeProviding {
     }
 }
 
-final class DistributionProfileResolver {
-    private let store: DistributionProfileStore
-    private let storefront: any StorefrontCountryCodeProviding
+struct AppDistributionEnvironment {
+    let receiptURL: URL?
 
-    init(
-        store: DistributionProfileStore = DistributionProfileStore(),
-        storefront: any StorefrontCountryCodeProviding = StoreKitStorefrontCountryCodeProvider()
-    ) {
-        self.store = store
-        self.storefront = storefront
+    init(receiptURL: URL? = Bundle.main.appStoreReceiptURL) {
+        self.receiptURL = receiptURL
     }
 
-    var storedProfile: DistributionProfile? {
-        guard store.hasCurrentResolutionVersion else { return nil }
-        return store.storedProfile
+    var isTestFlight: Bool {
+        receiptURL?.lastPathComponent == "sandboxReceipt"
+    }
+}
+
+final class DistributionProfileResolver {
+    private let storefront: any StorefrontCountryCodeProviding
+    private let isTestFlight: Bool
+
+    init(
+        storefront: any StorefrontCountryCodeProviding = StoreKitStorefrontCountryCodeProvider(),
+        isTestFlight: Bool = AppDistributionEnvironment().isTestFlight
+    ) {
+        self.storefront = storefront
+        self.isTestFlight = isTestFlight
     }
 
     func resolve() async -> DistributionProfileResolution {
-        if let storedProfile {
-            return .resolved(storedProfile)
-        }
-
-        if store.storedProfile == .mainlandClassicOnly {
-            store.save(.mainlandClassicOnly)
-            return .resolved(.mainlandClassicOnly)
-        }
-
-        guard let countryCode = await storefront.currentCountryCode() else {
+        if isTestFlight {
             return .requiresManualChoice
         }
 
-        let profile: DistributionProfile = countryCode.uppercased() == "CHN"
-            ? .mainlandClassicOnly
-            : .globalOnline
-        store.save(profile)
+        let profile: DistributionProfile
+        switch await storefront.currentCountryCode()?.uppercased() {
+        case "CHN", nil:
+            profile = .mainlandClassicOnly
+        default:
+            profile = .globalOnline
+        }
         return .resolved(profile)
     }
 
     @discardableResult
     func chooseManually(_ profile: DistributionProfile) -> DistributionProfile {
-        store.save(profile)
-        return profile
+        profile
     }
 }

@@ -2,165 +2,108 @@ import XCTest
 @testable import Toss
 
 final class DistributionProfileResolverTests: XCTestCase {
-    func testCHNStorefrontResolvesAndPersistsClassicOnly() async {
-        let store = DistributionProfileStore(store: ProfileKeyValueStore())
+    func testSandboxReceiptIdentifiesTestFlight() {
+        let environment = AppDistributionEnvironment(
+            receiptURL: URL(fileURLWithPath: "/app/StoreKit/sandboxReceipt")
+        )
+
+        XCTAssertTrue(environment.isTestFlight)
+    }
+
+    func testProductionReceiptDoesNotIdentifyTestFlight() {
+        let environment = AppDistributionEnvironment(
+            receiptURL: URL(fileURLWithPath: "/app/StoreKit/receipt")
+        )
+
+        XCTAssertFalse(environment.isTestFlight)
+    }
+
+    func testCHNStorefrontResolvesClassicOnly() async {
         let resolver = DistributionProfileResolver(
-            store: store,
-            storefront: StorefrontCountryCodeDouble(countryCode: "CHN")
+            storefront: StorefrontCountryCodeDouble(countryCode: "CHN"),
+            isTestFlight: false
         )
 
         let resolution = await resolver.resolve()
 
         XCTAssertEqual(resolution, .resolved(.mainlandClassicOnly))
-        XCTAssertEqual(store.storedProfile, .mainlandClassicOnly)
         XCTAssertFalse(DistributionProfile.mainlandClassicOnly.capabilities.showsCoinLibrary)
         XCTAssertFalse(DistributionProfile.mainlandClassicOnly.capabilities.showsAccount)
         XCTAssertFalse(DistributionProfile.mainlandClassicOnly.capabilities.usesOnlineServices)
     }
 
-    func testNonCHNStorefrontResolvesAndPersistsGlobalOnline() async {
-        let store = DistributionProfileStore(store: ProfileKeyValueStore())
+    func testNonCHNStorefrontResolvesGlobalOnline() async {
         let resolver = DistributionProfileResolver(
-            store: store,
-            storefront: StorefrontCountryCodeDouble(countryCode: "USA")
+            storefront: StorefrontCountryCodeDouble(countryCode: "USA"),
+            isTestFlight: false
         )
 
         let resolution = await resolver.resolve()
 
         XCTAssertEqual(resolution, .resolved(.globalOnline))
-        XCTAssertEqual(store.storedProfile, .globalOnline)
     }
 
-    func testStoredProfileWinsOverChangedStorefront() async {
-        let store = DistributionProfileStore(store: ProfileKeyValueStore())
-        store.save(.globalOnline)
-        let storefront = StorefrontCountryCodeDouble(countryCode: "CHN")
-        let resolver = DistributionProfileResolver(
-            store: store,
-            storefront: storefront
+    func testProductionRechecksStorefrontForEachLaunch() async {
+        let storefront = StorefrontCountryCodeDouble(countryCode: "USA")
+        let firstResolver = DistributionProfileResolver(
+            storefront: storefront,
+            isTestFlight: false
         )
 
-        let resolution = await resolver.resolve()
+        let firstResolution = await firstResolver.resolve()
+        storefront.countryCode = "CHN"
+        let relaunchedResolver = DistributionProfileResolver(
+            storefront: storefront,
+            isTestFlight: false
+        )
+        let relaunchedResolution = await relaunchedResolver.resolve()
 
-        XCTAssertEqual(resolution, .resolved(.globalOnline))
-        XCTAssertEqual(storefront.callCount, 0)
+        XCTAssertEqual(firstResolution, .resolved(.globalOnline))
+        XCTAssertEqual(relaunchedResolution, .resolved(.mainlandClassicOnly))
+        XCTAssertEqual(storefront.callCount, 2)
     }
 
-    func testLegacyGlobalProfileRechecksCHNStorefrontAndMigratesToClassicOnly() async {
-        let storage = ProfileKeyValueStore()
-        storage.set(DistributionProfile.globalOnline.rawValue, forKey: "distribution.profile")
-        let store = DistributionProfileStore(store: storage)
-        let storefront = StorefrontCountryCodeDouble(countryCode: "CHN")
+    func testProductionWithoutStorefrontDefaultsToClassicOnly() async {
+        let storefront = StorefrontCountryCodeDouble(countryCode: nil)
         let resolver = DistributionProfileResolver(
-            store: store,
-            storefront: storefront
+            storefront: storefront,
+            isTestFlight: false
         )
 
         let resolution = await resolver.resolve()
 
         XCTAssertEqual(resolution, .resolved(.mainlandClassicOnly))
-        XCTAssertEqual(store.storedProfile, .mainlandClassicOnly)
         XCTAssertEqual(storefront.callCount, 1)
     }
 
-    func testLegacyGlobalProfileRechecksNonCHNStorefrontAndMigratesOnce() async {
-        let storage = ProfileKeyValueStore()
-        storage.set(DistributionProfile.globalOnline.rawValue, forKey: "distribution.profile")
-        let store = DistributionProfileStore(store: storage)
+    func testTestFlightRequiresManualChoiceWithoutReadingStorefront() async {
         let storefront = StorefrontCountryCodeDouble(countryCode: "USA")
-        let resolver = DistributionProfileResolver(store: store, storefront: storefront)
-
-        let firstResolution = await resolver.resolve()
-
-        XCTAssertEqual(firstResolution, .resolved(.globalOnline))
-        XCTAssertEqual(storefront.callCount, 1)
-
-        let changedStorefront = StorefrontCountryCodeDouble(countryCode: "CHN")
-        let relaunchedResolver = DistributionProfileResolver(
-            store: store,
-            storefront: changedStorefront
-        )
-
-        let relaunchedResolution = await relaunchedResolver.resolve()
-
-        XCTAssertEqual(relaunchedResolution, .resolved(.globalOnline))
-        XCTAssertEqual(changedStorefront.callCount, 0)
-    }
-
-    func testLegacyGlobalProfileWithoutStorefrontRequiresManualChoice() async {
-        let storage = ProfileKeyValueStore()
-        storage.set(DistributionProfile.globalOnline.rawValue, forKey: "distribution.profile")
-        let storefront = StorefrontCountryCodeDouble(countryCode: nil)
         let resolver = DistributionProfileResolver(
-            store: DistributionProfileStore(store: storage),
-            storefront: storefront
+            storefront: storefront,
+            isTestFlight: true
         )
 
         let resolution = await resolver.resolve()
 
         XCTAssertEqual(resolution, .requiresManualChoice)
-        XCTAssertEqual(storefront.callCount, 1)
+        XCTAssertEqual(storefront.callCount, 0)
     }
 
     @MainActor
-    func testLegacyGlobalProfileIsNotReadyBeforeMigration() {
-        let storage = ProfileKeyValueStore()
-        storage.set(DistributionProfile.globalOnline.rawValue, forKey: "distribution.profile")
+    func testCoordinatorStartsResolvingBeforeProductionStorefrontCheck() {
         let coordinator = AppLaunchCoordinator(
             resolver: DistributionProfileResolver(
-                store: DistributionProfileStore(store: storage),
-                storefront: StorefrontCountryCodeDouble(countryCode: "CHN")
+                storefront: StorefrontCountryCodeDouble(countryCode: "CHN"),
+                isTestFlight: false
             )
         )
 
         XCTAssertEqual(coordinator.state, .resolving)
     }
-
-    func testUnknownStorefrontRequiresManualChoiceAndPersistsIt() async {
-        let store = DistributionProfileStore(store: ProfileKeyValueStore())
-        let resolver = DistributionProfileResolver(
-            store: store,
-            storefront: StorefrontCountryCodeDouble(countryCode: nil)
-        )
-
-        let resolution = await resolver.resolve()
-
-        XCTAssertEqual(resolution, .requiresManualChoice)
-        XCTAssertEqual(resolver.chooseManually(.mainlandClassicOnly), .mainlandClassicOnly)
-        XCTAssertEqual(store.storedProfile, .mainlandClassicOnly)
-    }
-
-    @MainActor
-    func testSavedProfileIsReadyBeforeStorefrontResolutionStarts() {
-        let store = DistributionProfileStore(store: ProfileKeyValueStore())
-        store.save(.mainlandClassicOnly)
-        let storefront = StorefrontCountryCodeDouble(countryCode: "USA")
-        let coordinator = AppLaunchCoordinator(
-            resolver: DistributionProfileResolver(
-                store: store,
-                storefront: storefront
-            )
-        )
-
-        XCTAssertEqual(coordinator.state, .resolved(.mainlandClassicOnly))
-        XCTAssertEqual(storefront.callCount, 0)
-    }
-}
-
-private final class ProfileKeyValueStore: PreferencesKeyValueStoring {
-    private var values: [String: Any] = [:]
-
-    func object(forKey key: String) -> Any? {
-        values[key]
-    }
-
-    func set(_ value: Any?, forKey key: String) {
-        values[key] = value
-    }
 }
 
 private final class StorefrontCountryCodeDouble: StorefrontCountryCodeProviding {
-    let countryCode: String?
+    var countryCode: String?
     private(set) var callCount = 0
 
     init(countryCode: String?) {

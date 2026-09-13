@@ -675,3 +675,25 @@ abd19a7 feat: limit mainland app to Classic
 * 发行档案解析与启动协调器迁移回归测试 9 项通过。
 * 完整 TossTests 257 项通过。
 * Debug 模拟器构建通过。
+
+---
+
+# 1.0.3 TestFlight 发行档案修复
+
+## 状态
+
+✅ 本地自动验证与 Release 构建通过，等待双档案 TestFlight 验收
+
+## 完成内容
+
+* 修复 1.0.3（1）在 TestFlight 沙盒店面下可能永久保存全球在线档案的问题。
+* TestFlight 构建每次冷启动显示大陆 Classic-only 与全球在线档案选择，便于分别验收。
+* 正式 App Store 构建不显示选择页，每次冷启动重新读取 Storefront；`CHN` 使用大陆 Classic-only，其他店面使用全球在线档案。
+* 正式环境暂时无法取得 Storefront 时安全降级至大陆 Classic-only，不初始化账户、硬币库或在线服务。
+* 版本保持 1.0.3，构建号调整为 2。
+
+## 验证结果
+
+* 发行档案与大陆离线路径聚焦测试 13 项通过。
+* 完整 TossTests 256 项通过。
+* 未签名 Release 设备构建通过。

@@ -39,7 +39,6 @@
 		F5F100043025000100000001 /* SupabaseConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F100033025000100000001 /* SupabaseConfiguration.swift */; };
 		F605000130F2000100000001 /* DistributionProfileResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F605000230F2000100000001 /* DistributionProfileResolverTests.swift */; };
 		F605000330F2000100000001 /* DistributionProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = F605000430F2000100000001 /* DistributionProfile.swift */; };
-		F605000530F2000100000001 /* DistributionProfileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F605000630F2000100000001 /* DistributionProfileStore.swift */; };
 		F605000730F2000100000001 /* DistributionProfileResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = F605000830F2000100000001 /* DistributionProfileResolver.swift */; };
 		F606000130F2100100000001 /* LaunchProfilePresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F606000230F2100100000001 /* LaunchProfilePresentationTests.swift */; };
 		F606000330F2100100000001 /* AppBootstrapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F606000430F2100100000001 /* AppBootstrapView.swift */; };
@@ -168,7 +167,6 @@
 		F5F100033025000100000001 /* SupabaseConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseConfiguration.swift; sourceTree = "<group>"; };
 		F605000230F2000100000001 /* DistributionProfileResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Configuration/DistributionProfileResolverTests.swift; sourceTree = "<group>"; };
 		F605000430F2000100000001 /* DistributionProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistributionProfile.swift; sourceTree = "<group>"; };
-		F605000630F2000100000001 /* DistributionProfileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistributionProfileStore.swift; sourceTree = "<group>"; };
 		F605000830F2000100000001 /* DistributionProfileResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistributionProfileResolver.swift; sourceTree = "<group>"; };
 		F606000230F2100100000001 /* LaunchProfilePresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/LaunchProfilePresentationTests.swift; sourceTree = "<group>"; };
 		F606000430F2100100000001 /* AppBootstrapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBootstrapView.swift; sourceTree = "<group>"; };
@@ -337,7 +335,6 @@
 			children = (
 				F5F100033025000100000001 /* SupabaseConfiguration.swift */,
 				F605000430F2000100000001 /* DistributionProfile.swift */,
-				F605000630F2000100000001 /* DistributionProfileStore.swift */,
 				F605000830F2000100000001 /* DistributionProfileResolver.swift */,
 			);
 			path = Configuration;
@@ -665,7 +662,6 @@
 				F607000330F2200100000001 /* ClassicSettingsViewModel.swift in Sources */,
 				F607000530F2200100000001 /* ClassicSettingsSheetView.swift in Sources */,
 				F605000330F2000100000001 /* DistributionProfile.swift in Sources */,
-				F605000530F2000100000001 /* DistributionProfileStore.swift in Sources */,
 				F605000730F2000100000001 /* DistributionProfileResolver.swift in Sources */,
 				F5A43AC12FFFEA0000F9D3AF /* CoinBack.swift in Sources */,
 				F5A43AB92FFFEA0000F9D3AF /* CoinTheme.swift in Sources */,
@@ -937,7 +933,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CODE_SIGN_ENTITLEMENTS = Toss/Toss.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_ASSET_PATHS = "\"Toss/Preview Content\"";
 				DEVELOPMENT_TEAM = 36ZQWSGBJ4;
 				ENABLE_PREVIEWS = YES;
@@ -968,7 +964,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CODE_SIGN_ENTITLEMENTS = Toss/Toss.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 36ZQWSGBJ4;
 				DEVELOPMENT_ASSET_PATHS = "\"Toss/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
