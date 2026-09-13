@@ -668,6 +668,7 @@ abd19a7 feat: limit mainland app to Classic
 * 已安装旧版的中国大陆用户升级后重新核对 App Store Storefront，并迁移至 Classic-only 档案。
 * 非中国大陆用户完成一次迁移后继续保持全球在线档案，后续启动不重复解析。
 * Storefront 暂不可用时进入手动地区选择，不使用未迁移的全球在线档案。
+* 修复版本准备为 1.0.3（1），用于向已安装旧版的大陆用户交付迁移。
 
 ## 验证结果
 
